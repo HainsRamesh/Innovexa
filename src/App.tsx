@@ -10,6 +10,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
+import ProblemDetails from "./pages/ProblemDetails";
 import Solutions from "./pages/Solutions";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
@@ -73,6 +74,7 @@ const AppRoutes = () => {
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
       <Route path="/explore" element={<Explore />} />
+      <Route path="/explore/:problemId" element={<ProblemDetails />} />
       <Route path="/solutions" element={<Solutions />} />
       <Route path="/about" element={<About />} />
       <Route path="/profile" element={<Profile />} />
