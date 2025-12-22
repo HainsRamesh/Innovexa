@@ -32,7 +32,7 @@ const BrowseProblemsPage = () => {
     try {
       const { data, error } = await supabase
         .from('problems')
-        .select('*, profiles(full_name, organization_name)')
+        .select('*')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
