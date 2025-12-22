@@ -19,6 +19,8 @@ import NotFound from "./pages/NotFound";
 // Dashboard Pages
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
 import ProblemsPage from "./pages/dashboard/ProblemsPage";
+import ProblemDetailPage from "./pages/dashboard/ProblemDetailPage";
+import EditProblemPage from "./pages/dashboard/EditProblemPage";
 import NewProblemPage from "./pages/dashboard/NewProblemPage";
 import BrowseProblemsPage from "./pages/dashboard/BrowseProblemsPage";
 import SolutionsPage from "./pages/dashboard/SolutionsPage";
@@ -56,6 +58,8 @@ const DashboardRoutes = () => {
         <Route path="admin" element={<DashboardOverview />} />
         <Route path="problems" element={<ProblemsPage />} />
         <Route path="problems/new" element={<NewProblemPage />} />
+        <Route path="problems/:problemId" element={<ProblemDetailPage />} />
+        <Route path="problems/:problemId/edit" element={<EditProblemPage />} />
         <Route path="browse" element={<BrowseProblemsPage />} />
         <Route path="solutions" element={<SolutionsPage />} />
         <Route path="bookmarks" element={<DashboardOverview />} />
