@@ -53,6 +53,7 @@ const solutionSchema = z.object({
   technology_stack: z.string().optional(),
 });
 
+type SolutionFormInput = z.input<typeof solutionSchema>;
 type SolutionFormValues = z.output<typeof solutionSchema>;
 
 interface SolutionSubmissionFormProps {
@@ -95,10 +96,13 @@ export function SolutionSubmissionForm({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (values: SolutionFormValues) => {
+  const onSubmit = async (data: SolutionFormInput) => {
     setIsSubmitting(true);
 
     try {
+      // Parse and transform the input data
+      const values = solutionSchema.parse(data);
+      
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -109,6 +113,7 @@ export function SolutionSubmissionForm({
           description: "Please sign in to submit a solution.",
           variant: "destructive",
         });
+        setIsSubmitting(false);
         return;
       }
 
@@ -168,7 +173,7 @@ export function SolutionSubmissionForm({
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit((data) => onSubmit(solutionSchema.parse(data)))} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
               control={form.control}
               name="title"
