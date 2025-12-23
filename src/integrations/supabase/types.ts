@@ -209,6 +209,41 @@ export type Database = {
         }
         Relationships: []
       }
+      solution_replies: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          solution_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          solution_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          solution_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "solution_replies_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       solutions: {
         Row: {
           ai_evaluation: string | null
