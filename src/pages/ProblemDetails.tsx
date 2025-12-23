@@ -14,7 +14,7 @@ import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissio
 import { SolutionsListCard } from "@/components/solutions/SolutionsListCard";
 import { InvestmentProposalForm } from "@/components/investments/InvestmentProposalForm";
 import type { Problem, Solution } from "@/types";
-import { Eye, TrendingUp, PlusCircle } from "lucide-react";
+import { TrendingUp, PlusCircle } from "lucide-react";
 
 const upsertMetaTag = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -44,7 +44,6 @@ export default function ProblemDetails() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
-  const [showSolutionsList, setShowSolutionsList] = useState(false);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
 
@@ -270,21 +269,12 @@ export default function ProblemDetails() {
                     ) : user && isInvestor ? (
                       <div className="space-y-4">
                         <p className="text-sm text-muted-foreground">
-                          Interested in this opportunity? View solutions or propose an investment.
+                          Interested in this opportunity? Propose an investment below.
                         </p>
-                        <div className="flex flex-wrap gap-3">
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowSolutionsList(!showSolutionsList)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            {showSolutionsList ? "Hide Solutions" : "View Solutions"}
-                          </Button>
-                          <Button onClick={() => setShowInvestmentForm(true)}>
-                            <TrendingUp className="h-4 w-4 mr-2" />
-                            Propose Investment
-                          </Button>
-                        </div>
+                        <Button onClick={() => setShowInvestmentForm(true)}>
+                          <TrendingUp className="h-4 w-4 mr-2" />
+                          Propose Investment
+                        </Button>
                       </div>
                     ) : user ? (
                       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
@@ -312,20 +302,21 @@ export default function ProblemDetails() {
                 </CardContent>
               </Card>
 
+              {/* Always show solutions section - publicly viewable */}
+              {problemId && (
+                <SolutionsListCard
+                  problemId={problemId}
+                  budgetMin={problem.budget_min}
+                  budgetMax={problem.budget_max}
+                  onSelectSolution={isInvestor ? handleSelectSolutionForInvestment : undefined}
+                />
+              )}
+
               {showSubmissionForm && problemId && (
                 <SolutionSubmissionForm
                   problemId={problemId}
                   onSuccess={() => setShowSubmissionForm(false)}
                   onCancel={() => setShowSubmissionForm(false)}
-                />
-              )}
-
-              {showSolutionsList && problemId && (
-                <SolutionsListCard
-                  problemId={problemId}
-                  budgetMin={problem.budget_min}
-                  budgetMax={problem.budget_max}
-                  onSelectSolution={handleSelectSolutionForInvestment}
                 />
               )}
 
