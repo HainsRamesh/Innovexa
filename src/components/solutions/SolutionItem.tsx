@@ -84,10 +84,9 @@ export function SolutionItem({ solution, problemOwnerId, onStatusChange }: Solut
   const handleApproveSolution = async () => {
     setIsApproving(true);
     try {
-      const { error } = await supabase
-        .from("solutions")
-        .update({ status: "accepted" })
-        .eq("id", solution.id);
+      const { error } = await supabase.rpc("approve_solution", {
+        _solution_id: solution.id,
+      });
 
       if (error) throw error;
 
@@ -98,7 +97,7 @@ export function SolutionItem({ solution, problemOwnerId, onStatusChange }: Solut
       console.error("Error approving solution:", error);
       toast({
         title: "Failed to approve solution",
-        description: "Please try again.",
+        description: error instanceof Error ? error.message : "Please try again.",
         variant: "destructive",
       });
     } finally {

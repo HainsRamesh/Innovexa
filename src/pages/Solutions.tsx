@@ -21,7 +21,7 @@ const Solutions = () => {
   const { user, role } = useAuth();
   const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
   const [mySolutions, setMySolutions] = useState<Solution[]>([]);
-  const [myProblemsApprovedSolutions, setMyProblemsApprovedSolutions] = useState<Solution[]>([]);
+  const [myProblemSolutions, setMyProblemSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -67,7 +67,7 @@ const Solutions = () => {
         setMySolutions(mine || []);
       }
 
-      // Fetch approved solutions for enterprise's problems
+      // Fetch solutions submitted to enterprise's problems (all relevant statuses)
       if (user && isEnterprise) {
         // First get the user's problems
         const { data: myProblems, error: problemsError } = await supabase
@@ -77,21 +77,23 @@ const Solutions = () => {
 
         if (problemsError) throw problemsError;
 
-        if (myProblems && myProblems.length > 0) {
-          const problemIds = myProblems.map(p => p.id);
-          
-          const { data: myApproved, error: myApprovedError } = await supabase
+        const problemIds = (myProblems || []).map((p) => p.id);
+
+        if (problemIds.length > 0) {
+          const { data: mineForProblems, error: mineForProblemsError } = await supabase
             .from('solutions')
             .select(`
               *,
               problems:problem_id (title, category)
             `)
             .in('problem_id', problemIds)
-            .eq('status', 'accepted')
+            .in('status', ['submitted', 'under_review', 'shortlisted', 'accepted'])
             .order('created_at', { ascending: false });
 
-          if (myApprovedError) throw myApprovedError;
-          setMyProblemsApprovedSolutions(myApproved || []);
+          if (mineForProblemsError) throw mineForProblemsError;
+          setMyProblemSolutions(mineForProblems || []);
+        } else {
+          setMyProblemSolutions([]);
         }
       }
     } catch (error) {
@@ -114,7 +116,7 @@ const Solutions = () => {
 
   const filteredApproved = filterSolutions(approvedSolutions);
   const filteredMine = filterSolutions(mySolutions);
-  const filteredMyProblemsApproved = filterSolutions(myProblemsApprovedSolutions);
+  const filteredMyProblems = filterSolutions(myProblemSolutions);
 
   const categories = [
     'technology',
@@ -276,13 +278,23 @@ const Solutions = () => {
       <section className="pt-24 pb-12 px-4">
         <div className="container mx-auto text-center">
           <Badge variant="secondary" className="mb-4">
-            Accepted Solutions
+            {isEnterprise ? "My Problems' Solutions" : 'Accepted Solutions'}
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Innovative <span className="text-gradient">Solutions</span>
+            {isEnterprise ? (
+              <>
+                Solutions for <span className="text-gradient">My Problems</span>
+              </>
+            ) : (
+              <>
+                Innovative <span className="text-gradient">Solutions</span>
+              </>
+            )}
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Discover accepted solutions from innovators tackling real-world challenges
+            {isEnterprise
+              ? 'Review solutions submitted to your posted problems'
+              : 'Discover accepted solutions from innovators tackling real-world challenges'}
           </p>
         </div>
       </section>
@@ -362,48 +374,24 @@ const Solutions = () => {
               </TabsContent>
             </Tabs>
           ) : isEnterprise ? (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="approved">All Approved Solutions</TabsTrigger>
-                <TabsTrigger value="my-approved">My Problems' Solutions ({myProblemsApprovedSolutions.length})</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="approved">
-                {isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                  </div>
-                ) : filteredApproved.length === 0 ? (
-                  <EmptyState 
-                    message={searchQuery || categoryFilter !== 'all' 
-                      ? 'Try adjusting your search or filters' 
-                      : 'No approved solutions yet.'
-                    } 
-                    showExplore={false}
-                  />
-                ) : (
-                  renderSolutionsGrid(filteredApproved, true)
-                )}
-              </TabsContent>
-              
-              <TabsContent value="my-approved">
-                {isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                  </div>
-                ) : filteredMyProblemsApproved.length === 0 ? (
-                  <EmptyState 
-                    message={searchQuery || categoryFilter !== 'all' 
-                      ? 'Try adjusting your search or filters' 
-                      : "No approved solutions for your problems yet."
-                    } 
-                    showExplore={false}
-                  />
-                ) : (
-                  renderSolutionsGrid(filteredMyProblemsApproved, true)
-                )}
-              </TabsContent>
-            </Tabs>
+            <>
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : filteredMyProblems.length === 0 ? (
+                <EmptyState
+                  message={
+                    searchQuery || categoryFilter !== 'all'
+                      ? 'Try adjusting your search or filters'
+                      : "No solutions submitted for your problems yet."
+                  }
+                  showExplore={false}
+                />
+              ) : (
+                renderSolutionsGrid(filteredMyProblems, true)
+              )}
+            </>
           ) : (
             // Non-innovators and non-enterprise only see approved solutions
             <>
