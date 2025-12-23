@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Send, Paperclip, X } from "lucide-react";
+import { Loader2, Send, Paperclip, X, Edit } from "lucide-react";
 
 const solutionSchema = z.object({
   title: z
@@ -53,14 +53,26 @@ const solutionSchema = z.object({
 
 type SolutionFormValues = z.infer<typeof solutionSchema>;
 
+interface ExistingSolution {
+  id: string;
+  title: string;
+  description: string;
+  approach: string | null;
+  estimated_cost: number | null;
+  timeline_weeks: number | null;
+  technology_stack: string[] | null;
+}
+
 interface SolutionSubmissionFormProps {
   problemId: string;
+  existingSolution?: ExistingSolution | null;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
 export function SolutionSubmissionForm({
   problemId,
+  existingSolution,
   onSuccess,
   onCancel,
 }: SolutionSubmissionFormProps) {
@@ -68,17 +80,33 @@ export function SolutionSubmissionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
 
+  const isEditing = !!existingSolution;
+
   const form = useForm<SolutionFormValues>({
     resolver: zodResolver(solutionSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      approach: "",
-      estimated_cost: "",
-      timeline_weeks: "",
-      technology_stack: "",
+      title: existingSolution?.title || "",
+      description: existingSolution?.description || "",
+      approach: existingSolution?.approach || "",
+      estimated_cost: existingSolution?.estimated_cost?.toString() || "",
+      timeline_weeks: existingSolution?.timeline_weeks?.toString() || "",
+      technology_stack: existingSolution?.technology_stack?.join(", ") || "",
     },
   });
+
+  // Reset form when existingSolution changes
+  useEffect(() => {
+    if (existingSolution) {
+      form.reset({
+        title: existingSolution.title,
+        description: existingSolution.description,
+        approach: existingSolution.approach || "",
+        estimated_cost: existingSolution.estimated_cost?.toString() || "",
+        timeline_weeks: existingSolution.timeline_weeks?.toString() || "",
+        technology_stack: existingSolution.technology_stack?.join(", ") || "",
+      });
+    }
+  }, [existingSolution, form]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -97,7 +125,6 @@ export function SolutionSubmissionForm({
     setIsSubmitting(true);
 
     try {
-      
       const {
         data: { user },
       } = await supabase.auth.getUser();
@@ -119,32 +146,63 @@ export function SolutionSubmissionForm({
       const estimatedCost = values.estimated_cost ? parseFloat(values.estimated_cost) : null;
       const timelineWeeks = values.timeline_weeks ? parseInt(values.timeline_weeks, 10) : null;
 
-      const { error } = await supabase.from("solutions").insert({
-        problem_id: problemId,
-        innovator_id: user.id,
-        title: values.title!,
-        description: values.description!,
-        approach: values.approach || null,
-        estimated_cost: estimatedCost,
-        timeline_weeks: timelineWeeks,
-        technology_stack: technologyStack,
-        status: "submitted" as const,
-      });
+      if (isEditing && existingSolution) {
+        // Update existing solution
+        const { error } = await supabase
+          .from("solutions")
+          .update({
+            title: values.title!,
+            description: values.description!,
+            approach: values.approach || null,
+            estimated_cost: estimatedCost,
+            timeline_weeks: timelineWeeks,
+            technology_stack: technologyStack,
+          })
+          .eq("id", existingSolution.id);
 
-      if (error) {
-        console.error("Error submitting solution:", error);
+        if (error) {
+          console.error("Error updating solution:", error);
+          toast({
+            title: "Update failed",
+            description: error.message || "Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+
         toast({
-          title: "Submission failed",
-          description: error.message || "Please try again later.",
-          variant: "destructive",
+          title: "Solution updated!",
+          description: "Your solution has been updated successfully.",
         });
-        return;
-      }
+      } else {
+        // Create new solution
+        const { error } = await supabase.from("solutions").insert({
+          problem_id: problemId,
+          innovator_id: user.id,
+          title: values.title!,
+          description: values.description!,
+          approach: values.approach || null,
+          estimated_cost: estimatedCost,
+          timeline_weeks: timelineWeeks,
+          technology_stack: technologyStack,
+          status: "submitted" as const,
+        });
 
-      toast({
-        title: "Solution submitted!",
-        description: "Your solution has been submitted for review.",
-      });
+        if (error) {
+          console.error("Error submitting solution:", error);
+          toast({
+            title: "Submission failed",
+            description: error.message || "Please try again later.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        toast({
+          title: "Solution submitted!",
+          description: "Your solution has been submitted for review.",
+        });
+      }
 
       form.reset();
       setAttachments([]);
@@ -165,8 +223,17 @@ export function SolutionSubmissionForm({
     <Card className="mt-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Send className="h-5 w-5" />
-          Submit Your Solution
+          {isEditing ? (
+            <>
+              <Edit className="h-5 w-5" />
+              Edit Your Solution
+            </>
+          ) : (
+            <>
+              <Send className="h-5 w-5" />
+              Submit Your Solution
+            </>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -355,12 +422,21 @@ export function SolutionSubmissionForm({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Submitting...
+                    {isEditing ? "Updating..." : "Submitting..."}
                   </>
                 ) : (
                   <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit Solution
+                    {isEditing ? (
+                      <>
+                        <Edit className="h-4 w-4 mr-2" />
+                        Update Solution
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        Submit Solution
+                      </>
+                    )}
                   </>
                 )}
               </Button>

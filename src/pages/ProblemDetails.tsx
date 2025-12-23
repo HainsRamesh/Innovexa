@@ -11,10 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissionForm";
-import { SolutionsListCard } from "@/components/solutions/SolutionsListCard";
+import { SolutionsList } from "@/components/solutions/SolutionsList";
 import { InvestmentProposalForm } from "@/components/investments/InvestmentProposalForm";
-import type { Problem, Solution } from "@/types";
-import { TrendingUp, PlusCircle } from "lucide-react";
+import type { Problem } from "@/types";
+import { TrendingUp, PlusCircle, Edit } from "lucide-react";
 
 const upsertMetaTag = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -36,6 +36,16 @@ const upsertLinkTag = (rel: string, href: string) => {
   tag.setAttribute("href", href);
 };
 
+interface ExistingSolution {
+  id: string;
+  title: string;
+  description: string;
+  approach: string | null;
+  estimated_cost: number | null;
+  timeline_weeks: number | null;
+  technology_stack: string[] | null;
+}
+
 export default function ProblemDetails() {
   const { problemId } = useParams();
   const { toast } = useToast();
@@ -45,15 +55,38 @@ export default function ProblemDetails() {
   const [isLoading, setIsLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
-  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
+  const [existingSolution, setExistingSolution] = useState<ExistingSolution | null>(null);
+  const [isCheckingExistingSolution, setIsCheckingExistingSolution] = useState(false);
 
   const isInnovator = role === "innovator";
   const isInvestor = role === "investor";
 
-  const handleSelectSolutionForInvestment = (solution: Solution) => {
-    setSelectedSolution(solution);
-    setShowInvestmentForm(true);
-  };
+  // Check if innovator already has a solution for this problem
+  useEffect(() => {
+    const checkExistingSolution = async () => {
+      if (!user || !problemId || !isInnovator) {
+        setExistingSolution(null);
+        return;
+      }
+
+      setIsCheckingExistingSolution(true);
+      const { data, error } = await supabase
+        .from("solutions")
+        .select("id, title, description, approach, estimated_cost, timeline_weeks, technology_stack")
+        .eq("problem_id", problemId)
+        .eq("innovator_id", user.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        setExistingSolution(data);
+      } else {
+        setExistingSolution(null);
+      }
+      setIsCheckingExistingSolution(false);
+    };
+
+    checkExistingSolution();
+  }, [user, problemId, isInnovator]);
 
   useEffect(() => {
     let isMounted = true;
@@ -131,6 +164,24 @@ export default function ProblemDetails() {
     if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
     if (max) return `Up to $${max.toLocaleString()}`;
     return `From $${min?.toLocaleString()}`;
+  };
+
+  const handleFormSuccess = () => {
+    setShowSubmissionForm(false);
+    // Refresh the existing solution check
+    if (user && problemId && isInnovator) {
+      supabase
+        .from("solutions")
+        .select("id, title, description, approach, estimated_cost, timeline_weeks, technology_stack")
+        .eq("problem_id", problemId)
+        .eq("innovator_id", user.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setExistingSolution(data || null);
+        });
+    }
+    // Force page reload to refresh solutions list
+    window.location.reload();
   };
 
   return (
@@ -260,10 +311,22 @@ export default function ProblemDetails() {
                     {user && isInnovator ? (
                       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                         <p className="text-sm text-muted-foreground">
-                          Ready to submit your solution for this problem?
+                          {existingSolution
+                            ? "You have already submitted a solution. Click to edit it."
+                            : "Ready to submit your solution for this problem?"}
                         </p>
-                        <Button onClick={() => setShowSubmissionForm(true)}>
-                          Submit Your Solution
+                        <Button 
+                          onClick={() => setShowSubmissionForm(true)}
+                          disabled={isCheckingExistingSolution}
+                        >
+                          {existingSolution ? (
+                            <>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Your Solution
+                            </>
+                          ) : (
+                            "Submit Your Solution"
+                          )}
                         </Button>
                       </div>
                     ) : user && isInvestor ? (
@@ -302,21 +365,21 @@ export default function ProblemDetails() {
                 </CardContent>
               </Card>
 
-              {/* Always show solutions section - publicly viewable */}
-              {problemId && (
-                <SolutionsListCard
-                  problemId={problemId}
-                  budgetMin={problem.budget_min}
-                  budgetMax={problem.budget_max}
-                  onSelectSolution={isInvestor ? handleSelectSolutionForInvestment : undefined}
-                />
-              )}
-
+              {/* Solution Submission Form - Above Solutions List */}
               {showSubmissionForm && problemId && (
                 <SolutionSubmissionForm
                   problemId={problemId}
-                  onSuccess={() => setShowSubmissionForm(false)}
+                  existingSolution={existingSolution}
+                  onSuccess={handleFormSuccess}
                   onCancel={() => setShowSubmissionForm(false)}
+                />
+              )}
+
+              {/* Solutions List - Comment Style */}
+              {problemId && problem && (
+                <SolutionsList
+                  problemId={problemId}
+                  problemOwnerId={problem.owner_id}
                 />
               )}
 
@@ -325,14 +388,11 @@ export default function ProblemDetails() {
                   problemId={problemId}
                   budgetMin={problem.budget_min}
                   budgetMax={problem.budget_max}
-                  selectedSolution={selectedSolution}
                   onSuccess={() => {
                     setShowInvestmentForm(false);
-                    setSelectedSolution(null);
                   }}
                   onCancel={() => {
                     setShowInvestmentForm(false);
-                    setSelectedSolution(null);
                   }}
                 />
               )}
