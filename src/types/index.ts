@@ -64,6 +64,25 @@ export interface Solution {
   problems?: Problem;
 }
 
+export type InvestmentStatus = 'proposed' | 'under_review' | 'accepted' | 'rejected' | 'withdrawn';
+
+export interface Investment {
+  id: string;
+  investor_id: string;
+  problem_id: string;
+  solution_id: string | null;
+  funding_amount: number;
+  expected_roi: number | null;
+  conditions: string | null;
+  comments: string | null;
+  status: InvestmentStatus;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile;
+  problems?: Problem;
+  solutions?: Solution;
+}
+
 export interface Bookmark {
   id: string;
   user_id: string;

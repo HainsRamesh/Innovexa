@@ -53,6 +53,63 @@ export type Database = {
           },
         ]
       }
+      investments: {
+        Row: {
+          comments: string | null
+          conditions: string | null
+          created_at: string
+          expected_roi: number | null
+          funding_amount: number
+          id: string
+          investor_id: string
+          problem_id: string
+          solution_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          comments?: string | null
+          conditions?: string | null
+          created_at?: string
+          expected_roi?: number | null
+          funding_amount: number
+          id?: string
+          investor_id: string
+          problem_id: string
+          solution_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          comments?: string | null
+          conditions?: string | null
+          created_at?: string
+          expected_roi?: number | null
+          funding_amount?: number
+          id?: string
+          investor_id?: string
+          problem_id?: string
+          solution_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investments_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       problems: {
         Row: {
           ai_complexity_score: number | null

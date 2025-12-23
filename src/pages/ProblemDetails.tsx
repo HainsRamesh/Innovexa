@@ -11,7 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissionForm";
-import type { Problem } from "@/types";
+import { SolutionsListCard } from "@/components/solutions/SolutionsListCard";
+import { InvestmentProposalForm } from "@/components/investments/InvestmentProposalForm";
+import type { Problem, Solution } from "@/types";
+import { Eye, TrendingUp } from "lucide-react";
 
 const upsertMetaTag = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -41,8 +44,17 @@ export default function ProblemDetails() {
   const [problem, setProblem] = useState<Problem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+  const [showSolutionsList, setShowSolutionsList] = useState(false);
+  const [showInvestmentForm, setShowInvestmentForm] = useState(false);
+  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
 
   const isInnovator = role === "innovator";
+  const isInvestor = role === "investor";
+
+  const handleSelectSolutionForInvestment = (solution: Solution) => {
+    setSelectedSolution(solution);
+    setShowInvestmentForm(true);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -245,29 +257,48 @@ export default function ProblemDetails() {
 
                   <Separator className="my-6" />
 
-                  <section aria-label="Next steps" className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                  <section aria-label="Next steps" className="space-y-4">
                     {user && isInnovator ? (
-                      <>
+                      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                         <p className="text-sm text-muted-foreground">
                           Ready to submit your solution for this problem?
                         </p>
                         <Button onClick={() => setShowSubmissionForm(true)}>
                           Submit Your Solution
                         </Button>
-                      </>
+                      </div>
+                    ) : user && isInvestor ? (
+                      <div className="space-y-4">
+                        <p className="text-sm text-muted-foreground">
+                          Interested in this opportunity? View solutions or propose an investment.
+                        </p>
+                        <div className="flex flex-wrap gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowSolutionsList(!showSolutionsList)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            {showSolutionsList ? "Hide Solutions" : "View Solutions"}
+                          </Button>
+                          <Button onClick={() => setShowInvestmentForm(true)}>
+                            <TrendingUp className="h-4 w-4 mr-2" />
+                            Propose Investment
+                          </Button>
+                        </div>
+                      </div>
                     ) : user ? (
                       <p className="text-sm text-muted-foreground">
-                        Only innovators can submit solutions. Switch to an innovator account to participate.
+                        Only innovators can submit solutions and investors can propose investments.
                       </p>
                     ) : (
-                      <>
+                      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                         <p className="text-sm text-muted-foreground">
                           Want to propose a solution? Create an account to submit your approach.
                         </p>
                         <Button asChild>
                           <Link to="/auth?mode=signup">Sign up to submit</Link>
                         </Button>
-                      </>
+                      </div>
                     )}
                   </section>
                 </CardContent>
@@ -278,6 +309,32 @@ export default function ProblemDetails() {
                   problemId={problemId}
                   onSuccess={() => setShowSubmissionForm(false)}
                   onCancel={() => setShowSubmissionForm(false)}
+                />
+              )}
+
+              {showSolutionsList && problemId && (
+                <SolutionsListCard
+                  problemId={problemId}
+                  budgetMin={problem.budget_min}
+                  budgetMax={problem.budget_max}
+                  onSelectSolution={handleSelectSolutionForInvestment}
+                />
+              )}
+
+              {showInvestmentForm && problemId && (
+                <InvestmentProposalForm
+                  problemId={problemId}
+                  budgetMin={problem.budget_min}
+                  budgetMax={problem.budget_max}
+                  selectedSolution={selectedSolution}
+                  onSuccess={() => {
+                    setShowInvestmentForm(false);
+                    setSelectedSolution(null);
+                  }}
+                  onCancel={() => {
+                    setShowInvestmentForm(false);
+                    setSelectedSolution(null);
+                  }}
                 />
               )}
             </article>
