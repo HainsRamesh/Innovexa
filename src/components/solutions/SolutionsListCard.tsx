@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import type { Solution } from "@/types";
-import { Eye, Filter, DollarSign, Clock, X } from "lucide-react";
+import { Eye, Filter, DollarSign, Clock, X, MessageCircle } from "lucide-react";
 
 interface SolutionsListCardProps {
   problemId: string;
@@ -166,50 +166,69 @@ export function SolutionsListCard({
               : "No solutions match your filter criteria."}
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-2">
             {filteredSolutions.map((solution) => (
-              <div
+              <Card
                 key={solution.id}
-                className="p-4 border rounded-lg hover:bg-secondary/20 transition-colors"
+                className="overflow-hidden hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h4 className="font-medium truncate">{solution.title}</h4>
-                      <Badge variant={getStatusVariant(solution.status)}>
+                <CardContent className="p-5">
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="font-semibold text-lg leading-tight line-clamp-2">
+                        {solution.title}
+                      </h4>
+                      <Badge variant={getStatusVariant(solution.status)} className="shrink-0">
                         {solution.status.replace("_", " ")}
                       </Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+
+                    <p className="text-sm text-muted-foreground line-clamp-3">
                       {solution.description}
                     </p>
-                    <div className="flex flex-wrap items-center gap-4 text-sm">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <DollarSign className="h-4 w-4" />
-                        {formatCurrency(solution.estimated_cost)}
-                      </span>
-                      {solution.timeline_weeks && (
-                        <span className="flex items-center gap-1 text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          {solution.timeline_weeks} weeks
+
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign className="h-4 w-4 text-primary" />
+                        <span className="font-medium">
+                          {formatCurrency(solution.estimated_cost)}
                         </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Clock className="h-4 w-4 text-primary" />
+                        <span className="font-medium">
+                          {solution.timeline_weeks
+                            ? `${solution.timeline_weeks} weeks`
+                            : "TBD"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {solution.approach && (
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-muted-foreground mb-1">Personal Opinion</p>
+                        <p className="text-sm line-clamp-2">{solution.approach}</p>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between pt-3 border-t">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground">
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        Comments
+                      </Button>
+                      {onSelectSolution && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => onSelectSolution(solution)}
+                        >
+                          Invest
+                        </Button>
                       )}
-                      <span className="text-xs text-muted-foreground">
-                        Submitted {format(new Date(solution.created_at), "MMM d, yyyy")}
-                      </span>
                     </div>
                   </div>
-                  {onSelectSolution && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onSelectSolution(solution)}
-                    >
-                      Invest
-                    </Button>
-                  )}
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
         )}
