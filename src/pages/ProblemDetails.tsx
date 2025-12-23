@@ -14,7 +14,7 @@ import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissio
 import { SolutionsListCard } from "@/components/solutions/SolutionsListCard";
 import { InvestmentProposalForm } from "@/components/investments/InvestmentProposalForm";
 import type { Problem, Solution } from "@/types";
-import { Eye, TrendingUp } from "lucide-react";
+import { Eye, TrendingUp, PlusCircle } from "lucide-react";
 
 const upsertMetaTag = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -287,9 +287,17 @@ export default function ProblemDetails() {
                         </div>
                       </div>
                     ) : user ? (
-                      <p className="text-sm text-muted-foreground">
-                        Only innovators can submit solutions and investors can propose investments.
-                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                        <p className="text-sm text-muted-foreground">
+                          Have a challenge that needs solving? Post your own problem.
+                        </p>
+                        <Button asChild>
+                          <Link to="/dashboard/problems/new">
+                            <PlusCircle className="h-4 w-4 mr-2" />
+                            Post a Problem
+                          </Link>
+                        </Button>
+                      </div>
                     ) : (
                       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                         <p className="text-sm text-muted-foreground">
