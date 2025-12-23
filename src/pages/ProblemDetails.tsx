@@ -9,6 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissionForm";
 import type { Problem } from "@/types";
 
 const upsertMetaTag = (name: string, content: string) => {
@@ -34,9 +36,13 @@ const upsertLinkTag = (rel: string, href: string) => {
 export default function ProblemDetails() {
   const { problemId } = useParams();
   const { toast } = useToast();
+  const { user, role } = useAuth();
 
   const [problem, setProblem] = useState<Problem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showSubmissionForm, setShowSubmissionForm] = useState(false);
+
+  const isInnovator = role === "innovator";
 
   useEffect(() => {
     let isMounted = true;
@@ -240,15 +246,40 @@ export default function ProblemDetails() {
                   <Separator className="my-6" />
 
                   <section aria-label="Next steps" className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      Want to propose a solution? Create an account to submit your approach.
-                    </p>
-                    <Button asChild>
-                      <Link to="/auth?mode=signup">Sign up to submit</Link>
-                    </Button>
+                    {user && isInnovator ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Ready to submit your solution for this problem?
+                        </p>
+                        <Button onClick={() => setShowSubmissionForm(true)}>
+                          Submit Your Solution
+                        </Button>
+                      </>
+                    ) : user ? (
+                      <p className="text-sm text-muted-foreground">
+                        Only innovators can submit solutions. Switch to an innovator account to participate.
+                      </p>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          Want to propose a solution? Create an account to submit your approach.
+                        </p>
+                        <Button asChild>
+                          <Link to="/auth?mode=signup">Sign up to submit</Link>
+                        </Button>
+                      </>
+                    )}
                   </section>
                 </CardContent>
               </Card>
+
+              {showSubmissionForm && problemId && (
+                <SolutionSubmissionForm
+                  problemId={problemId}
+                  onSuccess={() => setShowSubmissionForm(false)}
+                  onCancel={() => setShowSubmissionForm(false)}
+                />
+              )}
             </article>
           )}
         </section>
