@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight, CheckCircle } from 'lucide-react';
+import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight, CheckCircle, Eye } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { SolutionDetailDialog } from '@/components/solutions/SolutionDetailDialog';
 
 type Solution = Tables<'solutions'> & {
   problems?: { title: string; category: string } | null;
@@ -20,21 +21,25 @@ const Solutions = () => {
   const { user, role } = useAuth();
   const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
   const [mySolutions, setMySolutions] = useState<Solution[]>([]);
+  const [myProblemsApprovedSolutions, setMyProblemsApprovedSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('approved');
+  const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const isInnovator = role === 'innovator';
+  const isEnterprise = role === 'enterprise';
 
   useEffect(() => {
     fetchSolutions();
-  }, [user]);
+  }, [user, role]);
 
   const fetchSolutions = async () => {
     setIsLoading(true);
     try {
-      // Fetch approved solutions
+      // Fetch all approved solutions
       const { data: approved, error: approvedError } = await supabase
         .from('solutions')
         .select(`
@@ -61,6 +66,34 @@ const Solutions = () => {
         if (mineError) throw mineError;
         setMySolutions(mine || []);
       }
+
+      // Fetch approved solutions for enterprise's problems
+      if (user && isEnterprise) {
+        // First get the user's problems
+        const { data: myProblems, error: problemsError } = await supabase
+          .from('problems')
+          .select('id')
+          .eq('owner_id', user.id);
+
+        if (problemsError) throw problemsError;
+
+        if (myProblems && myProblems.length > 0) {
+          const problemIds = myProblems.map(p => p.id);
+          
+          const { data: myApproved, error: myApprovedError } = await supabase
+            .from('solutions')
+            .select(`
+              *,
+              problems:problem_id (title, category)
+            `)
+            .in('problem_id', problemIds)
+            .eq('status', 'accepted')
+            .order('created_at', { ascending: false });
+
+          if (myApprovedError) throw myApprovedError;
+          setMyProblemsApprovedSolutions(myApproved || []);
+        }
+      }
     } catch (error) {
       console.error('Error fetching solutions:', error);
     } finally {
@@ -81,6 +114,7 @@ const Solutions = () => {
 
   const filteredApproved = filterSolutions(approvedSolutions);
   const filteredMine = filterSolutions(mySolutions);
+  const filteredMyProblemsApproved = filterSolutions(myProblemsApprovedSolutions);
 
   const categories = [
     'technology',
@@ -127,7 +161,12 @@ const Solutions = () => {
     }
   };
 
-  const SolutionCard = ({ solution }: { solution: Solution }) => (
+  const handleViewDetails = (solution: Solution) => {
+    setSelectedSolution(solution);
+    setShowDetailDialog(true);
+  };
+
+  const SolutionCard = ({ solution, showViewButton = false }: { solution: Solution; showViewButton?: boolean }) => (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
@@ -192,6 +231,17 @@ const Solutions = () => {
               )}
             </div>
           )}
+          {showViewButton && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => handleViewDetails(solution)}
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              View Details
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -207,6 +257,14 @@ const Solutions = () => {
           <Link to="/explore">Explore Problems</Link>
         </Button>
       )}
+    </div>
+  );
+
+  const renderSolutionsGrid = (solutions: Solution[], showViewButton = false) => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {solutions.map((solution) => (
+        <SolutionCard key={solution.id} solution={solution} showViewButton={showViewButton} />
+      ))}
     </div>
   );
 
@@ -282,11 +340,7 @@ const Solutions = () => {
                     } 
                   />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredApproved.map((solution) => (
-                      <SolutionCard key={solution.id} solution={solution} />
-                    ))}
-                  </div>
+                  renderSolutionsGrid(filteredApproved, true)
                 )}
               </TabsContent>
               
@@ -303,16 +357,55 @@ const Solutions = () => {
                     } 
                   />
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredMine.map((solution) => (
-                      <SolutionCard key={solution.id} solution={solution} />
-                    ))}
+                  renderSolutionsGrid(filteredMine, true)
+                )}
+              </TabsContent>
+            </Tabs>
+          ) : isEnterprise ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="approved">All Approved Solutions</TabsTrigger>
+                <TabsTrigger value="my-approved">My Problems' Solutions ({myProblemsApprovedSolutions.length})</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="approved">
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
                   </div>
+                ) : filteredApproved.length === 0 ? (
+                  <EmptyState 
+                    message={searchQuery || categoryFilter !== 'all' 
+                      ? 'Try adjusting your search or filters' 
+                      : 'No approved solutions yet.'
+                    } 
+                    showExplore={false}
+                  />
+                ) : (
+                  renderSolutionsGrid(filteredApproved, true)
+                )}
+              </TabsContent>
+              
+              <TabsContent value="my-approved">
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : filteredMyProblemsApproved.length === 0 ? (
+                  <EmptyState 
+                    message={searchQuery || categoryFilter !== 'all' 
+                      ? 'Try adjusting your search or filters' 
+                      : "No approved solutions for your problems yet."
+                    } 
+                    showExplore={false}
+                  />
+                ) : (
+                  renderSolutionsGrid(filteredMyProblemsApproved, true)
                 )}
               </TabsContent>
             </Tabs>
           ) : (
-            // Non-innovators only see approved solutions
+            // Non-innovators and non-enterprise only see approved solutions
             <>
               {isLoading ? (
                 <div className="flex justify-center py-12">
@@ -325,11 +418,7 @@ const Solutions = () => {
                     : 'Be the first to submit an innovative solution!'}
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredApproved.map((solution) => (
-                    <SolutionCard key={solution.id} solution={solution} />
-                  ))}
-                </div>
+                renderSolutionsGrid(filteredApproved, true)
               )}
             </>
           )}
@@ -359,6 +448,13 @@ const Solutions = () => {
           <p>© 2024 INNOVEXA. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* Solution Detail Dialog */}
+      <SolutionDetailDialog
+        solution={selectedSolution}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+      />
     </div>
   );
 };

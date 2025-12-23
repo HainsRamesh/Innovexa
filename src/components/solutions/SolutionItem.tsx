@@ -273,20 +273,21 @@ export function SolutionItem({ solution, problemOwnerId, onStatusChange }: Solut
               </Button>
             )}
 
-            {/* Approve Button - only for problem owner and not already approved */}
-            {isProblemOwner && currentStatus !== "accepted" && (
+            {/* Approve Button - only for problem owner */}
+            {isProblemOwner && (
               <Button
-                variant="default"
+                variant={currentStatus === "accepted" ? "outline" : "default"}
                 size="sm"
                 onClick={handleApproveSolution}
-                disabled={isApproving}
+                disabled={isApproving || currentStatus === "accepted"}
+                className={currentStatus === "accepted" ? "bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20" : ""}
               >
                 {isApproving ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-1" />
                 ) : (
                   <CheckCircle className="h-4 w-4 mr-1" />
                 )}
-                Approve
+                {currentStatus === "accepted" ? "Approved" : "Approve"}
               </Button>
             )}
 
