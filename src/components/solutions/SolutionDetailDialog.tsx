@@ -128,21 +128,33 @@ export function SolutionDetailDialog({
               <div>
                 <h4 className="font-semibold flex items-center gap-2 mb-2">
                   <Paperclip className="h-4 w-4 text-primary" />
-                  Attachments
+                  Attachments ({solution.attachments.length})
                 </h4>
                 <div className="space-y-2">
-                  {solution.attachments.map((attachment, index) => (
-                    <a
-                      key={index}
-                      href={attachment}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
-                    >
-                      <FileText className="h-4 w-4" />
-                      Attachment {index + 1}
-                    </a>
-                  ))}
+                  {solution.attachments.map((attachment, index) => {
+                    const fileName = attachment.split('/').pop() || `Attachment ${index + 1}`;
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment);
+                    
+                    return (
+                      <a
+                        key={index}
+                        href={attachment}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-sm text-primary hover:underline p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <FileText className="h-4 w-4 shrink-0" />
+                        <span className="truncate">{fileName}</span>
+                        {isImage && (
+                          <img 
+                            src={attachment} 
+                            alt={fileName}
+                            className="h-8 w-8 object-cover rounded ml-auto"
+                          />
+                        )}
+                      </a>
+                    );
+                  })}
                 </div>
               </div>
             </>
