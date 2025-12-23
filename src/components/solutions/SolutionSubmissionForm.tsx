@@ -39,22 +39,19 @@ const solutionSchema = z.object({
   estimated_cost: z
     .string()
     .optional()
-    .transform((val) => (val ? parseFloat(val) : undefined))
-    .refine((val) => val === undefined || (!isNaN(val) && val >= 0), {
+    .refine((val) => !val || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
       message: "Estimated cost must be a positive number",
     }),
   timeline_weeks: z
     .string()
     .optional()
-    .transform((val) => (val ? parseInt(val, 10) : undefined))
-    .refine((val) => val === undefined || (!isNaN(val) && val >= 1 && val <= 520), {
+    .refine((val) => !val || (!isNaN(parseInt(val, 10)) && parseInt(val, 10) >= 1 && parseInt(val, 10) <= 520), {
       message: "Timeline must be between 1 and 520 weeks",
     }),
   technology_stack: z.string().optional(),
 });
 
-type SolutionFormInput = z.input<typeof solutionSchema>;
-type SolutionFormValues = z.output<typeof solutionSchema>;
+type SolutionFormValues = z.infer<typeof solutionSchema>;
 
 interface SolutionSubmissionFormProps {
   problemId: string;
@@ -71,7 +68,7 @@ export function SolutionSubmissionForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachments, setAttachments] = useState<File[]>([]);
 
-  const form = useForm<z.input<typeof solutionSchema>>({
+  const form = useForm<SolutionFormValues>({
     resolver: zodResolver(solutionSchema),
     defaultValues: {
       title: "",
@@ -96,12 +93,10 @@ export function SolutionSubmissionForm({
     setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const onSubmit = async (data: SolutionFormInput) => {
+  const onSubmit = async (values: SolutionFormValues) => {
     setIsSubmitting(true);
 
     try {
-      // Parse and transform the input data
-      const values = solutionSchema.parse(data);
       
       const {
         data: { user },
@@ -121,16 +116,19 @@ export function SolutionSubmissionForm({
         ? values.technology_stack.split(",").map((t) => t.trim()).filter(Boolean)
         : null;
 
+      const estimatedCost = values.estimated_cost ? parseFloat(values.estimated_cost) : null;
+      const timelineWeeks = values.timeline_weeks ? parseInt(values.timeline_weeks, 10) : null;
+
       const { error } = await supabase.from("solutions").insert({
         problem_id: problemId,
         innovator_id: user.id,
-        title: values.title,
-        description: values.description,
+        title: values.title!,
+        description: values.description!,
         approach: values.approach || null,
-        estimated_cost: values.estimated_cost ?? null,
-        timeline_weeks: values.timeline_weeks ?? null,
+        estimated_cost: estimatedCost,
+        timeline_weeks: timelineWeeks,
         technology_stack: technologyStack,
-        status: "submitted",
+        status: "submitted" as const,
       });
 
       if (error) {
