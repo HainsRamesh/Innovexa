@@ -9,8 +9,11 @@ interface Solution {
   id: string;
   title: string;
   description: string;
+  approach: string | null;
+  technology_stack: string[] | null;
   estimated_cost: number | null;
   timeline_weeks: number | null;
+  attachments: string[] | null;
   innovator_id: string;
   created_at: string;
   status: string;
@@ -25,27 +28,27 @@ export function SolutionsList({ problemId, problemOwnerId }: SolutionsListProps)
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchSolutions = async () => {
+    setIsLoading(true);
+
+    const { data, error } = await supabase
+      .from("solutions")
+      .select("id, title, description, approach, technology_stack, estimated_cost, timeline_weeks, attachments, innovator_id, created_at, status")
+      .eq("problem_id", problemId)
+      .in("status", ["submitted", "under_review", "shortlisted", "accepted"])
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching solutions:", error);
+      setSolutions([]);
+    } else {
+      setSolutions(data || []);
+    }
+
+    setIsLoading(false);
+  };
+
   useEffect(() => {
-    const fetchSolutions = async () => {
-      setIsLoading(true);
-
-      const { data, error } = await supabase
-        .from("solutions")
-        .select("id, title, description, estimated_cost, timeline_weeks, innovator_id, created_at, status")
-        .eq("problem_id", problemId)
-        .in("status", ["submitted", "under_review", "shortlisted", "accepted"])
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Error fetching solutions:", error);
-        setSolutions([]);
-      } else {
-        setSolutions(data || []);
-      }
-
-      setIsLoading(false);
-    };
-
     fetchSolutions();
   }, [problemId]);
 
@@ -99,6 +102,7 @@ export function SolutionsList({ problemId, problemOwnerId }: SolutionsListProps)
             key={solution.id}
             solution={solution}
             problemOwnerId={problemOwnerId}
+            onStatusChange={fetchSolutions}
           />
         ))}
       </div>

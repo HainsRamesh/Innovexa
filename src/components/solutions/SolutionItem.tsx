@@ -3,11 +3,12 @@ import { format } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { DollarSign, Clock, ChevronDown, ChevronUp, Reply, Send, Loader2 } from "lucide-react";
+import { DollarSign, Clock, ChevronDown, ChevronUp, Reply, Send, Loader2, Eye, CheckCircle } from "lucide-react";
+import { SolutionDetailDialog } from "./SolutionDetailDialog";
 
 interface SolutionReply {
   id: string;
@@ -26,15 +27,20 @@ interface SolutionItemProps {
     id: string;
     title: string;
     description: string;
+    approach?: string | null;
+    technology_stack?: string[] | null;
     estimated_cost: number | null;
     timeline_weeks: number | null;
+    attachments?: string[] | null;
     innovator_id: string;
     created_at: string;
+    status: string;
   };
   problemOwnerId: string;
+  onStatusChange?: () => void;
 }
 
-export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
+export function SolutionItem({ solution, problemOwnerId, onStatusChange }: SolutionItemProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
   
@@ -45,6 +51,9 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
   const [replies, setReplies] = useState<SolutionReply[]>([]);
   const [isLoadingReplies, setIsLoadingReplies] = useState(false);
   const [innovatorProfile, setInnovatorProfile] = useState<{ full_name: string | null; avatar_url: string | null } | null>(null);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(solution.status);
 
   const descriptionLimit = 200;
   const isLongDescription = solution.description.length > descriptionLimit;
@@ -59,6 +68,9 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
     role === "investor"
   );
 
+  // Check if user is the problem owner
+  const isProblemOwner = user?.id === problemOwnerId;
+
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return "Not specified";
     return `$${amount.toLocaleString()}`;
@@ -67,6 +79,31 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
   const getInitials = (name: string | null) => {
     if (!name) return "U";
     return name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+  };
+
+  const handleApproveSolution = async () => {
+    setIsApproving(true);
+    try {
+      const { error } = await supabase
+        .from("solutions")
+        .update({ status: "accepted" })
+        .eq("id", solution.id);
+
+      if (error) throw error;
+
+      setCurrentStatus("accepted");
+      toast({ title: "Solution approved successfully" });
+      onStatusChange?.();
+    } catch (error) {
+      console.error("Error approving solution:", error);
+      toast({
+        title: "Failed to approve solution",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsApproving(false);
+    }
   };
 
   // Fetch innovator profile
@@ -155,26 +192,33 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
   };
 
   return (
-    <div className="py-6">
-      {/* Solution Header with Profile */}
-      <div className="flex items-start gap-4">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={innovatorProfile?.avatar_url || undefined} />
-          <AvatarFallback>{getInitials(innovatorProfile?.full_name)}</AvatarFallback>
-        </Avatar>
-        
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium">
-              {innovatorProfile?.full_name || "Anonymous Innovator"}
-            </span>
-            <span className="text-sm text-muted-foreground">
-              · {format(new Date(solution.created_at), "MMM d, yyyy")}
-            </span>
-          </div>
+    <>
+      <div className="py-6">
+        {/* Solution Header with Profile */}
+        <div className="flex items-start gap-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={innovatorProfile?.avatar_url || undefined} />
+            <AvatarFallback>{getInitials(innovatorProfile?.full_name)}</AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="font-medium">
+                {innovatorProfile?.full_name || "Anonymous Innovator"}
+              </span>
+              <span className="text-sm text-muted-foreground">
+                · {format(new Date(solution.created_at), "MMM d, yyyy")}
+              </span>
+              {currentStatus === "accepted" && (
+                <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Approved
+                </Badge>
+              )}
+            </div>
 
-          {/* Solution Title */}
-          <h4 className="font-semibold text-lg mb-2">{solution.title}</h4>
+            {/* Solution Title */}
+            <h4 className="font-semibold text-lg mb-2">{solution.title}</h4>
 
           {/* Description with Read More */}
           <p className="text-muted-foreground whitespace-pre-wrap">
@@ -215,9 +259,39 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
             </div>
           </div>
 
-          {/* Reply Button */}
-          {canReply && (
-            <div className="mt-3">
+          {/* Action Buttons */}
+          <div className="mt-3 flex flex-wrap gap-2">
+            {/* View Details - only for problem owner */}
+            {isProblemOwner && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDetailDialog(true)}
+              >
+                <Eye className="h-4 w-4 mr-1" />
+                View Details
+              </Button>
+            )}
+
+            {/* Approve Button - only for problem owner and not already approved */}
+            {isProblemOwner && currentStatus !== "accepted" && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleApproveSolution}
+                disabled={isApproving}
+              >
+                {isApproving ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                )}
+                Approve
+              </Button>
+            )}
+
+            {/* Reply Button */}
+            {canReply && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -226,8 +300,8 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
                 <Reply className="h-4 w-4 mr-1" />
                 Reply
               </Button>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Reply Form */}
           {showReplyForm && (
@@ -293,8 +367,16 @@ export function SolutionItem({ solution, problemOwnerId }: SolutionItemProps) {
               ))}
             </div>
           )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Solution Detail Dialog */}
+      <SolutionDetailDialog
+        solution={{ ...solution, status: currentStatus }}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+      />
+    </>
   );
 }

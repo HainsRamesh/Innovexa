@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight, CheckCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 
 type Solution = Tables<'solutions'> & {
@@ -15,18 +17,25 @@ type Solution = Tables<'solutions'> & {
 };
 
 const Solutions = () => {
-  const [solutions, setSolutions] = useState<Solution[]>([]);
+  const { user, role } = useAuth();
+  const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
+  const [mySolutions, setMySolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState('approved');
+
+  const isInnovator = role === 'innovator';
 
   useEffect(() => {
     fetchSolutions();
-  }, []);
+  }, [user]);
 
   const fetchSolutions = async () => {
+    setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch approved solutions
+      const { data: approved, error: approvedError } = await supabase
         .from('solutions')
         .select(`
           *,
@@ -35,8 +44,23 @@ const Solutions = () => {
         .eq('status', 'accepted')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setSolutions(data || []);
+      if (approvedError) throw approvedError;
+      setApprovedSolutions(approved || []);
+
+      // Fetch user's own solutions if they are an innovator
+      if (user && isInnovator) {
+        const { data: mine, error: mineError } = await supabase
+          .from('solutions')
+          .select(`
+            *,
+            problems:problem_id (title, category)
+          `)
+          .eq('innovator_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (mineError) throw mineError;
+        setMySolutions(mine || []);
+      }
     } catch (error) {
       console.error('Error fetching solutions:', error);
     } finally {
@@ -44,14 +68,19 @@ const Solutions = () => {
     }
   };
 
-  const filteredSolutions = solutions.filter((solution) => {
-    const matchesSearch =
-      solution.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      solution.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory =
-      categoryFilter === 'all' || solution.problems?.category === categoryFilter;
-    return matchesSearch && matchesCategory;
-  });
+  const filterSolutions = (solutions: Solution[]) => {
+    return solutions.filter((solution) => {
+      const matchesSearch =
+        solution.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        solution.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory =
+        categoryFilter === 'all' || solution.problems?.category === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+  };
+
+  const filteredApproved = filterSolutions(approvedSolutions);
+  const filteredMine = filterSolutions(mySolutions);
 
   const categories = [
     'technology',
@@ -73,6 +102,113 @@ const Solutions = () => {
       maximumFractionDigits: 0,
     }).format(amount);
   };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return (
+          <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Approved
+          </Badge>
+        );
+      case 'submitted':
+        return <Badge variant="secondary">Submitted</Badge>;
+      case 'under_review':
+        return <Badge variant="outline">Under Review</Badge>;
+      case 'shortlisted':
+        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">Shortlisted</Badge>;
+      case 'draft':
+        return <Badge variant="outline" className="text-muted-foreground">Draft</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const SolutionCard = ({ solution }: { solution: Solution }) => (
+    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <Badge variant="outline" className="capitalize">
+                {solution.problems?.category || 'General'}
+              </Badge>
+              {getStatusBadge(solution.status)}
+            </div>
+            <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
+              {solution.title}
+            </CardTitle>
+          </div>
+          {solution.ai_match_score && (
+            <Badge variant="secondary" className="shrink-0">
+              {solution.ai_match_score}% Match
+            </Badge>
+          )}
+        </div>
+        <CardDescription className="line-clamp-2">
+          {solution.description}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          {solution.problems?.title && (
+            <div className="text-sm">
+              <span className="text-muted-foreground">For: </span>
+              <span className="font-medium">{solution.problems.title}</span>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+            {solution.estimated_cost && (
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                <span>{formatCurrency(solution.estimated_cost)}</span>
+              </div>
+            )}
+            {solution.timeline_weeks && (
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                <span>{solution.timeline_weeks} weeks</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4" />
+              <span>{new Date(solution.created_at).toLocaleDateString()}</span>
+            </div>
+          </div>
+          {solution.technology_stack && solution.technology_stack.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {solution.technology_stack.slice(0, 3).map((tech) => (
+                <Badge key={tech} variant="outline" className="text-xs">
+                  {tech}
+                </Badge>
+              ))}
+              {solution.technology_stack.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{solution.technology_stack.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const EmptyState = ({ message, showExplore = true }: { message: string; showExplore?: boolean }) => (
+    <div className="text-center py-12">
+      <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+      <h3 className="text-lg font-semibold mb-2">No Solutions Found</h3>
+      <p className="text-muted-foreground mb-6">{message}</p>
+      {showExplore && (
+        <Button asChild>
+          <Link to="/explore">Explore Problems</Link>
+        </Button>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -123,95 +259,79 @@ const Solutions = () => {
         </div>
       </section>
 
-      {/* Solutions Grid */}
+      {/* Solutions Content */}
       <section className="pb-20 px-4">
         <div className="container mx-auto">
-          {isLoading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : filteredSolutions.length === 0 ? (
-            <div className="text-center py-12">
-              <Lightbulb className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Solutions Found</h3>
-              <p className="text-muted-foreground mb-6">
-                {searchQuery || categoryFilter !== 'all'
-                  ? 'Try adjusting your search or filters'
-                  : 'Be the first to submit an innovative solution!'}
-              </p>
-              <Button asChild>
-                <Link to="/explore">Explore Problems</Link>
-              </Button>
-            </div>
+          {isInnovator ? (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-6">
+                <TabsTrigger value="approved">Approved Solutions</TabsTrigger>
+                <TabsTrigger value="my-solutions">My Solutions ({mySolutions.length})</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="approved">
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : filteredApproved.length === 0 ? (
+                  <EmptyState 
+                    message={searchQuery || categoryFilter !== 'all' 
+                      ? 'Try adjusting your search or filters' 
+                      : 'No approved solutions yet. Be the first to get your solution approved!'
+                    } 
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredApproved.map((solution) => (
+                      <SolutionCard key={solution.id} solution={solution} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="my-solutions">
+                {isLoading ? (
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : filteredMine.length === 0 ? (
+                  <EmptyState 
+                    message={searchQuery || categoryFilter !== 'all' 
+                      ? 'Try adjusting your search or filters' 
+                      : "You haven't submitted any solutions yet."
+                    } 
+                  />
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {filteredMine.map((solution) => (
+                      <SolutionCard key={solution.id} solution={solution} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredSolutions.map((solution) => (
-                <Card key={solution.id} className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <Badge variant="outline" className="mb-2 capitalize">
-                          {solution.problems?.category || 'General'}
-                        </Badge>
-                        <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-                          {solution.title}
-                        </CardTitle>
-                      </div>
-                      {solution.ai_match_score && (
-                        <Badge variant="secondary" className="shrink-0">
-                          {solution.ai_match_score}% Match
-                        </Badge>
-                      )}
-                    </div>
-                    <CardDescription className="line-clamp-2">
-                      {solution.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {solution.problems?.title && (
-                        <div className="text-sm">
-                          <span className="text-muted-foreground">For: </span>
-                          <span className="font-medium">{solution.problems.title}</span>
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        {solution.estimated_cost && (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-4 w-4" />
-                            <span>{formatCurrency(solution.estimated_cost)}</span>
-                          </div>
-                        )}
-                        {solution.timeline_weeks && (
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{solution.timeline_weeks} weeks</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(solution.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      {solution.technology_stack && solution.technology_stack.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {solution.technology_stack.slice(0, 3).map((tech) => (
-                            <Badge key={tech} variant="outline" className="text-xs">
-                              {tech}
-                            </Badge>
-                          ))}
-                          {solution.technology_stack.length > 3 && (
-                            <Badge variant="outline" className="text-xs">
-                              +{solution.technology_stack.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            // Non-innovators only see approved solutions
+            <>
+              {isLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : filteredApproved.length === 0 ? (
+                <EmptyState 
+                  message={searchQuery || categoryFilter !== 'all'
+                    ? 'Try adjusting your search or filters'
+                    : 'Be the first to submit an innovative solution!'}
+                />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredApproved.map((solution) => (
+                    <SolutionCard key={solution.id} solution={solution} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
