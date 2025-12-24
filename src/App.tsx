@@ -30,7 +30,7 @@ import SolutionsPage from "./pages/dashboard/SolutionsPage";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
+// Protected Route Component - redirects to landing if not authenticated
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading } = useAuth();
 
@@ -43,7 +43,35 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/auth" replace />;
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+// Public Only Route - redirects authenticated users based on role
+const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, role, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (user && role) {
+    // Redirect based on role
+    switch (role) {
+      case 'innovator':
+      case 'investor':
+        return <Navigate to="/innovations" replace />;
+      case 'enterprise':
+        return <Navigate to="/explore" replace />;
+      default:
+        return <Navigate to="/innovations" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -78,20 +106,37 @@ const DashboardRoutes = () => {
 const AppRoutes = () => {
   return (
     <Routes>
-      <Route path="/" element={<Index />} />
+      {/* Public only routes - redirect authenticated users */}
+      <Route path="/" element={
+        <PublicOnlyRoute><Index /></PublicOnlyRoute>
+      } />
+      <Route path="/about" element={
+        <PublicOnlyRoute><About /></PublicOnlyRoute>
+      } />
       <Route path="/auth" element={<Auth />} />
-      <Route path="/innovations" element={<Innovations />} />
+      
+      {/* Protected routes - require authentication */}
+      <Route path="/innovations" element={
+        <ProtectedRoute><Innovations /></ProtectedRoute>
+      } />
       <Route path="/innovations/new" element={
         <ProtectedRoute><NewInnovation /></ProtectedRoute>
       } />
       <Route path="/innovations/:innovationId/edit" element={
         <ProtectedRoute><EditInnovation /></ProtectedRoute>
       } />
-      <Route path="/explore" element={<Explore />} />
-      <Route path="/explore/:problemId" element={<ProblemDetails />} />
-      <Route path="/solutions" element={<Solutions />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/profile" element={<Profile />} />
+      <Route path="/explore" element={
+        <ProtectedRoute><Explore /></ProtectedRoute>
+      } />
+      <Route path="/explore/:problemId" element={
+        <ProtectedRoute><ProblemDetails /></ProtectedRoute>
+      } />
+      <Route path="/solutions" element={
+        <ProtectedRoute><Solutions /></ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute><Profile /></ProtectedRoute>
+      } />
       <Route
         path="/dashboard/*"
         element={

@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -11,17 +11,76 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Lightbulb, Menu, X } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+
+interface NavItem {
+  label: string;
+  path: string;
+}
 
 export const Navbar = () => {
   const { user, profile, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
+
+  // Get logo redirect based on role
+  const getLogoRedirect = () => {
+    if (!user) return '/';
+    switch (role) {
+      case 'innovator':
+      case 'investor':
+        return '/innovations';
+      case 'enterprise':
+        return '/explore';
+      default:
+        return '/innovations';
+    }
+  };
+
+  // Get navigation items based on auth state and role
+  const navItems = useMemo((): NavItem[] => {
+    if (!user) {
+      // Pre-login: Only show About (Landing is accessed via logo)
+      return [
+        { label: 'About', path: '/about' },
+      ];
+    }
+
+    // Post-login: Show role-specific navigation in correct order
+    switch (role) {
+      case 'innovator':
+        return [
+          { label: 'Innovations', path: '/innovations' },
+          { label: 'Explore Problems', path: '/explore' },
+          { label: 'Solutions', path: '/solutions' },
+        ];
+      case 'enterprise':
+        return [
+          { label: 'Explore Problems', path: '/explore' },
+          { label: 'Innovations', path: '/innovations' },
+          { label: 'Solutions', path: '/solutions' },
+        ];
+      case 'investor':
+        return [
+          { label: 'Innovations', path: '/innovations' },
+          { label: 'Explore Problems', path: '/explore' },
+          { label: 'Solutions', path: '/solutions' },
+        ];
+      default:
+        return [
+          { label: 'Innovations', path: '/innovations' },
+          { label: 'Explore Problems', path: '/explore' },
+          { label: 'Solutions', path: '/solutions' },
+        ];
+    }
+  }, [user, role]);
 
   const getDashboardLink = () => {
     if (!role) return '/dashboard';
@@ -38,12 +97,16 @@ export const Navbar = () => {
       .slice(0, 2);
   };
 
+  const isActiveRoute = (path: string) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to={getLogoRedirect()} className="flex items-center gap-2 group">
             <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center transition-transform group-hover:scale-105">
               <Lightbulb className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -52,18 +115,23 @@ export const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
-            <Link to="/innovations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Innovations
-            </Link>
-            <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Explore Problems
-            </Link>
-            <Link to="/solutions" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              Solutions
-            </Link>
-            <Link to="/about" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-              About
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "text-sm transition-colors relative py-1",
+                  isActiveRoute(item.path)
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {item.label}
+                {isActiveRoute(item.path) && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </Link>
+            ))}
           </div>
 
           {/* Auth Section */}
@@ -133,34 +201,21 @@ export const Navbar = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/50 animate-fade-in">
             <div className="flex flex-col gap-4">
-              <Link
-                to="/innovations"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Innovations
-              </Link>
-              <Link
-                to="/explore"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Explore Problems
-              </Link>
-              <Link
-                to="/solutions"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Solutions
-              </Link>
-              <Link
-                to="/about"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                About
-              </Link>
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={cn(
+                    "text-sm transition-colors pl-2 border-l-2",
+                    isActiveRoute(item.path)
+                      ? "text-primary font-medium border-primary"
+                      : "text-muted-foreground hover:text-foreground border-transparent"
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
                 {user ? (
                   <>
