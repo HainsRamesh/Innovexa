@@ -53,6 +53,38 @@ export type Database = {
           },
         ]
       }
+      innovation_likes: {
+        Row: {
+          created_at: string
+          id: string
+          innovation_id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          innovation_id: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          innovation_id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_likes_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       innovations: {
         Row: {
           category: Database["public"]["Enums"]["innovation_category"]
@@ -62,6 +94,7 @@ export type Database = {
           gallery_urls: string[] | null
           id: string
           innovator_id: string
+          like_count: number | null
           pdf_urls: string[] | null
           status: Database["public"]["Enums"]["innovation_status"]
           tagline: string
@@ -80,6 +113,7 @@ export type Database = {
           gallery_urls?: string[] | null
           id?: string
           innovator_id: string
+          like_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
           tagline: string
@@ -98,6 +132,7 @@ export type Database = {
           gallery_urls?: string[] | null
           id?: string
           innovator_id?: string
+          like_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
           tagline?: string
