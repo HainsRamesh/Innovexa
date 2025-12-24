@@ -59,9 +59,22 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Get redirect path based on user role
+  const getRoleRedirectPath = (userRole: AppRole | null) => {
+    switch (userRole) {
+      case 'innovator':
+      case 'investor':
+        return '/innovations';
+      case 'enterprise':
+        return '/explore';
+      default:
+        return '/innovations';
+    }
+  };
+
   useEffect(() => {
     if (user && role) {
-      navigate(`/dashboard/${role}`);
+      navigate(getRoleRedirectPath(role));
     }
   }, [user, role, navigate]);
 
