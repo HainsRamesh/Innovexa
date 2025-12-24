@@ -52,6 +52,9 @@ export const Navbar = () => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
+            <Link to="/innovations" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              Innovations
+            </Link>
             <Link to="/explore" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
               Explore Problems
             </Link>
@@ -130,6 +133,13 @@ export const Navbar = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/50 animate-fade-in">
             <div className="flex flex-col gap-4">
+              <Link
+                to="/innovations"
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Innovations
+              </Link>
               <Link
                 to="/explore"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
