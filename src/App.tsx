@@ -15,6 +15,9 @@ import Solutions from "./pages/Solutions";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import Innovations from "./pages/Innovations";
+import NewInnovation from "./pages/NewInnovation";
+import EditInnovation from "./pages/EditInnovation";
 
 // Dashboard Pages
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -77,6 +80,13 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Index />} />
       <Route path="/auth" element={<Auth />} />
+      <Route path="/innovations" element={<Innovations />} />
+      <Route path="/innovations/new" element={
+        <ProtectedRoute><NewInnovation /></ProtectedRoute>
+      } />
+      <Route path="/innovations/:innovationId/edit" element={
+        <ProtectedRoute><EditInnovation /></ProtectedRoute>
+      } />
       <Route path="/explore" element={<Explore />} />
       <Route path="/explore/:problemId" element={<ProblemDetails />} />
       <Route path="/solutions" element={<Solutions />} />

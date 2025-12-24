@@ -1,4 +1,6 @@
 export type AppRole = 'admin' | 'innovator' | 'enterprise' | 'investor';
+export type InnovationStatus = 'draft' | 'published' | 'featured' | 'archived';
+export type InnovationCategory = 'ai' | 'healthtech' | 'fintech' | 'climatetech' | 'edtech' | 'saas' | 'hardware' | 'web3' | 'other';
 export type ProblemStatus = 'draft' | 'open' | 'in_review' | 'matched' | 'closed';
 export type SolutionStatus = 'draft' | 'submitted' | 'under_review' | 'shortlisted' | 'accepted' | 'rejected';
 export type ProblemCategory = 'technology' | 'healthcare' | 'sustainability' | 'finance' | 'education' | 'infrastructure' | 'manufacturing' | 'agriculture' | 'other';
@@ -96,4 +98,24 @@ export interface DashboardStats {
   totalSolutions: number;
   activeChallenges: number;
   matchRate: number;
+}
+
+export interface Innovation {
+  id: string;
+  innovator_id: string;
+  title: string;
+  tagline: string;
+  category: InnovationCategory;
+  description: string;
+  cover_image_url: string;
+  video_url: string | null;
+  gallery_urls: string[] | null;
+  pdf_urls: string[] | null;
+  without_product: string;
+  with_product: string;
+  status: InnovationStatus;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
+  profiles?: Profile;
 }

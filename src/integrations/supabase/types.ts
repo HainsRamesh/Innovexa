@@ -53,6 +53,63 @@ export type Database = {
           },
         ]
       }
+      innovations: {
+        Row: {
+          category: Database["public"]["Enums"]["innovation_category"]
+          cover_image_url: string
+          created_at: string
+          description: string
+          gallery_urls: string[] | null
+          id: string
+          innovator_id: string
+          pdf_urls: string[] | null
+          status: Database["public"]["Enums"]["innovation_status"]
+          tagline: string
+          title: string
+          updated_at: string
+          video_url: string | null
+          view_count: number | null
+          with_product: string
+          without_product: string
+        }
+        Insert: {
+          category?: Database["public"]["Enums"]["innovation_category"]
+          cover_image_url: string
+          created_at?: string
+          description: string
+          gallery_urls?: string[] | null
+          id?: string
+          innovator_id: string
+          pdf_urls?: string[] | null
+          status?: Database["public"]["Enums"]["innovation_status"]
+          tagline: string
+          title: string
+          updated_at?: string
+          video_url?: string | null
+          view_count?: number | null
+          with_product: string
+          without_product: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["innovation_category"]
+          cover_image_url?: string
+          created_at?: string
+          description?: string
+          gallery_urls?: string[] | null
+          id?: string
+          innovator_id?: string
+          pdf_urls?: string[] | null
+          status?: Database["public"]["Enums"]["innovation_status"]
+          tagline?: string
+          title?: string
+          updated_at?: string
+          video_url?: string | null
+          view_count?: number | null
+          with_product?: string
+          without_product?: string
+        }
+        Relationships: []
+      }
       investments: {
         Row: {
           comments: string | null
@@ -383,6 +440,17 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "innovator" | "enterprise" | "investor"
+      innovation_category:
+        | "ai"
+        | "healthtech"
+        | "fintech"
+        | "climatetech"
+        | "edtech"
+        | "saas"
+        | "hardware"
+        | "web3"
+        | "other"
+      innovation_status: "draft" | "published" | "featured" | "archived"
       problem_category:
         | "technology"
         | "healthcare"
@@ -529,6 +597,18 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "innovator", "enterprise", "investor"],
+      innovation_category: [
+        "ai",
+        "healthtech",
+        "fintech",
+        "climatetech",
+        "edtech",
+        "saas",
+        "hardware",
+        "web3",
+        "other",
+      ],
+      innovation_status: ["draft", "published", "featured", "archived"],
       problem_category: [
         "technology",
         "healthcare",
