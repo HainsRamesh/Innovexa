@@ -47,10 +47,8 @@ export const Navbar = () => {
   // Get navigation items based on auth state and role
   const navItems = useMemo((): NavItem[] => {
     if (!user) {
-      // Pre-login: Only show About (Landing is accessed via logo)
-      return [
-        { label: 'About', path: '/about' },
-      ];
+      // Pre-login: No navigation links (Landing is accessed via logo)
+      return [];
     }
 
     // Post-login: Show role-specific navigation in correct order

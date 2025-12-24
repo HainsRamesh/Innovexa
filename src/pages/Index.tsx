@@ -132,7 +132,7 @@ const Index = () => {
                 </Link>
               </Button>
               <Button variant="hero-outline" size="xl" asChild>
-                <Link to="/explore">Explore Problems</Link>
+                <Link to="/explore">Learn More</Link>
               </Button>
             </div>
           </div>
