@@ -96,7 +96,11 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="z-50">
+        <DropdownMenuContent 
+          align="end" 
+          className="z-[100] bg-popover"
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <DropdownMenuItem onClick={handleEdit}>
             <Pencil className="h-4 w-4 mr-2" />
             Edit

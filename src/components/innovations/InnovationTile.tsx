@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Innovation } from "@/types";
 import { Expand, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,45 +48,101 @@ export const InnovationTile = ({
 }: InnovationTileProps) => {
   const { isLiked, likeCount, toggleLike, isLoading } = useInnovationLike(innovation.id, innovation.like_count ?? 0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Determine transform origin and hover styles based on position
-  const getHoverStyles = () => {
-    if (menuOpen) return "";
-    if (isFirst) return "hover:scale-[1.15] hover:z-20 origin-left";
-    if (isLast) return "hover:scale-[1.15] hover:z-20 origin-right";
-    return "hover:scale-[1.15] hover:z-20";
+  // The tile is "active" (enlarged) when hovered OR when menu is open
+  const isActive = isHovered || menuOpen;
+
+  const handleMouseEnter = useCallback(() => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+    }, 800);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    // Only reset hover if menu is not open
+    if (!menuOpen) {
+      setIsHovered(false);
+    }
+  }, [menuOpen]);
+
+  const handleMenuOpenChange = useCallback((open: boolean) => {
+    setMenuOpen(open);
+    // When menu closes and not hovering, reset active state
+    if (!open) {
+      setIsHovered(false);
+    }
+  }, []);
+
+  // Determine transform origin based on position
+  const getTransformOrigin = () => {
+    if (isFirst) return "left center";
+    if (isLast) return "right center";
+    return "center center";
   };
 
   return (
     <div
-      className={cn(
-        "group relative flex-shrink-0 w-[260px] cursor-pointer transition-all duration-300 ease-out delay-100",
-        getHoverStyles(),
-      )}
+      className="relative flex-shrink-0 w-[260px] cursor-pointer"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       onClick={() => onSelect(innovation)}
+      style={{
+        zIndex: isActive ? 40 : 1,
+        transform: isActive ? "scale(1.25)" : "scale(1)",
+        transformOrigin: getTransformOrigin(),
+        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), z-index 0ms",
+      }}
     >
-      {/* Card */}
+      {/* Card - image never scales */}
       <div
-        className={cn(
-          "relative h-[170px] rounded-xl overflow-hidden transition-all duration-300 ease-out delay-100 shadow-card",
-          !menuOpen && "group-hover:shadow-elevated",
-        )}
+        className="relative h-[170px] overflow-hidden"
+        style={{
+          borderRadius: isActive ? "16px" : "12px",
+          boxShadow: isActive 
+            ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4)" 
+            : "0 4px 6px -1px rgba(0,0,0,0.1)",
+          transition: "border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease-out",
+        }}
       >
-        {/* Cover Image */}
-        <img src={innovation.cover_image_url} alt={innovation.title} className="w-full h-full object-cover" />
-
-        {/* Gradient Overlay - stronger on hover */}
-        <div
-          className={cn(
-            "absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent transition-opacity duration-300",
-            menuOpen ? "opacity-80" : "opacity-80 group-hover:opacity-100",
-          )}
+        {/* Cover Image - static, never transforms */}
+        <img 
+          src={innovation.cover_image_url} 
+          alt={innovation.title} 
+          className="w-full h-full object-cover"
+          style={{ transform: "none" }}
         />
 
-        {/* Top right - Menu */}
+        {/* Gradient Overlay */}
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent"
+          style={{
+            opacity: isActive ? 1 : 0.8,
+            transition: "opacity 300ms ease-out",
+          }}
+        />
+
+        {/* Top right - Menu (only visible when this specific tile is active) */}
         {showMenu && (
-          <div className="absolute top-3 right-3 z-30" onClick={(e) => e.stopPropagation()}>
-            <InnovationTileMenu innovationId={innovation.id} onDelete={onDelete} onOpenChange={setMenuOpen} />
+          <div 
+            className="absolute top-3 right-3 z-50"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              opacity: isActive ? 1 : 0,
+              pointerEvents: isActive ? "auto" : "none",
+              transition: "opacity 200ms ease-out",
+            }}
+          >
+            <InnovationTileMenu 
+              innovationId={innovation.id} 
+              onDelete={onDelete} 
+              onOpenChange={handleMenuOpenChange} 
+            />
           </div>
         )}
 
@@ -101,23 +157,24 @@ export const InnovationTile = ({
           {categoryLabels[innovation.category]}
         </div>
 
-        {/* Content - enhanced on hover */}
-        <div className="absolute inset-x-0 bottom-0 p-4 transition-all duration-300">
+        {/* Content */}
+        <div className="absolute inset-x-0 bottom-0 p-4">
           <h3
-            className={cn(
-              "text-base font-semibold text-foreground line-clamp-1 mb-1 transition-colors",
-              !menuOpen && "group-hover:text-primary",
-            )}
+            className="text-base font-semibold text-foreground line-clamp-1 mb-1"
+            style={{
+              color: isActive ? "hsl(var(--primary))" : undefined,
+              transition: "color 300ms ease-out",
+            }}
           >
             {innovation.title}
           </h3>
           <p
-            className={cn(
-              "text-sm text-muted-foreground line-clamp-2 transition-all duration-300 transform",
-              menuOpen
-                ? "opacity-0 translate-y-2"
-                : "opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0",
-            )}
+            className="text-sm text-muted-foreground line-clamp-2"
+            style={{
+              opacity: isActive && !menuOpen ? 1 : 0,
+              transform: isActive && !menuOpen ? "translateY(0)" : "translateY(8px)",
+              transition: "opacity 300ms ease-out, transform 300ms ease-out",
+            }}
           >
             {innovation.tagline}
           </p>
@@ -125,10 +182,11 @@ export const InnovationTile = ({
 
         {/* Bottom row - Like and Expand */}
         <div
-          className={cn(
-            "absolute bottom-3 right-3 flex items-center gap-2 transition-opacity duration-300",
-            menuOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100",
-          )}
+          className="absolute bottom-3 right-3 flex items-center gap-2"
+          style={{
+            opacity: isActive && !menuOpen ? 1 : 0,
+            transition: "opacity 300ms ease-out",
+          }}
         >
           {/* Like button */}
           <button
