@@ -63,7 +63,7 @@ export default function Innovations() {
   });
 
   // Fetch innovator's own innovations (all statuses)
-  const { data: myInnovations = [] } = useQuery({
+  const { data: myInnovations = [], refetch: refetchMyInnovations } = useQuery({
     queryKey: ["my-innovations", user?.id],
     queryFn: async () => {
       if (!user || !isInnovator) return [];
@@ -195,6 +195,7 @@ export default function Innovations() {
                 <MyInnovationsSection
                   innovations={myInnovations}
                   onSelectInnovation={handleSelectInnovation}
+                  onRefresh={() => refetchMyInnovations()}
                 />
               )}
 

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ProblemCardMenu } from '@/components/ui/ProblemCardMenu';
 import { Search, Calendar, DollarSign, ArrowRight, Target, Sparkles } from 'lucide-react';
 import { Problem } from '@/types';
 import { format } from 'date-fns';
@@ -88,17 +89,22 @@ const Explore = () => {
     return `From $${min?.toLocaleString()}`;
   };
 
-  const ProblemCard = ({ problem }: { problem: Problem }) => (
+  const ProblemCard = ({ problem, showMenu = false }: { problem: Problem; showMenu?: boolean }) => (
     <Card key={problem.id} variant="interactive" className="group">
       <CardContent className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <Badge variant={problem.category as any}>{problem.category}</Badge>
-          {problem.ai_complexity_score && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Sparkles className="h-3 w-3 text-primary" />
-              AI Score: {problem.ai_complexity_score}
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {problem.ai_complexity_score && (
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-primary" />
+                AI Score: {problem.ai_complexity_score}
+              </div>
+            )}
+            {showMenu && (
+              <ProblemCardMenu problemId={problem.id} onDelete={fetchProblems} />
+            )}
+          </div>
         </div>
 
         <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
@@ -152,10 +158,10 @@ const Explore = () => {
     </Card>
   );
 
-  const renderProblemsGrid = (problems: Problem[]) => (
+  const renderProblemsGrid = (problems: Problem[], showMenu = false) => (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       {problems.map((problem) => (
-        <ProblemCard key={problem.id} problem={problem} />
+        <ProblemCard key={problem.id} problem={problem} showMenu={showMenu} />
       ))}
     </div>
   );
@@ -256,7 +262,7 @@ const Explore = () => {
                 </Select>
                 {canPostProblems && (
                   <Button asChild>
-                    <Link to="/dashboard/problems/new">Post a Problem</Link>
+                    <Link to="/problems/new">Post a Problem</Link>
                   </Button>
                 )}
               </div>
@@ -293,7 +299,7 @@ const Explore = () => {
                 {isLoading ? (
                   <LoadingState />
                 ) : filteredMyProblems.length > 0 ? (
-                  renderProblemsGrid(filteredMyProblems)
+                  renderProblemsGrid(filteredMyProblems, true)
                 ) : (
                   <Card>
                     <CardContent className="p-12 text-center">
@@ -305,7 +311,7 @@ const Explore = () => {
                           : 'Start by posting your first problem to get innovative solutions'}
                       </p>
                       <Button asChild>
-                        <Link to="/dashboard/problems/new">Post a Problem</Link>
+                        <Link to="/problems/new">Post a Problem</Link>
                       </Button>
                     </CardContent>
                   </Card>

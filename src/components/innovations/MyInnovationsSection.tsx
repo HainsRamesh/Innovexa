@@ -7,11 +7,13 @@ import { ChevronLeft, ChevronRight, Lightbulb } from 'lucide-react';
 interface MyInnovationsSectionProps {
   innovations: Innovation[];
   onSelectInnovation: (innovation: Innovation) => void;
+  onRefresh?: () => void;
 }
 
 export const MyInnovationsSection = ({
   innovations,
   onSelectInnovation,
+  onRefresh,
 }: MyInnovationsSectionProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,8 @@ export const MyInnovationsSection = ({
               key={innovation.id}
               innovation={innovation}
               onSelect={onSelectInnovation}
+              showMenu={true}
+              onDelete={onRefresh}
             />
           ))}
         </div>

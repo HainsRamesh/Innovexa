@@ -18,6 +18,8 @@ import NotFound from "./pages/NotFound";
 import Innovations from "./pages/Innovations";
 import NewInnovation from "./pages/NewInnovation";
 import EditInnovation from "./pages/EditInnovation";
+import NewProblem from "./pages/NewProblem";
+import EditProblem from "./pages/EditProblem";
 
 // Dashboard Pages
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -130,6 +132,12 @@ const AppRoutes = () => {
       } />
       <Route path="/explore/:problemId" element={
         <ProtectedRoute><ProblemDetails /></ProtectedRoute>
+      } />
+      <Route path="/problems/new" element={
+        <ProtectedRoute><NewProblem /></ProtectedRoute>
+      } />
+      <Route path="/problems/:problemId/edit" element={
+        <ProtectedRoute><EditProblem /></ProtectedRoute>
       } />
       <Route path="/solutions" element={
         <ProtectedRoute><Solutions /></ProtectedRoute>
