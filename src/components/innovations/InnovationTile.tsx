@@ -57,7 +57,7 @@ export const InnovationTile = ({
   const handleMouseEnter = useCallback(() => {
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(true);
-    }, 800);
+    }, 500);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
@@ -65,11 +65,14 @@ export const InnovationTile = ({
       clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = null;
     }
-    // Only reset hover if menu is not open
-    if (!menuOpen) {
-      setIsHovered(false);
-    }
-  }, [menuOpen]);
+    // Close menu and reset hover when leaving tile
+    setMenuOpen(false);
+    setIsHovered(false);
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false);
+  }, []);
 
   const handleMenuOpenChange = useCallback((open: boolean) => {
     setMenuOpen(open);
@@ -94,16 +97,19 @@ export const InnovationTile = ({
       onClick={() => onSelect(innovation)}
       style={{
         zIndex: isActive ? 40 : 1,
+        padding: isActive ? "12px 0" : "0",
+        margin: isActive ? "-12px 0" : "0",
         transform: isActive ? "scale(1.25)" : "scale(1)",
         transformOrigin: getTransformOrigin(),
-        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), z-index 0ms",
+        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), padding 400ms cubic-bezier(0.34, 1.56, 0.64, 1), margin 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
       {/* Card - image never scales */}
       <div
-        className="relative h-[170px] overflow-hidden"
+        className="relative h-[170px]"
         style={{
           borderRadius: isActive ? "16px" : "12px",
+          overflow: "hidden",
           boxShadow: isActive 
             ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4)" 
             : "0 4px 6px -1px rgba(0,0,0,0.1)",
