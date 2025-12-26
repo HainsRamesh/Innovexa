@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Innovation } from '@/types';
 import { Expand, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -40,14 +41,21 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
     innovation.id,
     innovation.like_count ?? 0
   );
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <div
-      className="group relative flex-shrink-0 w-[340px] cursor-pointer"
+      className={cn(
+        "group relative flex-shrink-0 w-[280px] cursor-pointer transition-all duration-300 ease-out",
+        !menuOpen && "hover:scale-110 hover:z-20 hover:-mx-[28px]"
+      )}
       onClick={() => onSelect(innovation)}
     >
       {/* Card */}
-      <div className="relative h-[200px] rounded-xl overflow-hidden transition-all duration-300 ease-out group-hover:scale-110 group-hover:z-20 shadow-card group-hover:shadow-elevated">
+      <div className={cn(
+        "relative h-[180px] rounded-xl overflow-hidden transition-all duration-300 ease-out shadow-card",
+        !menuOpen && "group-hover:shadow-elevated"
+      )}>
         {/* Cover Image */}
         <img
           src={innovation.cover_image_url}
@@ -56,12 +64,22 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
         />
         
         {/* Gradient Overlay - stronger on hover */}
-        <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className={cn(
+          "absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent transition-opacity duration-300",
+          menuOpen ? "opacity-80" : "opacity-80 group-hover:opacity-100"
+        )} />
         
-        {/* Top right - Menu or nothing (removed play icon) */}
+        {/* Top right - Menu */}
         {showMenu && (
-          <div className="absolute top-3 right-3 z-10">
-            <InnovationTileMenu innovationId={innovation.id} onDelete={onDelete} />
+          <div 
+            className="absolute top-3 right-3 z-30"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <InnovationTileMenu 
+              innovationId={innovation.id} 
+              onDelete={onDelete}
+              onOpenChange={setMenuOpen}
+            />
           </div>
         )}
         
@@ -76,19 +94,31 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
         
         {/* Content - enhanced on hover */}
         <div className="absolute inset-x-0 bottom-0 p-4 transition-all duration-300">
-          <h3 className="text-base font-semibold text-foreground line-clamp-1 mb-1 group-hover:text-primary transition-colors">
+          <h3 className={cn(
+            "text-base font-semibold text-foreground line-clamp-1 mb-1 transition-colors",
+            !menuOpen && "group-hover:text-primary"
+          )}>
             {innovation.title}
           </h3>
-          <p className="text-sm text-muted-foreground line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+          <p className={cn(
+            "text-sm text-muted-foreground line-clamp-2 transition-all duration-300 transform",
+            menuOpen ? "opacity-0 translate-y-2" : "opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
+          )}>
             {innovation.tagline}
           </p>
         </div>
         
         {/* Bottom row - Like and Expand */}
-        <div className="absolute bottom-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+        <div className={cn(
+          "absolute bottom-3 right-3 flex items-center gap-2 transition-opacity duration-300",
+          menuOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+        )}>
           {/* Like button */}
           <button
-            onClick={toggleLike}
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleLike(e);
+            }}
             disabled={isLoading}
             className={cn(
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-sm transition-all duration-200",

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,13 +24,20 @@ import { useToast } from '@/hooks/use-toast';
 interface InnovationTileMenuProps {
   innovationId: string;
   onDelete?: () => void;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const InnovationTileMenu = ({ innovationId, onDelete }: InnovationTileMenuProps) => {
+export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: InnovationTileMenuProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  // Notify parent when menu opens/closes
+  useEffect(() => {
+    onOpenChange?.(dropdownOpen || showDeleteDialog);
+  }, [dropdownOpen, showDeleteDialog, onOpenChange]);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -75,7 +82,7 @@ export const InnovationTileMenu = ({ innovationId, onDelete }: InnovationTileMen
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -89,7 +96,7 @@ export const InnovationTileMenu = ({ innovationId, onDelete }: InnovationTileMen
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="z-50">
           <DropdownMenuItem onClick={handleEdit}>
             <Pencil className="h-4 w-4 mr-2" />
             Edit
