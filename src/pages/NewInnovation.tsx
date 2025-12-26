@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { InnovationSubmissionForm } from '@/components/innovations/InnovationSubmissionForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft } from 'lucide-react';
@@ -46,6 +47,8 @@ export default function NewInnovation() {
           <InnovationSubmissionForm mode="create" />
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }
