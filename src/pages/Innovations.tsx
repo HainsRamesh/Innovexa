@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InnovationCategoryRow } from "@/components/innovations/InnovationCategoryRow";
@@ -114,15 +115,9 @@ export default function Innovations() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="relative pt-24 pb-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-hero" />
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
-          <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
-        </div>
-
-        <div className="container mx-auto px-4 relative z-10">
+      {/* Search Section */}
+      <section className="pt-24 pb-12 bg-background">
+        <div className="container mx-auto px-4">
           {/* Search & Filter Bar */}
           <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -204,6 +199,8 @@ export default function Innovations() {
 
       {/* Detail Modal */}
       <InnovationDetailModal innovation={selectedInnovation} open={modalOpen} onOpenChange={setModalOpen} />
+
+      <Footer />
     </div>
   );
 }

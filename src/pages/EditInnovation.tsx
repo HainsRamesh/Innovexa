@@ -2,6 +2,7 @@ import { Navigate, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { InnovationSubmissionForm } from '@/components/innovations/InnovationSubmissionForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Loader2 } from 'lucide-react';
@@ -85,6 +86,8 @@ export default function EditInnovation() {
           />
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 }

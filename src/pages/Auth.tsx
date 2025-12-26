@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Lightbulb, ArrowLeft, Building2, Rocket, TrendingUp, Shield } from 'lucide-react';
+import { Footer } from '@/components/layout/Footer';
 import { AppRole } from '@/types';
 import { z } from 'zod';
 
@@ -153,7 +154,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col">
+    <div className="min-h-screen bg-gradient-hero flex flex-col justify-between">
       {/* Header */}
       <header className="p-4">
         <Link to="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
@@ -302,6 +303,8 @@ const Auth = () => {
           </p>
         </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

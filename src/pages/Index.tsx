@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
+import { Footer } from "@/components/layout/Footer";
 import {
   Lightbulb,
   Sparkles,
@@ -292,31 +293,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Lightbulb className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold">INNOVEXA</span>
-            </div>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link to="/about" className="hover:text-foreground transition-colors">
-                About
-              </Link>
-              <Link to="/explore" className="hover:text-foreground transition-colors">
-                Explore
-              </Link>
-              <Link to="/auth" className="hover:text-foreground transition-colors">
-                Sign In
-              </Link>
-            </div>
-            <p className="text-sm text-muted-foreground">© 2024 INNOVEXA. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };

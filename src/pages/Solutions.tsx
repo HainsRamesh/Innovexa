@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -430,12 +431,7 @@ const Solutions = () => {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 px-4 border-t border-border/50 bg-muted/30">
-        <div className="container mx-auto text-center text-sm text-muted-foreground">
-          <p>© 2024 INNOVEXA. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
 
       {/* Solution Detail Dialog */}
       <SolutionDetailDialog
