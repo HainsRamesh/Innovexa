@@ -44,39 +44,61 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
     innovation.like_count ?? 0
   );
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Determine transform origin and hover styles based on position
-  const getHoverStyles = () => {
-    if (menuOpen) return "";
-    if (isFirst) return "hover:scale-[1.15] hover:z-20 origin-left";
-    if (isLast) return "hover:scale-[1.15] hover:z-20 origin-right";
-    return "hover:scale-[1.15] hover:z-20";
+  // Determine transform origin based on position
+  const getTransformOrigin = () => {
+    if (isFirst) return "origin-left";
+    if (isLast) return "origin-right";
+    return "origin-center";
   };
+
+  // Check if tile should be enlarged (hovered OR menu is open)
+  const isEnlarged = isHovered || menuOpen;
 
   return (
     <div
       className={cn(
-        "group relative flex-shrink-0 w-[260px] cursor-pointer transition-all duration-300 ease-out delay-150",
-        getHoverStyles()
+        "group relative flex-shrink-0 w-[260px] cursor-pointer",
+        "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        getTransformOrigin(),
+        isEnlarged && "scale-[1.25] z-20"
       )}
+      style={{
+        transitionDelay: isEnlarged ? '0ms' : '0ms',
+      }}
+      onMouseEnter={() => {
+        const timer = setTimeout(() => setIsHovered(true), 800);
+        (window as any).__hoverTimer = timer;
+      }}
+      onMouseLeave={() => {
+        clearTimeout((window as any).__hoverTimer);
+        if (!menuOpen) setIsHovered(false);
+      }}
       onClick={() => onSelect(innovation)}
     >
       {/* Card */}
       <div className={cn(
-        "relative h-[170px] rounded-xl overflow-hidden transition-all duration-300 ease-out delay-150 shadow-card",
-        !menuOpen && "group-hover:shadow-elevated"
+        "relative h-[170px] rounded-xl overflow-hidden",
+        "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        isEnlarged 
+          ? "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.4),0_8px_20px_-8px_rgba(0,0,0,0.3)]" 
+          : "shadow-card"
       )}>
         {/* Cover Image */}
         <img
           src={innovation.cover_image_url}
           alt={innovation.title}
-          className="w-full h-full object-cover"
+          className={cn(
+            "w-full h-full object-cover transition-transform duration-700 ease-out",
+            isEnlarged && "scale-105"
+          )}
         />
         
         {/* Gradient Overlay - stronger on hover */}
         <div className={cn(
-          "absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent transition-opacity duration-300",
-          menuOpen ? "opacity-80" : "opacity-80 group-hover:opacity-100"
+          "absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent transition-opacity duration-500",
+          isEnlarged ? "opacity-100" : "opacity-80"
         )} />
         
         {/* Top right - Menu */}
@@ -88,7 +110,10 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
             <InnovationTileMenu 
               innovationId={innovation.id} 
               onDelete={onDelete}
-              onOpenChange={setMenuOpen}
+              onOpenChange={(open) => {
+                setMenuOpen(open);
+                if (open) setIsHovered(true);
+              }}
             />
           </div>
         )}
@@ -97,22 +122,23 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
         <div className={cn(
           'absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium',
           categoryColors[innovation.category],
-          'text-primary-foreground'
+          'text-primary-foreground transition-transform duration-500',
+          isEnlarged && "scale-90"
         )}>
           {categoryLabels[innovation.category]}
         </div>
         
         {/* Content - enhanced on hover */}
-        <div className="absolute inset-x-0 bottom-0 p-4 transition-all duration-300">
+        <div className="absolute inset-x-0 bottom-0 p-4 transition-all duration-500">
           <h3 className={cn(
-            "text-base font-semibold text-foreground line-clamp-1 mb-1 transition-colors",
-            !menuOpen && "group-hover:text-primary"
+            "text-base font-semibold text-foreground line-clamp-1 mb-1 transition-all duration-500",
+            isEnlarged && "text-primary"
           )}>
             {innovation.title}
           </h3>
           <p className={cn(
-            "text-sm text-muted-foreground line-clamp-2 transition-all duration-300 transform",
-            menuOpen ? "opacity-0 translate-y-2" : "opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
+            "text-sm text-muted-foreground line-clamp-2 transition-all duration-500 transform",
+            isEnlarged ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
           )}>
             {innovation.tagline}
           </p>
@@ -120,8 +146,8 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
         
         {/* Bottom row - Like and Expand */}
         <div className={cn(
-          "absolute bottom-3 right-3 flex items-center gap-2 transition-opacity duration-300",
-          menuOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
+          "absolute bottom-3 right-3 flex items-center gap-2 transition-all duration-500",
+          isEnlarged ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
         )}>
           {/* Like button */}
           <button
