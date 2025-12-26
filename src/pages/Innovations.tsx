@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { InnovationCategoryRow } from "@/components/innovations/InnovationCategoryRow";
 import { InnovationDetailModal } from "@/components/innovations/InnovationDetailModal";
+import { MyInnovationsSection } from "@/components/innovations/MyInnovationsSection";
 import { Innovation, InnovationCategory } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const categories: InnovationCategory[] = [
@@ -38,7 +39,7 @@ const categoryLabels: Record<InnovationCategory, string> = {
 };
 
 export default function Innovations() {
-  const { role } = useAuth();
+  const { user, role } = useAuth();
   const [selectedInnovation, setSelectedInnovation] = useState<Innovation | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,6 +47,7 @@ export default function Innovations() {
 
   const isInnovator = role === "innovator";
 
+  // Fetch all published/featured innovations
   const { data: innovations = [], isLoading } = useQuery({
     queryKey: ["innovations"],
     queryFn: async () => {
@@ -58,6 +60,23 @@ export default function Innovations() {
       if (error) throw error;
       return data as Innovation[];
     },
+  });
+
+  // Fetch innovator's own innovations (all statuses)
+  const { data: myInnovations = [] } = useQuery({
+    queryKey: ["my-innovations", user?.id],
+    queryFn: async () => {
+      if (!user || !isInnovator) return [];
+      const { data, error } = await supabase
+        .from("innovations")
+        .select("*")
+        .eq("innovator_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      return data as Innovation[];
+    },
+    enabled: !!user && isInnovator,
   });
 
   const filteredInnovations = useMemo(() => {
@@ -106,10 +125,6 @@ export default function Innovations() {
     setSelectedInnovation(innovation);
     setModalOpen(true);
   };
-
-  // Featured innovations (first 5)
-  const featuredInnovations = innovations.filter((i) => i.status === "featured").slice(0, 5);
-  const hasFeatured = featuredInnovations.length > 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,6 +190,14 @@ export default function Innovations() {
             </div>
           ) : (
             <div className="space-y-10">
+              {/* My Innovations Section - Only for innovators with innovations */}
+              {isInnovator && myInnovations.length > 0 && (
+                <MyInnovationsSection
+                  innovations={myInnovations}
+                  onSelectInnovation={handleSelectInnovation}
+                />
+              )}
+
               {/* Show by category if no specific filter */}
               {categoryFilter === "all" ? (
                 categories.map((category) => (
