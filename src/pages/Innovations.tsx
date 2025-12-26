@@ -120,22 +120,6 @@ export default function Innovations() {
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
         </div>
 
-        <div className="container relative mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center mb-8">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-6">
-              <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm text-primary font-medium">Discover Innovations</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Explore Cutting-Edge{' '}
-              <span className="text-gradient-primary">Innovations</span>
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              Discover breakthrough products and solutions from innovators around the world.
-              See the impact with real-world use cases.
-            </p>
-          </div>
-
           {/* Search & Filter Bar */}
           <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
