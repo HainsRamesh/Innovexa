@@ -116,7 +116,7 @@ export default function Innovations() {
 
       {/* Hero Section */}
       <section className="relative pt-24 pb-12 overflow-hidden">
-        <div className="absolute inset-0" />
+        <div className="absolute inset-0 bg-gradient-hero" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
