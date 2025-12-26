@@ -62,7 +62,7 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
         "group relative flex-shrink-0 w-[260px] cursor-pointer",
         "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         getTransformOrigin(),
-        isEnlarged && "scale-[1.25] z-20"
+        isEnlarged && "scale-[1.25] z-40"
       )}
       style={{
         transitionDelay: isEnlarged ? '0ms' : '0ms',
@@ -79,11 +79,11 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
     >
       {/* Card */}
       <div className={cn(
-        "relative h-[170px] rounded-xl overflow-hidden",
+        "relative h-[170px] overflow-hidden",
         "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         isEnlarged 
-          ? "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.4),0_8px_20px_-8px_rgba(0,0,0,0.3)]" 
-          : "shadow-card"
+          ? "rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.4),0_8px_20px_-8px_rgba(0,0,0,0.3)]" 
+          : "rounded-xl shadow-card"
       )}>
         {/* Cover Image */}
         <img
@@ -122,8 +122,7 @@ export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelet
         <div className={cn(
           'absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium',
           categoryColors[innovation.category],
-          'text-primary-foreground transition-transform duration-500',
-          isEnlarged && "scale-90"
+          'text-primary-foreground'
         )}>
           {categoryLabels[innovation.category]}
         </div>
