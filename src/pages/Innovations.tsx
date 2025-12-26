@@ -1,58 +1,56 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Navbar } from "@/components/layout/Navbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { InnovationCategoryRow } from "@/components/innovations/InnovationCategoryRow";
-import { InnovationDetailModal } from "@/components/innovations/InnovationDetailModal";
-import { Innovation, InnovationCategory } from "@/types";
-import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, Sparkles, Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { Navbar } from '@/components/layout/Navbar';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { InnovationCategoryRow } from '@/components/innovations/InnovationCategoryRow';
+import { InnovationDetailModal } from '@/components/innovations/InnovationDetailModal';
+import { Innovation, InnovationCategory } from '@/types';
+import { useAuth } from '@/contexts/AuthContext';
+import { Plus, Search, Sparkles, Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const categories: InnovationCategory[] = [
-  "ai",
-  "healthtech",
-  "fintech",
-  "climatetech",
-  "edtech",
-  "saas",
-  "hardware",
-  "web3",
-  "other",
+  'ai', 'healthtech', 'fintech', 'climatetech', 'edtech', 'saas', 'hardware', 'web3', 'other'
 ];
 
 const categoryLabels: Record<InnovationCategory, string> = {
-  ai: "AI",
-  healthtech: "HealthTech",
-  fintech: "FinTech",
-  climatetech: "ClimateTech",
-  edtech: "EdTech",
-  saas: "SaaS",
-  hardware: "Hardware",
-  web3: "Web3",
-  other: "Other",
+  ai: 'AI',
+  healthtech: 'HealthTech',
+  fintech: 'FinTech',
+  climatetech: 'ClimateTech',
+  edtech: 'EdTech',
+  saas: 'SaaS',
+  hardware: 'Hardware',
+  web3: 'Web3',
+  other: 'Other',
 };
 
 export default function Innovations() {
   const { role } = useAuth();
   const [selectedInnovation, setSelectedInnovation] = useState<Innovation | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
-  const isInnovator = role === "innovator";
+  const isInnovator = role === 'innovator';
 
   const { data: innovations = [], isLoading } = useQuery({
-    queryKey: ["innovations"],
+    queryKey: ['innovations'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("innovations")
-        .select("*")
-        .in("status", ["published", "featured"])
-        .order("created_at", { ascending: false });
+        .from('innovations')
+        .select('*')
+        .in('status', ['published', 'featured'])
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data as Innovation[];
@@ -69,12 +67,12 @@ export default function Innovations() {
         (i) =>
           i.title.toLowerCase().includes(query) ||
           i.tagline.toLowerCase().includes(query) ||
-          i.category.toLowerCase().includes(query),
+          i.category.toLowerCase().includes(query)
       );
     }
 
     // Category filter
-    if (categoryFilter && categoryFilter !== "all") {
+    if (categoryFilter && categoryFilter !== 'all') {
       filtered = filtered.filter((i) => i.category === categoryFilter);
     }
 
@@ -107,7 +105,7 @@ export default function Innovations() {
   };
 
   // Featured innovations (first 5)
-  const featuredInnovations = innovations.filter((i) => i.status === "featured").slice(0, 5);
+  const featuredInnovations = innovations.filter(i => i.status === 'featured').slice(0, 5);
   const hasFeatured = featuredInnovations.length > 0;
 
   return (
@@ -115,49 +113,49 @@ export default function Innovations() {
       <Navbar />
 
       {/* Hero Section */}
-      {/* <section className="relative pt-24 pb-12 overflow-hidden">
+      <section className="relative pt-24 pb-12 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-hero" />
         <div className="absolute inset-0 opacity-30">
           <div className="absolute top-20 left-10 w-72 h-72 bg-primary/20 rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
-        </div> */}
-
-      <div className="container mx-auto px-4 relative z-10">
-        {/* Search & Filter Bar */}
-        <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search innovations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
-              <SelectValue placeholder="All Categories" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map((cat) => (
-                <SelectItem key={cat} value={cat}>
-                  {categoryLabels[cat]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {isInnovator && (
-            <Button asChild className="gap-2">
-              <Link to="/innovations/new">
-                <Plus className="h-4 w-4" />
-                Add Innovation
-              </Link>
-            </Button>
-          )}
         </div>
-      </div>
-      {/* </section> */}
+
+        <div className="container mx-auto px-4 relative z-10">
+          {/* Search & Filter Bar */}
+          <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search innovations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-[180px]">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {categoryLabels[cat]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {isInnovator && (
+              <Button asChild className="gap-2">
+                <Link to="/innovations/new">
+                  <Plus className="h-4 w-4" />
+                  Add Innovation
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* Innovations Listing */}
       <section className="py-8 pb-24">
@@ -181,7 +179,7 @@ export default function Innovations() {
           ) : (
             <div className="space-y-10">
               {/* Show by category if no specific filter */}
-              {categoryFilter === "all" ? (
+              {categoryFilter === 'all' ? (
                 categories.map((category) => (
                   <InnovationCategoryRow
                     key={category}
@@ -203,7 +201,11 @@ export default function Innovations() {
       </section>
 
       {/* Detail Modal */}
-      <InnovationDetailModal innovation={selectedInnovation} open={modalOpen} onOpenChange={setModalOpen} />
+      <InnovationDetailModal
+        innovation={selectedInnovation}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
     </div>
   );
 }
