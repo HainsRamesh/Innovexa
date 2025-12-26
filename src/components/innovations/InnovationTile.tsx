@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Innovation } from "@/types";
 import { Expand, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -48,45 +48,99 @@ export const InnovationTile = ({
 }: InnovationTileProps) => {
   const { isLiked, likeCount, toggleLike, isLoading } = useInnovationLike(innovation.id, innovation.like_count ?? 0);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Determine transform origin and hover styles based on position
-  const getHoverStyles = () => {
-    if (menuOpen) return "";
-    if (isFirst) return "hover:scale-[1.15] hover:z-20 origin-left";
-    if (isLast) return "hover:scale-[1.15] hover:z-20 origin-right";
-    return "hover:scale-[1.15] hover:z-20";
+  // Card is "active" (enlarged) when hovered OR menu is open
+  const isActive = isHovered || menuOpen;
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsHovered(true);
+    }, 800);
+  };
+
+  const handleMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    // Only reset hover if menu is closed
+    if (!menuOpen) {
+      setIsHovered(false);
+    }
+  };
+
+  // When menu closes, also reset hover state
+  const handleMenuOpenChange = (open: boolean) => {
+    setMenuOpen(open);
+    if (!open) {
+      // Small delay to allow cursor to remain on card
+      setTimeout(() => {
+        setIsHovered(false);
+      }, 100);
+    }
+  };
+
+  // Determine transform origin based on position
+  const getTransformOrigin = () => {
+    if (isFirst) return "left center";
+    if (isLast) return "right center";
+    return "center center";
   };
 
   return (
     <div
       className={cn(
-        "group relative flex-shrink-0 w-[260px] cursor-pointer transition-all duration-300 ease-out delay-100",
-        getHoverStyles(),
+        "relative flex-shrink-0 w-[260px] cursor-pointer",
+        isActive ? "z-40" : "z-0",
       )}
+      style={{
+        transform: isActive ? "scale(1.25)" : "scale(1)",
+        transformOrigin: getTransformOrigin(),
+        transition: "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), z-index 0s",
+      }}
       onClick={() => onSelect(innovation)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {/* Card */}
       <div
         className={cn(
-          "relative h-[170px] rounded-xl overflow-hidden transition-all duration-300 ease-out delay-100 shadow-card",
-          !menuOpen && "group-hover:shadow-elevated",
+          "relative h-[170px] overflow-hidden transition-all duration-300 ease-out",
+          isActive 
+            ? "rounded-2xl shadow-[0_20px_50px_-12px_rgba(0,0,0,0.4),0_8px_20px_-8px_rgba(0,0,0,0.3)]" 
+            : "rounded-xl shadow-card",
         )}
       >
         {/* Cover Image */}
         <img src={innovation.cover_image_url} alt={innovation.title} className="w-full h-full object-cover" />
 
-        {/* Gradient Overlay - stronger on hover */}
+        {/* Gradient Overlay */}
         <div
           className={cn(
             "absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent transition-opacity duration-300",
-            menuOpen ? "opacity-80" : "opacity-80 group-hover:opacity-100",
+            isActive ? "opacity-100" : "opacity-80",
           )}
         />
 
-        {/* Top right - Menu */}
-        {showMenu && (
-          <div className="absolute top-3 right-3 z-30" onClick={(e) => e.stopPropagation()}>
-            <InnovationTileMenu innovationId={innovation.id} onDelete={onDelete} onOpenChange={setMenuOpen} />
+        {/* Top right - Menu (only visible on THIS card's active state) */}
+        {showMenu && isActive && (
+          <div 
+            className="absolute top-3 right-3 z-50" 
+            onClick={(e) => e.stopPropagation()}
+            onMouseEnter={() => {
+              // Keep card hovered when entering menu area
+              if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+              setIsHovered(true);
+            }}
+          >
+            <InnovationTileMenu 
+              innovationId={innovation.id} 
+              onDelete={onDelete} 
+              onOpenChange={handleMenuOpenChange} 
+            />
           </div>
         )}
 
@@ -101,12 +155,12 @@ export const InnovationTile = ({
           {categoryLabels[innovation.category]}
         </div>
 
-        {/* Content - enhanced on hover */}
+        {/* Content */}
         <div className="absolute inset-x-0 bottom-0 p-4 transition-all duration-300">
           <h3
             className={cn(
               "text-base font-semibold text-foreground line-clamp-1 mb-1 transition-colors",
-              !menuOpen && "group-hover:text-primary",
+              isActive && "text-primary",
             )}
           >
             {innovation.title}
@@ -114,9 +168,9 @@ export const InnovationTile = ({
           <p
             className={cn(
               "text-sm text-muted-foreground line-clamp-2 transition-all duration-300 transform",
-              menuOpen
-                ? "opacity-0 translate-y-2"
-                : "opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0",
+              isActive
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-2",
             )}
           >
             {innovation.tagline}
@@ -127,7 +181,7 @@ export const InnovationTile = ({
         <div
           className={cn(
             "absolute bottom-3 right-3 flex items-center gap-2 transition-opacity duration-300",
-            menuOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100",
+            isActive ? "opacity-100" : "opacity-0",
           )}
         >
           {/* Like button */}
