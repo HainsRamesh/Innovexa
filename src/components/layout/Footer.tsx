@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
-import { Linkedin, Twitter, Instagram, Youtube } from "lucide-react";
+import { Facebook, Twitter, Youtube, Instagram, Linkedin } from "lucide-react";
 
 const socialLinks = [
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
-  { icon: Twitter, href: "https://twitter.com", label: "Twitter" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
+  { icon: Twitter, href: "https://twitter.com", label: "X (Twitter)" },
   { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
+  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
+  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
 ];
 
 const footerLinks = [
@@ -17,43 +18,61 @@ const footerLinks = [
 ];
 
 export function Footer() {
-  return (
-    <footer className="bg-muted/50 border-t border-border">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-          {/* Social Links */}
-          <div className="flex items-center gap-4">
-            {socialLinks.map((social) => (
-              <a
-                key={social.label}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={social.label}
-              >
-                <social.icon className="h-5 w-5" />
-              </a>
-            ))}
-          </div>
+  const currentYear = new Date().getFullYear();
 
-          {/* Footer Links */}
-          <nav className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
-            {footerLinks.map((link) => (
-              <Link
-                key={link.label}
-                to={link.href}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {link.label}
-              </Link>
-            ))}
+  return (
+    <footer className="bg-[#1D2435] text-white">
+      <div className="container mx-auto px-4 py-6">
+        {/* Top Section */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Follow Innovexa Label */}
+          <span className="text-sm font-medium">Follow Innovexa</span>
+
+          {/* Social Links */}
+          <nav aria-label="Social media links">
+            <ul className="flex items-center gap-5">
+              {socialLinks.map((social) => (
+                <li key={social.label}>
+                  <a
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white hover:opacity-80 transition-opacity"
+                    aria-label={social.label}
+                  >
+                    <social.icon className="h-5 w-5" />
+                  </a>
+                </li>
+              ))}
+            </ul>
           </nav>
         </div>
 
-        {/* Copyright */}
-        <div className="mt-6 pt-6 border-t border-border text-center text-sm text-muted-foreground">
-          © {new Date().getFullYear()} InnoMatch. All rights reserved.
+        {/* Separator */}
+        <div className="my-5 border-t border-white/30" />
+
+        {/* Bottom Section */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          {/* Copyright */}
+          <span className="text-sm">
+            © {currentYear} Innovexa
+          </span>
+
+          {/* Footer Navigation Links */}
+          <nav aria-label="Footer navigation">
+            <ul className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+              {footerLinks.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-white hover:opacity-80 hover:underline transition-opacity"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </div>
     </footer>
