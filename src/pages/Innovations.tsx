@@ -120,7 +120,6 @@ export default function Innovations() {
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-accent/20 rounded-full blur-3xl" />
         </div>
 
-        <div className="container mx-auto px-4 relative z-10">
           {/* Search & Filter Bar */}
           <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
