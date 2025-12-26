@@ -10,6 +10,8 @@ interface InnovationTileProps {
   onSelect: (innovation: Innovation) => void;
   showMenu?: boolean;
   onDelete?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
 const categoryColors: Record<string, string> = {
@@ -36,24 +38,32 @@ const categoryLabels: Record<string, string> = {
   other: 'Other',
 };
 
-export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelete }: InnovationTileProps) => {
+export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelete, isFirst = false, isLast = false }: InnovationTileProps) => {
   const { isLiked, likeCount, toggleLike, isLoading } = useInnovationLike(
     innovation.id,
     innovation.like_count ?? 0
   );
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Determine transform origin and hover styles based on position
+  const getHoverStyles = () => {
+    if (menuOpen) return "";
+    if (isFirst) return "hover:scale-[1.15] hover:z-20 origin-left";
+    if (isLast) return "hover:scale-[1.15] hover:z-20 origin-right";
+    return "hover:scale-[1.15] hover:z-20";
+  };
+
   return (
     <div
       className={cn(
-        "group relative flex-shrink-0 w-[280px] cursor-pointer transition-all duration-300 ease-out",
-        !menuOpen && "hover:scale-110 hover:z-20 hover:-mx-[28px]"
+        "group relative flex-shrink-0 w-[260px] cursor-pointer transition-all duration-300 ease-out delay-150",
+        getHoverStyles()
       )}
       onClick={() => onSelect(innovation)}
     >
       {/* Card */}
       <div className={cn(
-        "relative h-[180px] rounded-xl overflow-hidden transition-all duration-300 ease-out shadow-card",
+        "relative h-[170px] rounded-xl overflow-hidden transition-all duration-300 ease-out delay-150 shadow-card",
         !menuOpen && "group-hover:shadow-elevated"
       )}>
         {/* Cover Image */}

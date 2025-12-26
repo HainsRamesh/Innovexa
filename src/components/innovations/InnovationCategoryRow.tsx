@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Innovation, InnovationCategory } from '@/types';
 import { InnovationTile } from './InnovationTile';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -27,6 +27,29 @@ export const InnovationCategoryRow = ({
   onSelectInnovation,
 }: InnovationCategoryRowProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkScrollability = () => {
+    if (scrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft + clientWidth < scrollWidth - 1);
+    }
+  };
+
+  useEffect(() => {
+    checkScrollability();
+    const ref = scrollRef.current;
+    if (ref) {
+      ref.addEventListener('scroll', checkScrollability);
+      window.addEventListener('resize', checkScrollability);
+      return () => {
+        ref.removeEventListener('scroll', checkScrollability);
+        window.removeEventListener('resize', checkScrollability);
+      };
+    }
+  }, [innovations]);
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
@@ -51,20 +74,26 @@ export const InnovationCategoryRow = ({
 
       {/* Scroll Container */}
       <div className="relative">
-        {/* Left gradient overlay - visible on hover */}
-        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
+        {/* Left gradient overlay - visible only when can scroll left */}
+        {canScrollLeft && (
+          <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
+        )}
         
-        {/* Right gradient overlay - visible on hover */}
-        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
+        {/* Right gradient overlay - visible only when can scroll right */}
+        {canScrollRight && (
+          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
+        )}
 
-        {/* Left Arrow - no background, larger icon, high z-index */}
-        <button
-          onClick={() => scroll('left')}
-          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/row:opacity-100 transition-all duration-300 text-foreground hover:text-primary hover:scale-110"
-          aria-label="Scroll left"
-        >
-          <ChevronLeft className="h-8 w-8 drop-shadow-lg" />
-        </button>
+        {/* Left Arrow - visible only when can scroll left */}
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll('left')}
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/row:opacity-100 transition-all duration-300 text-foreground hover:text-primary hover:scale-110"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="h-8 w-8 drop-shadow-lg" />
+          </button>
+        )}
 
         {/* Tiles */}
         <div
@@ -72,23 +101,27 @@ export const InnovationCategoryRow = ({
           className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth py-4 px-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {innovations.map((innovation) => (
+          {innovations.map((innovation, index) => (
             <InnovationTile
               key={innovation.id}
               innovation={innovation}
               onSelect={onSelectInnovation}
+              isFirst={index === 0}
+              isLast={index === innovations.length - 1}
             />
           ))}
         </div>
 
-        {/* Right Arrow - no background, larger icon, high z-index */}
-        <button
-          onClick={() => scroll('right')}
-          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/row:opacity-100 transition-all duration-300 text-foreground hover:text-primary hover:scale-110"
-          aria-label="Scroll right"
-        >
-          <ChevronRight className="h-8 w-8 drop-shadow-lg" />
-        </button>
+        {/* Right Arrow - visible only when can scroll right */}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll('right')}
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/row:opacity-100 transition-all duration-300 text-foreground hover:text-primary hover:scale-110"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="h-8 w-8 drop-shadow-lg" />
+          </button>
+        )}
       </div>
     </div>
   );
