@@ -30,6 +30,8 @@ const Explore = () => {
   const [activeTab, setActiveTab] = useState('all');
 
   const isEnterprise = role === 'enterprise';
+  const isInnovator = role === 'innovator';
+  const canPostProblems = isEnterprise || isInnovator;
 
   useEffect(() => {
     fetchProblems();
@@ -48,8 +50,8 @@ const Explore = () => {
       if (error) throw error;
       setAllProblems((data as Problem[]) || []);
 
-      // Fetch enterprise's own problems
-      if (user && isEnterprise) {
+      // Fetch user's own problems (for enterprise OR innovator)
+      if (user && canPostProblems) {
         const { data: myData, error: myError } = await supabase
           .from('problems')
           .select('*')
@@ -252,6 +254,11 @@ const Explore = () => {
                     <SelectItem value="agriculture">Agriculture</SelectItem>
                   </SelectContent>
                 </Select>
+                {canPostProblems && (
+                  <Button asChild>
+                    <Link to="/dashboard/problems/new">Post a Problem</Link>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -264,8 +271,8 @@ const Explore = () => {
             </p>
           </div>
 
-          {/* Problems Content - Tabs for Enterprise, Grid for others */}
-          {isEnterprise ? (
+          {/* Problems Content - Tabs for Enterprise and Innovator, Grid for others */}
+          {canPostProblems ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-6">
                 <TabsTrigger value="all">All Problems</TabsTrigger>
@@ -291,7 +298,7 @@ const Explore = () => {
                   <Card>
                     <CardContent className="p-12 text-center">
                       <Target className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No problems posted yet</h3>
+                      <h3 className="text-lg font-medium mb-2">You haven't posted any problems yet.</h3>
                       <p className="text-muted-foreground mb-6">
                         {searchQuery || categoryFilter !== 'all'
                           ? 'Try adjusting your search or filters'
@@ -306,7 +313,7 @@ const Explore = () => {
               </TabsContent>
             </Tabs>
           ) : (
-            // Non-enterprise users see all problems
+            // Non-enterprise/non-innovator users see all problems only
             <>
               {isLoading ? (
                 <LoadingState />
