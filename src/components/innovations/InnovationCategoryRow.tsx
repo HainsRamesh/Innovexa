@@ -98,8 +98,8 @@ export const InnovationCategoryRow = ({
         {/* Tiles */}
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth py-4 px-1"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth py-10 px-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowY: 'visible' }}
         >
           {innovations.map((innovation, index) => (
             <InnovationTile

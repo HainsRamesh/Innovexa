@@ -91,6 +91,7 @@ export const InnovationTile = ({
 
   return (
     <div
+      data-innovation-tile-root
       className="relative flex-shrink-0 w-[260px] cursor-pointer"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}

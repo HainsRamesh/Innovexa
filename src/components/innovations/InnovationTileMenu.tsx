@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -34,10 +34,37 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
   const [isDeleting, setIsDeleting] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  const tileRootRef = useRef<HTMLElement | null>(null);
+
   // Notify parent when menu opens/closes
   useEffect(() => {
     onOpenChange?.(dropdownOpen || showDeleteDialog);
   }, [dropdownOpen, showDeleteDialog, onOpenChange]);
+
+  // Auto-close the dropdown when the cursor leaves the tile + menu popover
+  useEffect(() => {
+    if (!dropdownOpen) return;
+
+    tileRootRef.current =
+      (triggerRef.current?.closest('[data-innovation-tile-root]') as HTMLElement | null) ?? null;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      const target = e.target as Node | null;
+      if (!target) return;
+
+      const inTile = tileRootRef.current?.contains(target) ?? false;
+      const inContent = contentRef.current?.contains(target) ?? false;
+
+      if (!inTile && !inContent) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('pointermove', handlePointerMove);
+    return () => document.removeEventListener('pointermove', handlePointerMove);
+  }, [dropdownOpen]);
 
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -85,6 +112,7 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
       <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
         <DropdownMenuTrigger asChild>
           <Button
+            ref={triggerRef}
             variant="ghost"
             size="icon"
             className="h-7 w-7 bg-background/80 backdrop-blur-sm hover:bg-background/90"
@@ -96,8 +124,9 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent 
-          align="end" 
+        <DropdownMenuContent
+          ref={contentRef}
+          align="end"
           className="z-[100] bg-popover"
           onCloseAutoFocus={(e) => e.preventDefault()}
         >
@@ -105,7 +134,7 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
             <Pencil className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={handleDeleteClick}
             className="text-destructive focus:text-destructive"
           >
