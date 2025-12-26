@@ -1,11 +1,14 @@
 import { Innovation } from '@/types';
-import { Expand, Play, Heart } from 'lucide-react';
+import { Expand, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useInnovationLike } from '@/hooks/useInnovationLike';
+import { InnovationTileMenu } from './InnovationTileMenu';
 
 interface InnovationTileProps {
   innovation: Innovation;
   onSelect: (innovation: Innovation) => void;
+  showMenu?: boolean;
+  onDelete?: () => void;
 }
 
 const categoryColors: Record<string, string> = {
@@ -32,7 +35,7 @@ const categoryLabels: Record<string, string> = {
   other: 'Other',
 };
 
-export const InnovationTile = ({ innovation, onSelect }: InnovationTileProps) => {
+export const InnovationTile = ({ innovation, onSelect, showMenu = false, onDelete }: InnovationTileProps) => {
   const { isLiked, likeCount, toggleLike, isLoading } = useInnovationLike(
     innovation.id,
     innovation.like_count ?? 0
@@ -55,10 +58,10 @@ export const InnovationTile = ({ innovation, onSelect }: InnovationTileProps) =>
         {/* Gradient Overlay - stronger on hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent opacity-80 group-hover:opacity-100 transition-opacity duration-300" />
         
-        {/* Video indicator */}
-        {innovation.video_url && (
-          <div className="absolute top-3 right-3 bg-background/80 backdrop-blur-sm rounded-full p-1.5">
-            <Play className="h-3.5 w-3.5 text-foreground" />
+        {/* Top right - Menu or nothing (removed play icon) */}
+        {showMenu && (
+          <div className="absolute top-3 right-3 z-10">
+            <InnovationTileMenu innovationId={innovation.id} onDelete={onDelete} />
           </div>
         )}
         
