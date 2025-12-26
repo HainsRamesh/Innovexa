@@ -1,7 +1,6 @@
 import { useRef } from 'react';
 import { Innovation, InnovationCategory } from '@/types';
 import { InnovationTile } from './InnovationTile';
-import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface InnovationCategoryRowProps {
@@ -31,7 +30,7 @@ export const InnovationCategoryRow = ({
 
   const scroll = (direction: 'left' | 'right') => {
     if (scrollRef.current) {
-      const scrollAmount = direction === 'left' ? -600 : 600;
+      const scrollAmount = direction === 'left' ? -500 : 500;
       scrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
@@ -39,9 +38,9 @@ export const InnovationCategoryRow = ({
   if (innovations.length === 0) return null;
 
   return (
-    <div className="relative group/row">
+    <div className="relative group/row py-2">
       {/* Category Header */}
-      <div className="flex items-center justify-between mb-4 px-1">
+      <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg font-semibold text-foreground">
           {categoryLabels[category]}
         </h2>
@@ -52,20 +51,25 @@ export const InnovationCategoryRow = ({
 
       {/* Scroll Container */}
       <div className="relative">
-        {/* Left Arrow */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover/row:opacity-100 transition-opacity shadow-lg"
+        {/* Left gradient overlay - visible on hover */}
+        <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
+        
+        {/* Right gradient overlay - visible on hover */}
+        <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
+
+        {/* Left Arrow - no background, larger icon, high z-index */}
+        <button
           onClick={() => scroll('left')}
+          className="absolute left-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/row:opacity-100 transition-all duration-300 text-foreground hover:text-primary hover:scale-110"
+          aria-label="Scroll left"
         >
-          <ChevronLeft className="h-5 w-5" />
-        </Button>
+          <ChevronLeft className="h-8 w-8 drop-shadow-lg" />
+        </button>
 
         {/* Tiles */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide pb-2 scroll-smooth"
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth py-4 px-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {innovations.map((innovation) => (
@@ -77,15 +81,14 @@ export const InnovationCategoryRow = ({
           ))}
         </div>
 
-        {/* Right Arrow */}
-        <Button
-          variant="secondary"
-          size="icon"
-          className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 opacity-0 group-hover/row:opacity-100 transition-opacity shadow-lg"
+        {/* Right Arrow - no background, larger icon, high z-index */}
+        <button
           onClick={() => scroll('right')}
+          className="absolute right-2 top-1/2 -translate-y-1/2 z-30 opacity-0 group-hover/row:opacity-100 transition-all duration-300 text-foreground hover:text-primary hover:scale-110"
+          aria-label="Scroll right"
         >
-          <ChevronRight className="h-5 w-5" />
-        </Button>
+          <ChevronRight className="h-8 w-8 drop-shadow-lg" />
+        </button>
       </div>
     </div>
   );
