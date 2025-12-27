@@ -146,7 +146,12 @@ export const InnovationTile = ({
               transition: "opacity 200ms ease-out",
             }}
           >
-            <InnovationTileMenu innovationId={innovation.id} onDelete={onDelete} onOpenChange={handleMenuOpenChange} />
+            <InnovationTileMenu 
+              innovationId={innovation.id} 
+              onDelete={onDelete} 
+              onOpenChange={handleMenuOpenChange}
+              forceClose={!isActive}
+            />
           </div>
         )}
 
