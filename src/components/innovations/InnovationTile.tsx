@@ -23,7 +23,7 @@ const categoryColors: Record<string, string> = {
   saas: "bg-primary",
   hardware: "bg-category-infrastructure",
   web3: "bg-accent",
-  other: "bg-muted",
+  other: "bg-primary/80",
 };
 
 const categoryLabels: Record<string, string> = {
@@ -153,7 +153,7 @@ export const InnovationTile = ({
         {/* Category badge */}
         <div
           className={cn(
-            "absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-medium",
+            "absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm",
             categoryColors[innovation.category],
             "text-primary-foreground",
           )}
@@ -173,9 +173,6 @@ export const InnovationTile = ({
             }}
           >
             {innovation.title}
-            {innovation.category === "other" && innovation.custom_category && (
-              <span className="text-muted-foreground font-normal"> ({innovation.custom_category})</span>
-            )}
           </h3>
           <p
             className="text-sm text-muted-foreground line-clamp-2"
