@@ -18,7 +18,7 @@ const categoryLabels: Record<InnovationCategory, string> = {
   saas: 'Software as a Service',
   hardware: 'Hardware & IoT',
   web3: 'Web3 & Blockchain',
-  other: 'Other Innovations',
+  other: 'Others',
 };
 
 export const InnovationCategoryRow = ({
@@ -66,7 +66,6 @@ export const InnovationCategoryRow = ({
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg font-semibold text-foreground">
           {categoryLabels[category]}
-          {category === "other" && " (Custom Categories)"}
         </h2>
         <span className="text-sm text-muted-foreground">
           {innovations.length} {innovations.length === 1 ? 'innovation' : 'innovations'}
