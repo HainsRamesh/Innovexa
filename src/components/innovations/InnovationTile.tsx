@@ -99,7 +99,7 @@ export const InnovationTile = ({
       style={{
         zIndex: isActive ? 40 : 1,
         padding: isActive ? "12px 0" : "0",
-        margin: isActive ? "-12px 0" : "0",
+        margin: isActive ? "0" : "0",
         transform: isActive ? "scale(1.25)" : "scale(1)",
         transformOrigin: getTransformOrigin(),
         transition:
