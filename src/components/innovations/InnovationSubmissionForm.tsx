@@ -275,14 +275,16 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                     </SelectContent>
                   </Select>
                   {field.value === "other" && (
-                    <div className="mx-2">
-                      <Label htmlFor="other-category">Specify Category *</Label>
-                      <Input
-                        id="other-category"
-                        placeholder="Enter your category"
-                        value={otherCategory}
-                        onChange={(e) => setOtherCategory(e.target.value)}
-                      />
+                    <div>
+                      <FormLabel htmlFor="other-category">Specify Category *</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="other-category"
+                          placeholder="Enter your category"
+                          value={otherCategory}
+                          onChange={(e) => setOtherCategory(e.target.value)}
+                        />
+                      </FormControl>
                     </div>
                   )}
                   <FormMessage />
