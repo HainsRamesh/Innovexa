@@ -98,7 +98,7 @@ export const InnovationTile = ({
       onClick={() => onSelect(innovation)}
       style={{
         zIndex: isActive ? 40 : 1,
-        padding: isActive ? "12px 0" : "0",
+        padding: isActive ? "5px 0" : "0",
         margin: isActive ? "-5px 0" : "0",
         transform: isActive ? "scale(1.25)" : "scale(1)",
         transformOrigin: getTransformOrigin(),
