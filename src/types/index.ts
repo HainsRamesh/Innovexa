@@ -106,6 +106,7 @@ export interface Innovation {
   title: string;
   tagline: string;
   category: InnovationCategory;
+  custom_category: string | null;
   description: string;
   cover_image_url: string;
   video_url: string | null;

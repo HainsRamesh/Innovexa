@@ -90,6 +90,7 @@ export type Database = {
           category: Database["public"]["Enums"]["innovation_category"]
           cover_image_url: string
           created_at: string
+          custom_category: string | null
           description: string
           gallery_urls: string[] | null
           id: string
@@ -109,6 +110,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["innovation_category"]
           cover_image_url: string
           created_at?: string
+          custom_category?: string | null
           description: string
           gallery_urls?: string[] | null
           id?: string
@@ -128,6 +130,7 @@ export type Database = {
           category?: Database["public"]["Enums"]["innovation_category"]
           cover_image_url?: string
           created_at?: string
+          custom_category?: string | null
           description?: string
           gallery_urls?: string[] | null
           id?: string
