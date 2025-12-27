@@ -61,7 +61,7 @@ export const InnovationCategoryRow = ({
   if (innovations.length === 0) return null;
 
   return (
-    <div className="relative group/row py-2">
+    <div className="relative group/row py-2" style={{ overflow: 'visible' }}>
       {/* Category Header */}
       <div className="flex items-center justify-between mb-3 px-1">
         <h2 className="text-lg font-semibold text-foreground">
@@ -73,7 +73,7 @@ export const InnovationCategoryRow = ({
       </div>
 
       {/* Scroll Container */}
-      <div className="relative">
+      <div className="relative" style={{ overflow: 'visible' }}>
         {/* Left gradient overlay - visible only when can scroll left */}
         {canScrollLeft && (
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
@@ -98,7 +98,7 @@ export const InnovationCategoryRow = ({
         {/* Tiles */}
         <div
           ref={scrollRef}
-          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth py-10 px-1"
+          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth py-6 px-2"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowY: 'visible' }}
         >
           {innovations.map((innovation, index) => (

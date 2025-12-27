@@ -97,24 +97,22 @@ export const InnovationTile = ({
       onMouseLeave={handleMouseLeave}
       onClick={() => onSelect(innovation)}
       style={{
-        zIndex: isActive ? 40 : 1,
-        padding: isActive ? "12px 0" : "0",
-        margin: isActive ? "-12px 0" : "0",
-        transform: isActive ? "scale(1.25)" : "scale(1)",
+        zIndex: isActive ? 50 : 1,
+        transform: isActive ? "scale(1.05)" : "scale(1)",
         transformOrigin: getTransformOrigin(),
-        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), padding 400ms cubic-bezier(0.34, 1.56, 0.64, 1), margin 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transition: "transform 300ms cubic-bezier(0.4, 0, 0.2, 1), z-index 0ms",
       }}
     >
       {/* Card - image never scales */}
       <div
         className="relative h-[170px]"
         style={{
-          borderRadius: isActive ? "16px" : "12px",
+          borderRadius: "12px",
           overflow: "hidden",
           boxShadow: isActive 
-            ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4)" 
+            ? "0 12px 28px -8px rgba(0,0,0,0.35), 0 4px 12px -4px rgba(0,0,0,0.2)" 
             : "0 4px 6px -1px rgba(0,0,0,0.1)",
-          transition: "border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease-out",
+          transition: "box-shadow 300ms ease-out",
         }}
       >
         {/* Cover Image - static, never transforms */}
