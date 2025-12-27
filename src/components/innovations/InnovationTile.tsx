@@ -99,10 +99,11 @@ export const InnovationTile = ({
       style={{
         zIndex: isActive ? 40 : 1,
         padding: isActive ? "12px 0" : "0",
-        margin: isActive ? "-12px 0" : "0",
+        margin: isActive ? "-30px 0" : "0",
         transform: isActive ? "scale(1.25)" : "scale(1)",
         transformOrigin: getTransformOrigin(),
-        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), padding 400ms cubic-bezier(0.34, 1.56, 0.64, 1), margin 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transition:
+          "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), padding 400ms cubic-bezier(0.34, 1.56, 0.64, 1), margin 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
       {/* Card - image never scales */}
@@ -111,16 +112,16 @@ export const InnovationTile = ({
         style={{
           borderRadius: isActive ? "16px" : "12px",
           overflow: "hidden",
-          boxShadow: isActive 
-            ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4)" 
+          boxShadow: isActive
+            ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4)"
             : "0 4px 6px -1px rgba(0,0,0,0.1)",
           transition: "border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease-out",
         }}
       >
         {/* Cover Image - static, never transforms */}
-        <img 
-          src={innovation.cover_image_url} 
-          alt={innovation.title} 
+        <img
+          src={innovation.cover_image_url}
+          alt={innovation.title}
           className="w-full h-full object-cover"
           style={{ transform: "none" }}
         />
@@ -136,7 +137,7 @@ export const InnovationTile = ({
 
         {/* Top right - Menu (only visible when this specific tile is active) */}
         {showMenu && (
-          <div 
+          <div
             className="absolute top-3 right-3 z-50"
             onClick={(e) => e.stopPropagation()}
             style={{
@@ -145,11 +146,7 @@ export const InnovationTile = ({
               transition: "opacity 200ms ease-out",
             }}
           >
-            <InnovationTileMenu 
-              innovationId={innovation.id} 
-              onDelete={onDelete} 
-              onOpenChange={handleMenuOpenChange} 
-            />
+            <InnovationTileMenu innovationId={innovation.id} onDelete={onDelete} onOpenChange={handleMenuOpenChange} />
           </div>
         )}
 
