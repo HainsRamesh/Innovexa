@@ -25,9 +25,10 @@ interface InnovationTileMenuProps {
   innovationId: string;
   onDelete?: () => void;
   onOpenChange?: (open: boolean) => void;
+  forceClose?: boolean;
 }
 
-export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: InnovationTileMenuProps) => {
+export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange, forceClose }: InnovationTileMenuProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -35,6 +36,13 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
+
+  // Force close dropdown when parent says so (tile no longer active)
+  useEffect(() => {
+    if (forceClose && dropdownOpen) {
+      setDropdownOpen(false);
+    }
+  }, [forceClose, dropdownOpen]);
 
   // Notify parent when menu opens/closes
   useEffect(() => {
