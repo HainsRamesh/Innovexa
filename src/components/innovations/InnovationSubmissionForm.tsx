@@ -169,7 +169,16 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       const innovationData = {
         title: data.title,
         tagline: data.tagline,
-        category: data.category as "ai" | "healthtech" | "fintech" | "climatetech" | "edtech" | "saas" | "hardware" | "web3" | "other",
+        category: data.category as
+          | "ai"
+          | "healthtech"
+          | "fintech"
+          | "climatetech"
+          | "edtech"
+          | "saas"
+          | "hardware"
+          | "web3"
+          | "other",
         description: data.description,
         cover_image_url: coverImageUrl,
         video_url: data.video_url || null,
@@ -266,8 +275,8 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                     </SelectContent>
                   </Select>
                   {field.value === "other" && (
-                    <div className="mt-2">
-                      <Label htmlFor="other-category">Specify Category</Label>
+                    <div className="mx-2">
+                      <Label htmlFor="other-category">Specify Category *</Label>
                       <Input
                         id="other-category"
                         placeholder="Enter your category"
