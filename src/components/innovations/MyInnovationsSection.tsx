@@ -49,7 +49,7 @@ export const MyInnovationsSection = ({
   if (innovations.length === 0) return null;
 
   return (
-    <div className="relative group/row mb-8 py-2" style={{ overflow: 'visible' }}>
+    <div className="relative group/row mb-8 py-2">
       {/* Section Header with distinct styling */}
       <div className="flex items-center justify-between mb-3 px-1">
         <div className="flex items-center gap-2">
@@ -66,7 +66,7 @@ export const MyInnovationsSection = ({
       </div>
 
       {/* Scroll Container - no background */}
-      <div className="relative" style={{ overflow: 'visible' }}>
+      <div className="relative">
         {/* Left gradient overlay - visible only when can scroll left */}
         {canScrollLeft && (
           <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-background via-background/60 to-transparent z-10 pointer-events-none opacity-0 group-hover/row:opacity-100 transition-opacity duration-300" />
@@ -91,8 +91,8 @@ export const MyInnovationsSection = ({
         {/* Tiles */}
         <div
           ref={scrollRef}
-          className="flex gap-4 overflow-x-auto scrollbar-hide scroll-smooth py-6 px-2"
-          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none', overflowY: 'visible' }}
+          className="flex gap-3 overflow-x-auto scrollbar-hide scroll-smooth py-4 px-1"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {innovations.map((innovation, index) => (
             <InnovationTile
