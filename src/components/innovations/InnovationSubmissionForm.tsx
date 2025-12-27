@@ -276,7 +276,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                   </Select>
                   {field.value === "other" && (
                     <div>
-                      <FormLabel htmlFor="other-category" className="mb-2">
+                      <FormLabel htmlFor="other-category" className="mb-2 block">
                         Specify Category *
                       </FormLabel>
                       <FormControl>
