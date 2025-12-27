@@ -169,7 +169,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       const innovationData = {
         title: data.title,
         tagline: data.tagline,
-        category: data.category === "other" ? "other" : data.category,
+        category: data.category as "ai" | "healthtech" | "fintech" | "climatetech" | "edtech" | "saas" | "hardware" | "web3" | "other",
         description: data.description,
         cover_image_url: coverImageUrl,
         video_url: data.video_url || null,
@@ -179,7 +179,6 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
         with_product: data.with_product,
         status,
         innovator_id: user.id,
-        ...(data.category === "other" && otherCategory && { custom_category: otherCategory }),
       };
 
       if (mode === "edit" && initialData?.id) {
