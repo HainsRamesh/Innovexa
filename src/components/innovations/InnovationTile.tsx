@@ -158,7 +158,9 @@ export const InnovationTile = ({
             "text-primary-foreground",
           )}
         >
-          {categoryLabels[innovation.category]}
+          {innovation.category === "other" && innovation.custom_category
+            ? innovation.custom_category
+            : categoryLabels[innovation.category]}
         </div>
 
         {/* Content */}
@@ -171,6 +173,9 @@ export const InnovationTile = ({
             }}
           >
             {innovation.title}
+            {innovation.category === "other" && innovation.custom_category && (
+              <span className="text-muted-foreground font-normal"> ({innovation.custom_category})</span>
+            )}
           </h3>
           <p
             className="text-sm text-muted-foreground line-clamp-2"

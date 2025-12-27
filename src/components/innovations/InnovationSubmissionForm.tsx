@@ -23,11 +23,18 @@ const innovationSchema = z.object({
     .min(10, "Tagline must be at least 10 characters")
     .max(200, "Tagline must be less than 200 characters"),
   category: z.enum(["ai", "healthtech", "fintech", "climatetech", "edtech", "saas", "hardware", "web3", "other"]),
+  custom_category: z.string().optional(),
   description: z.string().min(50, "Description must be at least 50 characters"),
   video_url: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   without_product: z.string().min(30, "Please describe the problem scenario (min 30 characters)"),
   with_product: z.string().min(30, "Please describe the solution scenario (min 30 characters)"),
-});
+}).refine(
+  (data) => data.category !== "other" || (data.custom_category && data.custom_category.trim().length >= 2),
+  {
+    message: "Please specify a category (min 2 characters)",
+    path: ["custom_category"],
+  }
+);
 
 type InnovationFormData = z.infer<typeof innovationSchema>;
 
@@ -38,6 +45,7 @@ interface InnovationSubmissionFormProps {
       cover_image_url?: string;
       gallery_urls?: string[];
       pdf_urls?: string[];
+      custom_category?: string;
     }
   >;
   mode?: "create" | "edit";
@@ -65,7 +73,6 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>(initialData?.gallery_urls || []);
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [pdfNames, setPdfNames] = useState<string[]>(initialData?.pdf_urls?.map((_, i) => `Document ${i + 1}`) || []);
-  const [otherCategory, setOtherCategory] = useState(initialData?.category === "other" ? initialData?.title || "" : "");
 
   const form = useForm<InnovationFormData>({
     resolver: zodResolver(innovationSchema),
@@ -73,12 +80,15 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       title: initialData?.title || "",
       tagline: initialData?.tagline || "",
       category: initialData?.category || "other",
+      custom_category: initialData?.custom_category || "",
       description: initialData?.description || "",
       video_url: initialData?.video_url || "",
       without_product: initialData?.without_product || "",
       with_product: initialData?.with_product || "",
     },
   });
+
+  const watchedCategory = form.watch("category");
 
   const uploadFile = async (file: File, folder: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
@@ -179,6 +189,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
           | "hardware"
           | "web3"
           | "other",
+        custom_category: data.category === "other" ? data.custom_category : null,
         description: data.description,
         cover_image_url: coverImageUrl,
         video_url: data.video_url || null,
@@ -274,25 +285,27 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                       ))}
                     </SelectContent>
                   </Select>
-                  {field.value === "other" && (
-                    <div>
-                      <FormLabel htmlFor="other-category" className="mb-2 block">
-                        Specify Category *
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          id="other-category"
-                          placeholder="Enter your category"
-                          value={otherCategory}
-                          onChange={(e) => setOtherCategory(e.target.value)}
-                        />
-                      </FormControl>
-                    </div>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            {watchedCategory === "other" && (
+              <FormField
+                control={form.control}
+                name="custom_category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Specify Category *</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your category (e.g., Healthcare, FinTech)" {...field} />
+                    </FormControl>
+                    <FormDescription>This will be displayed alongside your innovation</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <FormField
               control={form.control}

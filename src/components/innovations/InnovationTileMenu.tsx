@@ -35,36 +35,16 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const contentRef = useRef<HTMLDivElement | null>(null);
-  const tileRootRef = useRef<HTMLElement | null>(null);
 
   // Notify parent when menu opens/closes
   useEffect(() => {
     onOpenChange?.(dropdownOpen || showDeleteDialog);
   }, [dropdownOpen, showDeleteDialog, onOpenChange]);
 
-  // Auto-close the dropdown when the cursor leaves the tile + menu popover
-  useEffect(() => {
-    if (!dropdownOpen) return;
-
-    tileRootRef.current =
-      (triggerRef.current?.closest('[data-innovation-tile-root]') as HTMLElement | null) ?? null;
-
-    const handlePointerMove = (e: PointerEvent) => {
-      const target = e.target as Node | null;
-      if (!target) return;
-
-      const inTile = tileRootRef.current?.contains(target) ?? false;
-      const inContent = contentRef.current?.contains(target) ?? false;
-
-      if (!inTile && !inContent) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('pointermove', handlePointerMove);
-    return () => document.removeEventListener('pointermove', handlePointerMove);
-  }, [dropdownOpen]);
+  // Keep menu open when interacting with dropdown content
+  const handleContentPointerDown = (e: React.PointerEvent) => {
+    e.stopPropagation();
+  };
 
   const handleEdit = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -109,7 +89,7 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
 
   return (
     <>
-      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+      <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen} modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             ref={triggerRef}
@@ -125,17 +105,29 @@ export const InnovationTileMenu = ({ innovationId, onDelete, onOpenChange }: Inn
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          ref={contentRef}
           align="end"
           className="z-[100] bg-popover"
           onCloseAutoFocus={(e) => e.preventDefault()}
+          onPointerDown={handleContentPointerDown}
+          onPointerDownOutside={(e) => {
+            // Prevent closing if clicking inside the tile
+            const target = e.target as Node | null;
+            const tile = triggerRef.current?.closest('[data-innovation-tile-root]');
+            if (tile?.contains(target)) {
+              e.preventDefault();
+            }
+          }}
         >
-          <DropdownMenuItem onClick={handleEdit}>
+          <DropdownMenuItem 
+            onClick={handleEdit}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             <Pencil className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={handleDeleteClick}
+            onPointerDown={(e) => e.stopPropagation()}
             className="text-destructive focus:text-destructive"
           >
             <Trash2 className="h-4 w-4 mr-2" />
