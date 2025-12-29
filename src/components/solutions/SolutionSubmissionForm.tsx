@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Send, Paperclip, X, Edit } from "lucide-react";
+import { Send, Paperclip, X, Edit } from "lucide-react";
 
 const solutionSchema = z.object({
   title: z
@@ -419,30 +420,26 @@ export function SolutionSubmissionForm({
                 </Button>
               )}
               <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
-                {isSubmitting ? (
+                {isEditing ? (
                   <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {isEditing ? "Updating..." : "Submitting..."}
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Solution
                   </>
                 ) : (
                   <>
-                    {isEditing ? (
-                      <>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Update Solution
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" />
-                        Submit Solution
-                      </>
-                    )}
+                    <Send className="h-4 w-4 mr-2" />
+                    Submit Solution
                   </>
                 )}
               </Button>
             </div>
           </form>
         </Form>
+
+        <LoadingOverlay
+          isVisible={isSubmitting}
+          message={isEditing ? "Updating your solution…" : "Submitting your solution…"}
+        />
       </CardContent>
     </Card>
   );
