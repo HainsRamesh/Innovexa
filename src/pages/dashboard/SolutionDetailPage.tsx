@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalLoading } from '@/contexts/LoadingContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { AttachmentsList } from '@/components/solutions/AttachmentsList';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -31,6 +31,7 @@ const SolutionDetailPage = () => {
   const { solutionId } = useParams<{ solutionId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const navigate = useNavigate();
 
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -46,6 +47,7 @@ const SolutionDetailPage = () => {
 
   const fetchSolutionDetails = async () => {
     setIsLoading(true);
+    startLoading("Loading solution details…");
     setError(null);
 
     try {
@@ -83,6 +85,7 @@ const SolutionDetailPage = () => {
       });
     } finally {
       setIsLoading(false);
+      stopLoading();
     }
   };
 
@@ -106,7 +109,7 @@ const SolutionDetailPage = () => {
   const isEditable = solution && EDITABLE_STATUSES.includes(solution.status);
 
   if (isLoading) {
-    return <LoadingOverlay isVisible={true} message="Loading solution details…" />;
+    return null; // Global loading overlay is shown
   }
 
   if (error) {
