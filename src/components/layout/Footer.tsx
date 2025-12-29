@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Facebook, Twitter, Youtube, Instagram, Linkedin, ArrowRight, Sparkles } from "lucide-react";
+import { Facebook, Twitter, Youtube, Instagram, Linkedin, Sparkles } from "lucide-react";
 
 const socialLinks = [
   { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
@@ -58,36 +57,11 @@ export function Footer() {
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* CTA Strip */}
-      <div className="relative border-b border-white/10">
-        <div className="container mx-auto px-4 py-10">
-          <div className="glass rounded-2xl p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
-                <Sparkles className="h-5 w-5 text-primary" />
-                <span className="text-sm text-primary font-medium">Start Your Journey</span>
-              </div>
-              <h3 className="text-2xl md:text-3xl font-bold">
-                Ready to Transform Innovation?
-              </h3>
-            </div>
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <Button variant="hero" size="lg" asChild>
-                <Link to="/auth?mode=signup">
-                  Get Started Free
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Link>
-              </Button>
-              <Button variant="hero-outline" size="lg" asChild>
-                <Link to="/about">Learn More</Link>
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Top divider */}
+      <div className="border-t border-white/10" />
 
       {/* Main Footer Content */}
-      <div className="relative container mx-auto px-4 py-12 md:py-16">
+      <div className="relative container mx-auto px-4 py-12 md:py-14">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-4 space-y-6">
