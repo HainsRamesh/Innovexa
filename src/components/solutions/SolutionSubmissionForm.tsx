@@ -17,9 +17,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { AttachmentsList } from "./AttachmentsList";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Send, Paperclip, X, Edit } from "lucide-react";
+import { Send, Paperclip, X, Edit, Loader2 } from "lucide-react";
 
 const solutionSchema = z.object({
   title: z
@@ -62,6 +63,8 @@ interface ExistingSolution {
   estimated_cost: number | null;
   timeline_weeks: number | null;
   technology_stack: string[] | null;
+  attachments?: string[] | null;
+  innovator_id?: string;
 }
 
 interface SolutionSubmissionFormProps {
@@ -79,7 +82,8 @@ export function SolutionSubmissionForm({
 }: SolutionSubmissionFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [newAttachments, setNewAttachments] = useState<File[]>([]);
 
   const isEditing = !!existingSolution;
 
@@ -112,14 +116,41 @@ export function SolutionSubmissionForm({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const newFiles = Array.from(files).slice(0, 5 - attachments.length);
-      setAttachments((prev) => [...prev, ...newFiles].slice(0, 5));
+      const existingCount = existingSolution?.attachments?.length || 0;
+      const maxNew = 5 - existingCount - newAttachments.length;
+      const newFiles = Array.from(files).slice(0, maxNew);
+      setNewAttachments((prev) => [...prev, ...newFiles].slice(0, 5 - existingCount));
     }
     e.target.value = "";
   };
 
-  const removeAttachment = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  const removeNewAttachment = (index: number) => {
+    setNewAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadAttachments = async (userId: string, solutionId: string): Promise<string[]> => {
+    if (newAttachments.length === 0) return [];
+
+    const uploadedPaths: string[] = [];
+
+    for (const file of newAttachments) {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${userId}/${solutionId}/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from("solution-attachments")
+        .upload(filePath, file);
+
+      if (error) {
+        console.error("Error uploading file:", error);
+        throw new Error(`Failed to upload ${file.name}`);
+      }
+
+      uploadedPaths.push(filePath);
+    }
+
+    return uploadedPaths;
   };
 
   const onSubmit = async (values: SolutionFormValues) => {
@@ -148,6 +179,15 @@ export function SolutionSubmissionForm({
       const timelineWeeks = values.timeline_weeks ? parseInt(values.timeline_weeks, 10) : null;
 
       if (isEditing && existingSolution) {
+        // Upload new attachments if any
+        let allAttachments = existingSolution.attachments || [];
+        if (newAttachments.length > 0) {
+          setIsUploading(true);
+          const newPaths = await uploadAttachments(user.id, existingSolution.id);
+          allAttachments = [...allAttachments, ...newPaths];
+          setIsUploading(false);
+        }
+
         // Update existing solution
         const { error } = await supabase
           .from("solutions")
@@ -158,6 +198,7 @@ export function SolutionSubmissionForm({
             estimated_cost: estimatedCost,
             timeline_weeks: timelineWeeks,
             technology_stack: technologyStack,
+            attachments: allAttachments.length > 0 ? allAttachments : null,
           })
           .eq("id", existingSolution.id);
 
@@ -176,27 +217,48 @@ export function SolutionSubmissionForm({
           description: "Your solution has been updated successfully.",
         });
       } else {
-        // Create new solution
-        const { error } = await supabase.from("solutions").insert({
-          problem_id: problemId,
-          innovator_id: user.id,
-          title: values.title!,
-          description: values.description!,
-          approach: values.approach || null,
-          estimated_cost: estimatedCost,
-          timeline_weeks: timelineWeeks,
-          technology_stack: technologyStack,
-          status: "submitted" as const,
-        });
+        // Create new solution first to get the ID
+        const { data: newSolution, error: insertError } = await supabase
+          .from("solutions")
+          .insert({
+            problem_id: problemId,
+            innovator_id: user.id,
+            title: values.title!,
+            description: values.description!,
+            approach: values.approach || null,
+            estimated_cost: estimatedCost,
+            timeline_weeks: timelineWeeks,
+            technology_stack: technologyStack,
+            status: "submitted" as const,
+          })
+          .select("id")
+          .single();
 
-        if (error) {
-          console.error("Error submitting solution:", error);
+        if (insertError) {
+          console.error("Error submitting solution:", insertError);
           toast({
             title: "Submission failed",
-            description: error.message || "Please try again later.",
+            description: insertError.message || "Please try again later.",
             variant: "destructive",
           });
           return;
+        }
+
+        // Upload attachments if any
+        if (newAttachments.length > 0 && newSolution) {
+          setIsUploading(true);
+          const uploadedPaths = await uploadAttachments(user.id, newSolution.id);
+          
+          // Update solution with attachment paths
+          const { error: updateError } = await supabase
+            .from("solutions")
+            .update({ attachments: uploadedPaths })
+            .eq("id", newSolution.id);
+
+          if (updateError) {
+            console.error("Error updating attachments:", updateError);
+          }
+          setIsUploading(false);
         }
 
         toast({
@@ -206,19 +268,23 @@ export function SolutionSubmissionForm({
       }
 
       form.reset();
-      setAttachments([]);
+      setNewAttachments([]);
       onSuccess?.();
     } catch (err) {
       console.error("Unexpected error:", err);
       toast({
         title: "Something went wrong",
-        description: "Please try again later.",
+        description: err instanceof Error ? err.message : "Please try again later.",
         variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
+
+  const existingCount = existingSolution?.attachments?.length || 0;
+  const totalCount = existingCount + newAttachments.length;
 
   return (
     <Card className="mt-6">
@@ -361,15 +427,27 @@ export function SolutionSubmissionForm({
               />
             </div>
 
-            {/* File Attachments */}
+            {/* Existing Attachments (Edit mode) */}
+            {isEditing && existingSolution?.attachments && existingSolution.attachments.length > 0 && (
+              <div className="space-y-3">
+                <FormLabel>Existing Attachments</FormLabel>
+                <AttachmentsList
+                  attachments={existingSolution.attachments}
+                  innovatorId={existingSolution.innovator_id || ""}
+                  showCard={false}
+                />
+              </div>
+            )}
+
+            {/* New File Attachments */}
             <div className="space-y-3">
-              <FormLabel>Attachments (optional)</FormLabel>
+              <FormLabel>{isEditing ? "Add More Attachments" : "Attachments (optional)"}</FormLabel>
               <div className="flex items-center gap-3">
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  disabled={attachments.length >= 5}
+                  disabled={totalCount >= 5 || isUploading}
                   onClick={() => document.getElementById("file-upload")?.click()}
                 >
                   <Paperclip className="h-4 w-4 mr-2" />
@@ -383,13 +461,13 @@ export function SolutionSubmissionForm({
                   accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg"
                 />
                 <span className="text-sm text-muted-foreground">
-                  {attachments.length}/5 files
+                  {totalCount}/5 files
                 </span>
               </div>
 
-              {attachments.length > 0 && (
+              {newAttachments.length > 0 && (
                 <ul className="space-y-2">
-                  {attachments.map((file, index) => (
+                  {newAttachments.map((file, index) => (
                     <li
                       key={index}
                       className="flex items-center justify-between bg-secondary/50 rounded-md px-3 py-2 text-sm"
@@ -400,7 +478,7 @@ export function SolutionSubmissionForm({
                         variant="ghost"
                         size="icon"
                         className="h-6 w-6"
-                        onClick={() => removeAttachment(index)}
+                        onClick={() => removeNewAttachment(index)}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -409,7 +487,7 @@ export function SolutionSubmissionForm({
                 </ul>
               )}
               <p className="text-xs text-muted-foreground">
-                Supported: PDF, DOC, DOCX, TXT, PNG, JPG (max 5 files). File upload coming soon.
+                Supported: PDF, DOC, DOCX, TXT, PNG, JPG (max 5 files total)
               </p>
             </div>
 
@@ -419,18 +497,15 @@ export function SolutionSubmissionForm({
                   Cancel
                 </Button>
               )}
-              <Button type="submit" disabled={isSubmitting} className="flex-1 sm:flex-none">
-                {isEditing ? (
-                  <>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Update Solution
-                  </>
+              <Button type="submit" disabled={isSubmitting || isUploading} className="flex-1 sm:flex-none">
+                {isSubmitting || isUploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : isEditing ? (
+                  <Edit className="h-4 w-4 mr-2" />
                 ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Submit Solution
-                  </>
+                  <Send className="h-4 w-4 mr-2" />
                 )}
+                {isUploading ? "Uploading files…" : isEditing ? "Update Solution" : "Submit Solution"}
               </Button>
             </div>
           </form>
@@ -438,7 +513,7 @@ export function SolutionSubmissionForm({
 
         <LoadingOverlay
           isVisible={isSubmitting}
-          message={isEditing ? "Updating your solution…" : "Submitting your solution…"}
+          message={isUploading ? "Uploading attachments…" : isEditing ? "Updating your solution…" : "Submitting your solution…"}
         />
       </CardContent>
     </Card>

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -6,8 +7,21 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { DollarSign, Clock, FileText, Layers, Paperclip } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DollarSign,
+  Clock,
+  FileText,
+  Layers,
+  Paperclip,
+  Download,
+  Loader2,
+  FileImage,
+  File,
+} from "lucide-react";
 
 interface SolutionDetailDialogProps {
   solution: {
@@ -21,17 +35,70 @@ interface SolutionDetailDialogProps {
     attachments?: string[] | null;
     created_at: string;
     status: string;
+    innovator_id?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const FILE_TYPE_ICONS: Record<string, typeof FileText> = {
+  pdf: FileText,
+  doc: FileText,
+  docx: FileText,
+  txt: FileText,
+  png: FileImage,
+  jpg: FileImage,
+  jpeg: FileImage,
+  gif: FileImage,
+  webp: FileImage,
+};
+
+const getFileExtension = (filename: string): string => {
+  return filename.split(".").pop()?.toLowerCase() || "";
+};
+
+const getFileIcon = (filename: string) => {
+  const ext = getFileExtension(filename);
+  return FILE_TYPE_ICONS[ext] || File;
+};
+
 export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionDetailDialogProps) {
+  const { toast } = useToast();
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+
   if (!solution) return null;
 
   const formatCurrency = (amount: number | null) => {
     if (amount === null) return "Not specified";
     return `$${amount.toLocaleString()}`;
+  };
+
+  const handleDownload = async (path: string, index: number) => {
+    setDownloadingIndex(index);
+
+    try {
+      // Generate a signed URL for the file
+      const { data, error } = await supabase.storage
+        .from("solution-attachments")
+        .createSignedUrl(path, 60 * 5); // 5 minutes expiry
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, "_blank");
+      }
+    } catch (error) {
+      console.error("Error generating download link:", error);
+      toast({
+        title: "Download failed",
+        description: "Could not generate download link. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDownloadingIndex(null);
+    }
   };
 
   return (
@@ -122,35 +189,69 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
             <>
               <Separator />
               <div>
-                <h4 className="font-semibold flex items-center gap-2 mb-2">
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
                   <Paperclip className="h-4 w-4 text-primary" />
                   Attachments ({solution.attachments.length})
                 </h4>
                 <div className="space-y-2">
-                  {solution.attachments.map((attachment, index) => {
-                    const fileName = attachment.split('/').pop() || `Attachment ${index + 1}`;
-                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(attachment);
-                    
+                  {solution.attachments.map((path, index) => {
+                    const fileName = path.split("/").pop() || `Attachment ${index + 1}`;
+                    const ext = getFileExtension(fileName).toUpperCase();
+                    const IconComponent = getFileIcon(fileName);
+                    const isDownloading = downloadingIndex === index;
+
                     return (
-                      <a
+                      <div
                         key={index}
-                        href={attachment}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-primary hover:underline p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                       >
-                        <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{fileName}</span>
-                        {isImage && (
-                          <img 
-                            src={attachment} 
-                            alt={fileName}
-                            className="h-8 w-8 object-cover rounded ml-auto"
-                          />
-                        )}
-                      </a>
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <IconComponent className="h-5 w-5 text-primary" />
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{fileName}</p>
+                          <Badge variant="outline" className="text-xs">
+                            {ext || "FILE"}
+                          </Badge>
+                        </div>
+
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownload(path, index)}
+                          disabled={isDownloading}
+                          className="shrink-0"
+                        >
+                          {isDownloading ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Download className="h-4 w-4 mr-1" />
+                              Open
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     );
                   })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* No attachments message */}
+          {(!solution.attachments || solution.attachments.length === 0) && (
+            <>
+              <Separator />
+              <div>
+                <h4 className="font-semibold flex items-center gap-2 mb-3">
+                  <Paperclip className="h-4 w-4 text-primary" />
+                  Attachments
+                </h4>
+                <div className="text-center py-4 text-muted-foreground">
+                  <Paperclip className="h-6 w-6 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No attachments uploaded</p>
                 </div>
               </div>
             </>
