@@ -60,8 +60,13 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Get redirect path based on user role
-  const getRoleRedirectPath = (userRole: AppRole | null) => {
+  // Get redirect path based on user role or returnTo param
+  const getRedirectPath = (userRole: AppRole | null) => {
+    const returnTo = searchParams.get('returnTo');
+    if (returnTo) {
+      return returnTo;
+    }
+    
     switch (userRole) {
       case 'innovator':
       case 'investor':
@@ -75,9 +80,9 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && role) {
-      navigate(getRoleRedirectPath(role));
+      navigate(getRedirectPath(role));
     }
-  }, [user, role, navigate]);
+  }, [user, role, navigate, searchParams]);
 
   const validateForm = () => {
     try {
