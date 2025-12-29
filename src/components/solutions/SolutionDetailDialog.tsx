@@ -1,4 +1,3 @@
-import { forwardRef } from "react";
 import { format } from "date-fns";
 import {
   Dialog,
@@ -27,18 +26,17 @@ interface SolutionDetailDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const SolutionDetailDialog = forwardRef<HTMLDivElement, SolutionDetailDialogProps>(
-  function SolutionDetailDialog({ solution, open, onOpenChange }, ref) {
-    if (!solution) return null;
+export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionDetailDialogProps) {
+  if (!solution) return null;
 
-    const formatCurrency = (amount: number | null) => {
-      if (amount === null) return "Not specified";
-      return `$${amount.toLocaleString()}`;
-    };
+  const formatCurrency = (amount: number | null) => {
+    if (amount === null) return "Not specified";
+    return `$${amount.toLocaleString()}`;
+  };
 
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent ref={ref} className="max-w-2xl max-h-[85vh] overflow-y-auto">
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle className="text-xl">{solution.title}</DialogTitle>
@@ -166,6 +164,4 @@ export const SolutionDetailDialog = forwardRef<HTMLDivElement, SolutionDetailDia
       </DialogContent>
     </Dialog>
   );
-});
-
-SolutionDetailDialog.displayName = "SolutionDetailDialog";
+}
