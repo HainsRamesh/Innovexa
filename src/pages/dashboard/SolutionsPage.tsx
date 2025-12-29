@@ -241,7 +241,7 @@ const SolutionsPage = () => {
                                 View
                               </Link>
                             </DropdownMenuItem>
-                            {solution.status === 'draft' && (
+                            {(solution.status === 'draft' || solution.status === 'submitted') && (
                               <DropdownMenuItem asChild>
                                 <Link to={`/dashboard/solutions/${solution.id}/edit`}>
                                   <Edit className="h-4 w-4 mr-2" />
