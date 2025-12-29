@@ -147,7 +147,7 @@ const EditSolutionPage = () => {
         </p>
       </div>
 
-      {/* Form */}
+      {/* Form with existing attachments passed */}
       <SolutionSubmissionForm
         problemId={solution.problem_id}
         existingSolution={{
@@ -158,6 +158,8 @@ const EditSolutionPage = () => {
           estimated_cost: solution.estimated_cost,
           timeline_weeks: solution.timeline_weeks,
           technology_stack: solution.technology_stack,
+          attachments: solution.attachments,
+          innovator_id: solution.innovator_id,
         }}
         onSuccess={handleSuccess}
         onCancel={handleCancel}

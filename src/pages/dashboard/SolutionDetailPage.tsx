@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+import { AttachmentsList } from '@/components/solutions/AttachmentsList';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import {
@@ -16,7 +17,6 @@ import {
   Layers,
   DollarSign,
   Clock,
-  Paperclip,
   Calendar,
   Target,
   AlertCircle,
@@ -258,37 +258,10 @@ const SolutionDetailPage = () => {
           )}
 
           {/* Attachments */}
-          {solution.attachments && solution.attachments.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Paperclip className="h-4 w-4 text-primary" />
-                  Attachments ({solution.attachments.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {solution.attachments.map((attachment, index) => {
-                    const fileName =
-                      attachment.split('/').pop() || `Attachment ${index + 1}`;
-                    return (
-                      <a
-                        key={index}
-                        href={attachment}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-primary hover:underline p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
-                      >
-                        <FileText className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{fileName}</span>
-                        <ExternalLink className="h-3 w-3 ml-auto shrink-0" />
-                      </a>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <AttachmentsList
+            attachments={solution.attachments}
+            innovatorId={solution.innovator_id}
+          />
         </div>
 
         {/* Sidebar */}

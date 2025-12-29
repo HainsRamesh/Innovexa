@@ -373,7 +373,7 @@ export function SolutionItem({ solution, problemOwnerId, onStatusChange }: Solut
 
       {/* Solution Detail Dialog */}
       <SolutionDetailDialog
-        solution={{ ...solution, status: currentStatus }}
+        solution={{ ...solution, status: currentStatus, innovator_id: solution.innovator_id }}
         open={showDetailDialog}
         onOpenChange={setShowDetailDialog}
       />
