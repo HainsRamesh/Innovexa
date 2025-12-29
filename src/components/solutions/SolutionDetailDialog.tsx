@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -11,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalLoading } from "@/contexts/LoadingContext";
 import {
   DollarSign,
   Clock,
@@ -64,6 +66,7 @@ const getFileIcon = (filename: string) => {
 
 export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionDetailDialogProps) {
   const { toast } = useToast();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
 
   if (!solution) return null;
@@ -75,6 +78,7 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
 
   const handleDownload = async (path: string, index: number) => {
     setDownloadingIndex(index);
+    startLoading("Preparing download…");
 
     try {
       // Generate a signed URL for the file
@@ -98,12 +102,13 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
       });
     } finally {
       setDownloadingIndex(null);
+      stopLoading();
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" aria-describedby="solution-detail-description">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle className="text-xl">{solution.title}</DialogTitle>
@@ -113,6 +118,9 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
               </Badge>
             )}
           </div>
+          <DialogDescription id="solution-detail-description">
+            View the details of this solution including description, approach, and attachments.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 mt-4">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalLoading } from '@/contexts/LoadingContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,7 @@ type Solution = Tables<'solutions'> & {
 
 const Solutions = () => {
   const { user, role } = useAuth();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
   const [mySolutions, setMySolutions] = useState<Solution[]>([]);
   const [myProblemSolutions, setMyProblemSolutions] = useState<Solution[]>([]);
@@ -39,6 +41,7 @@ const Solutions = () => {
 
   const fetchSolutions = async () => {
     setIsLoading(true);
+    startLoading("Loading solutions…");
     try {
       // Fetch all approved solutions
       const { data: approved, error: approvedError } = await supabase
@@ -101,6 +104,7 @@ const Solutions = () => {
       console.error('Error fetching solutions:', error);
     } finally {
       setIsLoading(false);
+      stopLoading();
     }
   };
 

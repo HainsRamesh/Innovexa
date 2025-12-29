@@ -14,6 +14,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalLoading } from "@/contexts/LoadingContext";
 
 interface AttachmentInfo {
   name: string;
@@ -64,6 +65,7 @@ export function AttachmentsList({
   showCard = true,
 }: AttachmentsListProps) {
   const { toast } = useToast();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const [isLoading, setIsLoading] = useState(true);
   const [attachmentInfos, setAttachmentInfos] = useState<AttachmentInfo[]>([]);
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
@@ -92,6 +94,7 @@ export function AttachmentsList({
 
   const handleDownload = async (attachment: AttachmentInfo, index: number) => {
     setDownloadingIndex(index);
+    startLoading("Preparing download…");
 
     try {
       // Generate a signed URL for the file
@@ -116,6 +119,7 @@ export function AttachmentsList({
       });
     } finally {
       setDownloadingIndex(null);
+      stopLoading();
     }
   };
 

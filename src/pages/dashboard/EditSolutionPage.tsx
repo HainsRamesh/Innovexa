@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useGlobalLoading } from '@/contexts/LoadingContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { SolutionSubmissionForm } from '@/components/solutions/SolutionSubmissionForm';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, AlertCircle, Lock } from 'lucide-react';
@@ -16,6 +16,7 @@ const EditSolutionPage = () => {
   const { solutionId } = useParams<{ solutionId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const navigate = useNavigate();
 
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -31,6 +32,7 @@ const EditSolutionPage = () => {
 
   const fetchSolution = async () => {
     setIsLoading(true);
+    startLoading("Loading solution…");
     setError(null);
 
     try {
@@ -71,6 +73,7 @@ const EditSolutionPage = () => {
       });
     } finally {
       setIsLoading(false);
+      stopLoading();
     }
   };
 
@@ -87,7 +90,7 @@ const EditSolutionPage = () => {
   };
 
   if (isLoading) {
-    return <LoadingOverlay isVisible={true} message="Loading solution…" />;
+    return null; // Global loading overlay is shown
   }
 
   if (error) {

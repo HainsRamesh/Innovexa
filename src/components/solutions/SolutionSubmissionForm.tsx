@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { AttachmentsList } from "./AttachmentsList";
 import { useToast } from "@/hooks/use-toast";
+import { useGlobalLoading } from "@/contexts/LoadingContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Paperclip, X, Edit, Loader2 } from "lucide-react";
 
@@ -81,6 +81,7 @@ export function SolutionSubmissionForm({
   onCancel,
 }: SolutionSubmissionFormProps) {
   const { toast } = useToast();
+  const { startLoading, stopLoading } = useGlobalLoading();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [newAttachments, setNewAttachments] = useState<File[]>([]);
@@ -155,6 +156,7 @@ export function SolutionSubmissionForm({
 
   const onSubmit = async (values: SolutionFormValues) => {
     setIsSubmitting(true);
+    startLoading(isEditing ? "Updating your solution…" : "Submitting your solution…");
 
     try {
       const {
@@ -280,6 +282,7 @@ export function SolutionSubmissionForm({
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);
+      stopLoading();
     }
   };
 
@@ -510,11 +513,6 @@ export function SolutionSubmissionForm({
             </div>
           </form>
         </Form>
-
-        <LoadingOverlay
-          isVisible={isSubmitting}
-          message={isUploading ? "Uploading attachments…" : isEditing ? "Updating your solution…" : "Submitting your solution…"}
-        />
       </CardContent>
     </Card>
   );
