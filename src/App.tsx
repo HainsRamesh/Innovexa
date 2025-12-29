@@ -37,6 +37,8 @@ import EditProblemPage from "./pages/dashboard/EditProblemPage";
 import NewProblemPage from "./pages/dashboard/NewProblemPage";
 import BrowseProblemsPage from "./pages/dashboard/BrowseProblemsPage";
 import SolutionsPage from "./pages/dashboard/SolutionsPage";
+import SolutionDetailPage from "./pages/dashboard/SolutionDetailPage";
+import EditSolutionPage from "./pages/dashboard/EditSolutionPage";
 
 const queryClient = new QueryClient();
 
@@ -103,6 +105,8 @@ const DashboardRoutes = () => {
         <Route path="problems/:problemId/edit" element={<EditProblemPage />} />
         <Route path="browse" element={<BrowseProblemsPage />} />
         <Route path="solutions" element={<SolutionsPage />} />
+        <Route path="solutions/:solutionId" element={<SolutionDetailPage />} />
+        <Route path="solutions/:solutionId/edit" element={<EditSolutionPage />} />
         <Route path="bookmarks" element={<DashboardOverview />} />
         <Route path="settings" element={<DashboardOverview />} />
         <Route path="investments" element={<DashboardOverview />} />
