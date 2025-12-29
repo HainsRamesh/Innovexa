@@ -20,6 +20,14 @@ import NewInnovation from "./pages/NewInnovation";
 import EditInnovation from "./pages/EditInnovation";
 import NewProblem from "./pages/NewProblem";
 import EditProblem from "./pages/EditProblem";
+import Features from "./pages/Features";
+import Pricing from "./pages/Pricing";
+import Docs from "./pages/Docs";
+import Blog from "./pages/Blog";
+import Careers from "./pages/Careers";
+import Contact from "./pages/Contact";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
 
 // Dashboard Pages
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -116,6 +124,16 @@ const AppRoutes = () => {
         <PublicOnlyRoute><About /></PublicOnlyRoute>
       } />
       <Route path="/auth" element={<Auth />} />
+      
+      {/* Public informational pages */}
+      <Route path="/features" element={<Features />} />
+      <Route path="/pricing" element={<Pricing />} />
+      <Route path="/docs" element={<Docs />} />
+      <Route path="/blog" element={<Blog />} />
+      <Route path="/careers" element={<Careers />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/privacy" element={<Privacy />} />
+      <Route path="/terms" element={<Terms />} />
       
       {/* Protected routes - require authentication */}
       <Route path="/innovations" element={
