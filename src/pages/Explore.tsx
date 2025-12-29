@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
@@ -23,16 +23,47 @@ import { format } from 'date-fns';
 
 const Explore = () => {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
   const [allProblems, setAllProblems] = useState<Problem[]>([]);
   const [myProblems, setMyProblems] = useState<Problem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('all');
+  const postProblemRef = useRef<HTMLDivElement>(null);
 
   const isEnterprise = role === 'enterprise';
   const isInnovator = role === 'innovator';
   const canPostProblems = isEnterprise || isInnovator;
+
+  const handleGetStarted = () => {
+    if (user && canPostProblems) {
+      // User is logged in and can post problems - scroll to section then navigate
+      if (postProblemRef.current) {
+        const headerOffset = 100;
+        const elementPosition = postProblemRef.current.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+        
+        window.scrollTo({
+          top: offsetPosition,
+          behavior: 'smooth'
+        });
+        
+        // Navigate after scroll animation
+        setTimeout(() => {
+          navigate('/problems/new');
+        }, 500);
+      } else {
+        navigate('/problems/new');
+      }
+    } else if (user) {
+      // User is logged in but doesn't have the right role
+      navigate('/problems/new');
+    } else {
+      // User is not logged in - redirect to auth with return URL
+      navigate('/auth?mode=signup&returnTo=/problems/new');
+    }
+  };
 
   useEffect(() => {
     fetchProblems();
@@ -232,42 +263,44 @@ const Explore = () => {
           </div>
 
           {/* Filters */}
-          <Card className="mb-8">
-            <CardContent className="p-4">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search problems..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
+          <div ref={postProblemRef} id="post-problem">
+            <Card className="mb-8">
+              <CardContent className="p-4">
+                <div className="flex flex-col md:flex-row gap-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search problems..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-full md:w-48">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      <SelectItem value="technology">Technology</SelectItem>
+                      <SelectItem value="healthcare">Healthcare</SelectItem>
+                      <SelectItem value="sustainability">Sustainability</SelectItem>
+                      <SelectItem value="finance">Finance</SelectItem>
+                      <SelectItem value="education">Education</SelectItem>
+                      <SelectItem value="infrastructure">Infrastructure</SelectItem>
+                      <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                      <SelectItem value="agriculture">Agriculture</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {canPostProblems && (
+                    <Button asChild>
+                      <Link to="/problems/new">Post a Problem</Link>
+                    </Button>
+                  )}
                 </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="technology">Technology</SelectItem>
-                    <SelectItem value="healthcare">Healthcare</SelectItem>
-                    <SelectItem value="sustainability">Sustainability</SelectItem>
-                    <SelectItem value="finance">Finance</SelectItem>
-                    <SelectItem value="education">Education</SelectItem>
-                    <SelectItem value="infrastructure">Infrastructure</SelectItem>
-                    <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                    <SelectItem value="agriculture">Agriculture</SelectItem>
-                  </SelectContent>
-                </Select>
-                {canPostProblems && (
-                  <Button asChild>
-                    <Link to="/problems/new">Post a Problem</Link>
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Results Count */}
           <div className="mb-6">
@@ -339,8 +372,13 @@ const Explore = () => {
                 <p className="text-muted-foreground mb-6">
                   Post your challenge and connect with innovative solutions from around the world.
                 </p>
-                <Button variant="hero" size="lg" asChild>
-                  <Link to="/auth?mode=signup">Get Started</Link>
+                <Button 
+                  variant="hero" 
+                  size="lg" 
+                  onClick={handleGetStarted}
+                  className="relative z-10"
+                >
+                  Get Started
                 </Button>
               </CardContent>
             </Card>
