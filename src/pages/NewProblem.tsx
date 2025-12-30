@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { SubmissionLoadingOverlay, SubmissionStatus } from '@/components/ui/SubmissionLoadingOverlay';
 import { ArrowLeft, Plus, X, Save, Send } from 'lucide-react';
 import { ProblemCategory, ProblemStatus } from '@/types';
 import { z } from 'zod';
@@ -39,6 +40,10 @@ const NewProblem = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("loading");
+  const [lastError, setLastError] = useState<string | undefined>();
+  const [pendingStatus, setPendingStatus] = useState<ProblemStatus | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
@@ -113,10 +118,7 @@ const NewProblem = () => {
     }
   };
 
-  const handleSubmit = async (status: ProblemStatus) => {
-    if (!validateForm()) return;
-
-    setIsLoading(true);
+  const performSubmission = useCallback(async (status: ProblemStatus) => {
     try {
       const { error } = await supabase.from('problems').insert({
         owner_id: user!.id,
@@ -134,26 +136,52 @@ const NewProblem = () => {
 
       if (error) throw error;
 
-      toast({
-        title: status === 'draft' ? 'Draft saved' : 'Problem published',
-        description:
-          status === 'draft'
-            ? 'Your problem has been saved as a draft.'
-            : 'Your problem is now live and visible to innovators.',
-      });
-
-      navigate('/explore');
+      // Success
+      setSubmissionStatus("success");
+      
+      setTimeout(() => {
+        setOverlayOpen(false);
+        setIsLoading(false);
+        toast({
+          title: status === 'draft' ? 'Draft saved' : 'Problem published',
+          description:
+            status === 'draft'
+              ? 'Your problem has been saved as a draft.'
+              : 'Your problem is now live and visible to innovators.',
+        });
+        navigate('/explore');
+      }, 600);
     } catch (error) {
       console.error('Error creating problem:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to save problem. Please try again.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
+      setLastError('Failed to save problem. Please try again.');
+      setSubmissionStatus("error");
     }
+  }, [user, formData, toast, navigate]);
+
+  const handleSubmit = async (status: ProblemStatus) => {
+    if (!validateForm()) return;
+
+    setPendingStatus(status);
+    setIsLoading(true);
+    setOverlayOpen(true);
+    setSubmissionStatus("loading");
+    setLastError(undefined);
+
+    await performSubmission(status);
   };
+
+  const handleRetry = useCallback(() => {
+    if (pendingStatus) {
+      setSubmissionStatus("loading");
+      performSubmission(pendingStatus);
+    }
+  }, [pendingStatus, performSubmission]);
+
+  const handleCloseOverlay = useCallback(() => {
+    setOverlayOpen(false);
+    setIsLoading(false);
+    setPendingStatus(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -391,6 +419,16 @@ const NewProblem = () => {
           </form>
         </div>
       </main>
+
+      {/* Submission Loading Overlay */}
+      <SubmissionLoadingOverlay
+        open={overlayOpen}
+        type="problem"
+        status={submissionStatus}
+        onRetry={handleRetry}
+        onClose={handleCloseOverlay}
+        errorMessage={lastError}
+      />
 
       <Footer />
     </div>

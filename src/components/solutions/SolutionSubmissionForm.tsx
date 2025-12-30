@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +18,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AttachmentsList } from "./AttachmentsList";
+import { SubmissionLoadingOverlay, SubmissionStatus } from "@/components/ui/SubmissionLoadingOverlay";
 import { useToast } from "@/hooks/use-toast";
-import { useGlobalLoading } from "@/contexts/LoadingContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Paperclip, X, Edit, Loader2 } from "lucide-react";
 
@@ -81,7 +82,11 @@ export function SolutionSubmissionForm({
   onCancel,
 }: SolutionSubmissionFormProps) {
   const { toast } = useToast();
-  const { startLoading, stopLoading } = useGlobalLoading();
+  const navigate = useNavigate();
+  const [overlayOpen, setOverlayOpen] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("loading");
+  const [lastError, setLastError] = useState<string | undefined>();
+  const [pendingValues, setPendingValues] = useState<SolutionFormValues | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [newAttachments, setNewAttachments] = useState<File[]>([]);
@@ -154,23 +159,14 @@ export function SolutionSubmissionForm({
     return uploadedPaths;
   };
 
-  const onSubmit = async (values: SolutionFormValues) => {
-    setIsSubmitting(true);
-    startLoading(isEditing ? "Updating your solution…" : "Submitting your solution…");
-
+  const performSubmission = useCallback(async (values: SolutionFormValues) => {
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
 
       if (!user) {
-        toast({
-          title: "Authentication required",
-          description: "Please sign in to submit a solution.",
-          variant: "destructive",
-        });
-        setIsSubmitting(false);
-        return;
+        throw new Error("Please sign in to submit a solution.");
       }
 
       const technologyStack = values.technology_stack
@@ -205,19 +201,8 @@ export function SolutionSubmissionForm({
           .eq("id", existingSolution.id);
 
         if (error) {
-          console.error("Error updating solution:", error);
-          toast({
-            title: "Update failed",
-            description: error.message || "Please try again later.",
-            variant: "destructive",
-          });
-          return;
+          throw new Error(error.message || "Failed to update solution.");
         }
-
-        toast({
-          title: "Solution updated!",
-          description: "Your solution has been updated successfully.",
-        });
       } else {
         // Create new solution first to get the ID
         const { data: newSolution, error: insertError } = await supabase
@@ -237,13 +222,7 @@ export function SolutionSubmissionForm({
           .single();
 
         if (insertError) {
-          console.error("Error submitting solution:", insertError);
-          toast({
-            title: "Submission failed",
-            description: insertError.message || "Please try again later.",
-            variant: "destructive",
-          });
-          return;
+          throw new Error(insertError.message || "Failed to submit solution.");
         }
 
         // Upload attachments if any
@@ -252,39 +231,63 @@ export function SolutionSubmissionForm({
           const uploadedPaths = await uploadAttachments(user.id, newSolution.id);
           
           // Update solution with attachment paths
-          const { error: updateError } = await supabase
+          await supabase
             .from("solutions")
             .update({ attachments: uploadedPaths })
             .eq("id", newSolution.id);
 
-          if (updateError) {
-            console.error("Error updating attachments:", updateError);
-          }
           setIsUploading(false);
         }
-
-        toast({
-          title: "Solution submitted!",
-          description: "Your solution has been submitted for review.",
-        });
       }
 
+      // Success
+      setSubmissionStatus("success");
       form.reset();
       setNewAttachments([]);
-      onSuccess?.();
+      
+      // Wait for success animation then navigate/callback
+      setTimeout(() => {
+        setOverlayOpen(false);
+        setIsSubmitting(false);
+        toast({
+          title: isEditing ? "Solution updated!" : "Solution submitted!",
+          description: isEditing 
+            ? "Your solution has been updated successfully."
+            : "Your solution has been submitted for review.",
+        });
+        onSuccess?.();
+      }, 600);
     } catch (err) {
-      console.error("Unexpected error:", err);
-      toast({
-        title: "Something went wrong",
-        description: err instanceof Error ? err.message : "Please try again later.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
+      console.error("Submission error:", err);
+      setLastError(err instanceof Error ? err.message : "Please try again later.");
+      setSubmissionStatus("error");
       setIsUploading(false);
-      stopLoading();
     }
+  }, [isEditing, existingSolution, newAttachments, problemId, form, toast, onSuccess]);
+
+  const onSubmit = async (values: SolutionFormValues) => {
+    setPendingValues(values);
+    setIsSubmitting(true);
+    setOverlayOpen(true);
+    setSubmissionStatus("loading");
+    setLastError(undefined);
+    
+    // Perform the actual submission
+    await performSubmission(values);
   };
+
+  const handleRetry = useCallback(() => {
+    if (pendingValues) {
+      setSubmissionStatus("loading");
+      performSubmission(pendingValues);
+    }
+  }, [pendingValues, performSubmission]);
+
+  const handleCloseOverlay = useCallback(() => {
+    setOverlayOpen(false);
+    setIsSubmitting(false);
+    setPendingValues(null);
+  }, []);
 
   const existingCount = existingSolution?.attachments?.length || 0;
   const totalCount = existingCount + newAttachments.length;
@@ -514,6 +517,16 @@ export function SolutionSubmissionForm({
           </form>
         </Form>
       </CardContent>
+
+      {/* Submission Loading Overlay */}
+      <SubmissionLoadingOverlay
+        open={overlayOpen}
+        type="solution"
+        status={submissionStatus}
+        onRetry={handleRetry}
+        onClose={handleCloseOverlay}
+        errorMessage={lastError}
+      />
     </Card>
   );
 }
