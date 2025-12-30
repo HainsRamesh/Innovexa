@@ -1,10 +1,11 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { InnovexaPageSkeleton } from "@/components/ui/InnovexaSkeleton";
 
 interface LoadingContextType {
   startLoading: (message?: string) => void;
   stopLoading: () => void;
   isLoading: boolean;
+  loadingMessage: string;
 }
 
 const LoadingContext = createContext<LoadingContextType | undefined>(undefined);
@@ -25,9 +26,13 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   const isLoading = loadingCount > 0;
 
   return (
-    <LoadingContext.Provider value={{ startLoading, stopLoading, isLoading }}>
+    <LoadingContext.Provider value={{ startLoading, stopLoading, isLoading, loadingMessage: message }}>
       {children}
-      <LoadingOverlay isVisible={isLoading} message={message} />
+      {isLoading && (
+        <div className="fixed inset-0 z-[9999]">
+          <InnovexaPageSkeleton message={message} />
+        </div>
+      )}
     </LoadingContext.Provider>
   );
 }
