@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGlobalLoading } from '@/contexts/LoadingContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
@@ -14,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight, CheckCircle, Eye } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { SolutionDetailDialog } from '@/components/solutions/SolutionDetailDialog';
+import { InnovexaSolutionsGridSkeleton } from '@/components/ui/InnovexaSkeleton';
 
 type Solution = Tables<'solutions'> & {
   problems?: { title: string; category: string } | null;
@@ -21,7 +21,6 @@ type Solution = Tables<'solutions'> & {
 
 const Solutions = () => {
   const { user, role } = useAuth();
-  const { startLoading, stopLoading } = useGlobalLoading();
   const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
   const [mySolutions, setMySolutions] = useState<Solution[]>([]);
   const [myProblemSolutions, setMyProblemSolutions] = useState<Solution[]>([]);
@@ -41,7 +40,6 @@ const Solutions = () => {
 
   const fetchSolutions = async () => {
     setIsLoading(true);
-    startLoading("Loading solutions…");
     try {
       // Fetch all approved solutions
       const { data: approved, error: approvedError } = await supabase
@@ -104,7 +102,6 @@ const Solutions = () => {
       console.error('Error fetching solutions:', error);
     } finally {
       setIsLoading(false);
-      stopLoading();
     }
   };
 
@@ -346,9 +343,7 @@ const Solutions = () => {
               
               <TabsContent value="approved">
                 {isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                  </div>
+                  <InnovexaSolutionsGridSkeleton cards={6} />
                 ) : filteredApproved.length === 0 ? (
                   <EmptyState 
                     message={searchQuery || categoryFilter !== 'all' 
@@ -363,9 +358,7 @@ const Solutions = () => {
               
               <TabsContent value="my-solutions">
                 {isLoading ? (
-                  <div className="flex justify-center py-12">
-                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                  </div>
+                  <InnovexaSolutionsGridSkeleton cards={6} />
                 ) : filteredMine.length === 0 ? (
                   <EmptyState 
                     message={searchQuery || categoryFilter !== 'all' 
@@ -381,9 +374,7 @@ const Solutions = () => {
           ) : isEnterprise ? (
             <>
               {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
+                <InnovexaSolutionsGridSkeleton cards={6} />
               ) : filteredMyProblems.length === 0 ? (
                 <EmptyState
                   message={
@@ -401,9 +392,7 @@ const Solutions = () => {
             // Non-innovators and non-enterprise only see approved solutions
             <>
               {isLoading ? (
-                <div className="flex justify-center py-12">
-                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-                </div>
+                <InnovexaSolutionsGridSkeleton cards={6} />
               ) : filteredApproved.length === 0 ? (
                 <EmptyState 
                   message={searchQuery || categoryFilter !== 'all'
