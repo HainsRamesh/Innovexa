@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { SubmissionLoadingOverlay, SubmissionStatus } from '@/components/ui/SubmissionLoadingOverlay';
+import { useGlobalOverlay } from '@/contexts/GlobalOverlayContext';
 import { ArrowLeft, Plus, X, Save, Send } from 'lucide-react';
 import { ProblemCategory, ProblemStatus } from '@/types';
 import { z } from 'zod';
@@ -39,9 +39,8 @@ const NewProblem = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { showOverlay, setOverlayStatus, hideOverlay } = useGlobalOverlay();
   const [isLoading, setIsLoading] = useState(false);
-  const [overlayOpen, setOverlayOpen] = useState(false);
-  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("loading");
   const [lastError, setLastError] = useState<string | undefined>();
   const [pendingStatus, setPendingStatus] = useState<ProblemStatus | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -136,11 +135,10 @@ const NewProblem = () => {
 
       if (error) throw error;
 
-      // Success
-      setSubmissionStatus("success");
+      setOverlayStatus("success");
       
       setTimeout(() => {
-        setOverlayOpen(false);
+        hideOverlay();
         setIsLoading(false);
         toast({
           title: status === 'draft' ? 'Draft saved' : 'Problem published',
@@ -154,34 +152,27 @@ const NewProblem = () => {
     } catch (error) {
       console.error('Error creating problem:', error);
       setLastError('Failed to save problem. Please try again.');
-      setSubmissionStatus("error");
+      setOverlayStatus("error");
     }
-  }, [user, formData, toast, navigate]);
+  }, [user, formData, toast, navigate, setOverlayStatus, hideOverlay]);
 
   const handleSubmit = async (status: ProblemStatus) => {
     if (!validateForm()) return;
 
     setPendingStatus(status);
     setIsLoading(true);
-    setOverlayOpen(true);
-    setSubmissionStatus("loading");
     setLastError(undefined);
 
+    showOverlay({ mode: "submitting", type: "problem" });
     await performSubmission(status);
   };
 
   const handleRetry = useCallback(() => {
     if (pendingStatus) {
-      setSubmissionStatus("loading");
+      showOverlay({ mode: "submitting", type: "problem" });
       performSubmission(pendingStatus);
     }
-  }, [pendingStatus, performSubmission]);
-
-  const handleCloseOverlay = useCallback(() => {
-    setOverlayOpen(false);
-    setIsLoading(false);
-    setPendingStatus(null);
-  }, []);
+  }, [pendingStatus, performSubmission, showOverlay]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -419,16 +410,6 @@ const NewProblem = () => {
           </form>
         </div>
       </main>
-
-      {/* Submission Loading Overlay */}
-      <SubmissionLoadingOverlay
-        open={overlayOpen}
-        type="problem"
-        status={submissionStatus}
-        onRetry={handleRetry}
-        onClose={handleCloseOverlay}
-        errorMessage={lastError}
-      />
 
       <Footer />
     </div>

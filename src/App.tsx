@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoadingProvider } from "@/contexts/LoadingContext";
+import { GlobalOverlayProvider } from "@/contexts/GlobalOverlayContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 
 // Pages
@@ -189,7 +190,9 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <AppRoutes />
+            <GlobalOverlayProvider>
+              <AppRoutes />
+            </GlobalOverlayProvider>
           </BrowserRouter>
         </TooltipProvider>
       </LoadingProvider>

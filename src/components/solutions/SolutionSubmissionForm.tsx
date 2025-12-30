@@ -18,7 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { AttachmentsList } from "./AttachmentsList";
-import { SubmissionLoadingOverlay, SubmissionStatus } from "@/components/ui/SubmissionLoadingOverlay";
+import { useGlobalOverlay } from "@/contexts/GlobalOverlayContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Send, Paperclip, X, Edit, Loader2 } from "lucide-react";
@@ -83,8 +83,7 @@ export function SolutionSubmissionForm({
 }: SolutionSubmissionFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [overlayOpen, setOverlayOpen] = useState(false);
-  const [submissionStatus, setSubmissionStatus] = useState<SubmissionStatus>("loading");
+  const { showOverlay, setOverlayStatus, hideOverlay } = useGlobalOverlay();
   const [lastError, setLastError] = useState<string | undefined>();
   const [pendingValues, setPendingValues] = useState<SolutionFormValues | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -240,14 +239,14 @@ export function SolutionSubmissionForm({
         }
       }
 
-      // Success
-      setSubmissionStatus("success");
+      // Success - use global overlay
+      setOverlayStatus("success");
       form.reset();
       setNewAttachments([]);
       
       // Wait for success animation then navigate/callback
       setTimeout(() => {
-        setOverlayOpen(false);
+        hideOverlay();
         setIsSubmitting(false);
         toast({
           title: isEditing ? "Solution updated!" : "Solution submitted!",
@@ -260,17 +259,21 @@ export function SolutionSubmissionForm({
     } catch (err) {
       console.error("Submission error:", err);
       setLastError(err instanceof Error ? err.message : "Please try again later.");
-      setSubmissionStatus("error");
+      setOverlayStatus("error");
       setIsUploading(false);
     }
-  }, [isEditing, existingSolution, newAttachments, problemId, form, toast, onSuccess]);
+  }, [isEditing, existingSolution, newAttachments, problemId, form, toast, onSuccess, setOverlayStatus, hideOverlay]);
 
   const onSubmit = async (values: SolutionFormValues) => {
     setPendingValues(values);
     setIsSubmitting(true);
-    setOverlayOpen(true);
-    setSubmissionStatus("loading");
     setLastError(undefined);
+    
+    // Show global overlay immediately
+    showOverlay({
+      mode: isEditing ? "saving" : "submitting",
+      type: "solution",
+    });
     
     // Perform the actual submission
     await performSubmission(values);
@@ -278,16 +281,19 @@ export function SolutionSubmissionForm({
 
   const handleRetry = useCallback(() => {
     if (pendingValues) {
-      setSubmissionStatus("loading");
+      showOverlay({
+        mode: isEditing ? "saving" : "submitting",
+        type: "solution",
+      });
       performSubmission(pendingValues);
     }
-  }, [pendingValues, performSubmission]);
+  }, [pendingValues, performSubmission, showOverlay, isEditing]);
 
   const handleCloseOverlay = useCallback(() => {
-    setOverlayOpen(false);
+    hideOverlay();
     setIsSubmitting(false);
     setPendingValues(null);
-  }, []);
+  }, [hideOverlay]);
 
   const existingCount = existingSolution?.attachments?.length || 0;
   const totalCount = existingCount + newAttachments.length;
@@ -517,16 +523,6 @@ export function SolutionSubmissionForm({
           </form>
         </Form>
       </CardContent>
-
-      {/* Submission Loading Overlay */}
-      <SubmissionLoadingOverlay
-        open={overlayOpen}
-        type="solution"
-        status={submissionStatus}
-        onRetry={handleRetry}
-        onClose={handleCloseOverlay}
-        errorMessage={lastError}
-      />
     </Card>
   );
 }
