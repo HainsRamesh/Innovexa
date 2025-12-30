@@ -142,6 +142,80 @@ export function InnovexaSkeletonCard({ className }: InnovexaSkeletonCardProps) {
   );
 }
 
+// Solution card skeleton - matches the SolutionCard layout exactly
+export function InnovexaSolutionCardSkeleton({ className }: { className?: string }) {
+  return (
+    <div 
+      className={cn(
+        "rounded-lg border border-border/50 bg-card p-6 space-y-4",
+        className
+      )}
+      role="status"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading solution...</span>
+      {/* Header: badges */}
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-2">
+            <InnovexaSkeleton className="h-5 w-20 rounded-full" />
+            <InnovexaSkeleton className="h-5 w-16 rounded-full" />
+          </div>
+          {/* Title */}
+          <InnovexaSkeleton className="h-5" style={{ width: "80%" }} />
+        </div>
+        {/* Match badge */}
+        <InnovexaSkeleton className="h-5 w-16 rounded-full flex-shrink-0" />
+      </div>
+      
+      {/* Description */}
+      <InnovexaSkeleton className="h-4" style={{ width: "95%" }} />
+      <InnovexaSkeleton className="h-4" style={{ width: "70%" }} />
+      
+      {/* Problem title */}
+      <div className="pt-1">
+        <InnovexaSkeleton className="h-4" style={{ width: "50%" }} />
+      </div>
+      
+      {/* Meta: cost, time, date */}
+      <div className="flex flex-wrap gap-4">
+        <InnovexaSkeleton className="h-4 w-20" />
+        <InnovexaSkeleton className="h-4 w-16" />
+        <InnovexaSkeleton className="h-4 w-24" />
+      </div>
+      
+      {/* Tech stack badges */}
+      <div className="flex gap-2">
+        <InnovexaSkeleton className="h-6 w-14 rounded-full" />
+        <InnovexaSkeleton className="h-6 w-16 rounded-full" />
+        <InnovexaSkeleton className="h-6 w-12 rounded-full" />
+      </div>
+      
+      {/* View button */}
+      <InnovexaSkeleton className="h-9 w-28 rounded-md mt-2" />
+    </div>
+  );
+}
+
+// Solutions grid skeleton - matches the solutions grid layout
+export function InnovexaSolutionsGridSkeleton({ cards = 6, className }: { cards?: number; className?: string }) {
+  return (
+    <div 
+      className={cn(
+        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6",
+        className
+      )}
+      role="status"
+      aria-busy="true"
+    >
+      <span className="sr-only">Loading solutions...</span>
+      {Array.from({ length: cards }).map((_, i) => (
+        <InnovexaSolutionCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 interface InnovexaSkeletonGridProps {
   cards?: number;
   className?: string;

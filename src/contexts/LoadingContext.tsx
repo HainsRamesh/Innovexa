@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { InnovexaPageSkeleton } from "@/components/ui/InnovexaSkeleton";
 
 interface LoadingContextType {
   startLoading: (message?: string) => void;
@@ -28,11 +27,6 @@ export function LoadingProvider({ children }: { children: ReactNode }) {
   return (
     <LoadingContext.Provider value={{ startLoading, stopLoading, isLoading, loadingMessage: message }}>
       {children}
-      {isLoading && (
-        <div className="fixed inset-0 z-[9999]">
-          <InnovexaPageSkeleton message={message} />
-        </div>
-      )}
     </LoadingContext.Provider>
   );
 }
