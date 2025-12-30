@@ -107,11 +107,22 @@
 
   html {
     scroll-behavior: smooth;
+    /* Force dark background to prevent white flash during navigation */
+    background-color: #060B16;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', system-ui, sans-serif;
+    /* Ensure body also has dark background */
+    background-color: #060B16;
+    min-height: 100vh;
+  }
+
+  /* Prevent white flash during page transitions */
+  #root {
+    background-color: #060B16;
+    min-height: 100vh;
   }
 
   h1, h2, h3, h4, h5, h6 {
