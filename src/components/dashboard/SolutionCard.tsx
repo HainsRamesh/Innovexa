@@ -8,13 +8,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, Edit, Trash2, MoreVertical, Sparkles, Calendar } from 'lucide-react';
+import { Eye, Edit, Trash2, MoreVertical, Sparkles, Calendar, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Solution, SolutionStatus } from '@/types';
 import { format } from 'date-fns';
 
 interface SolutionCardProps {
   solution: Solution & { problems?: { title: string; category: string } };
   onDelete: (id: string) => void;
+  isBookmarked?: boolean;
+  onToggleBookmark?: (solutionId: string) => void;
 }
 
 const getStatusBadge = (status: SolutionStatus) => {
@@ -41,7 +43,7 @@ const getStatusLabel = (status: SolutionStatus) => {
   return labels[status];
 };
 
-export const SolutionCard = ({ solution, onDelete }: SolutionCardProps) => {
+export const SolutionCard = ({ solution, onDelete, isBookmarked, onToggleBookmark }: SolutionCardProps) => {
   const canEdit = solution.status === 'draft' || solution.status === 'submitted';
 
   return (
@@ -51,36 +53,52 @@ export const SolutionCard = ({ solution, onDelete }: SolutionCardProps) => {
           <Badge variant={getStatusBadge(solution.status)}>
             {getStatusLabel(solution.status)}
           </Badge>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2">
-                <MoreVertical className="h-4 w-4" />
+          <div className="flex items-center gap-1">
+            {onToggleBookmark && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onToggleBookmark(solution.id)}
+              >
+                {isBookmarked ? (
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to={`/dashboard/solutions/${solution.id}`}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View
-                </Link>
-              </DropdownMenuItem>
-              {canEdit && (
+            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
-                  <Link to={`/dashboard/solutions/${solution.id}/edit`}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Edit
+                  <Link to={`/dashboard/solutions/${solution.id}`}>
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
                   </Link>
                 </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => onDelete(solution.id)}
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {canEdit && (
+                  <DropdownMenuItem asChild>
+                    <Link to={`/dashboard/solutions/${solution.id}/edit`}>
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={() => onDelete(solution.id)}
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
