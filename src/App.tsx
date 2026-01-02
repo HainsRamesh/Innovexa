@@ -41,6 +41,7 @@ import BrowseProblemsPage from "./pages/dashboard/BrowseProblemsPage";
 import SolutionsPage from "./pages/dashboard/SolutionsPage";
 import SolutionDetailPage from "./pages/dashboard/SolutionDetailPage";
 import EditSolutionPage from "./pages/dashboard/EditSolutionPage";
+import BookmarksPage from "./pages/dashboard/BookmarksPage";
 
 const queryClient = new QueryClient();
 

@@ -2,9 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -13,33 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Plus,
-  Search,
-  Filter,
-  Eye,
-  Edit,
-  Trash2,
-  MoreHorizontal,
-  FileText,
-} from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Problem, ProblemStatus, ProblemCategory } from '@/types';
+import { Plus, Search, FileText } from 'lucide-react';
+import { Problem } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { ProblemCard } from '@/components/dashboard/ProblemCard';
+import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
 
 const ProblemsPage = () => {
   const { user } = useAuth();
@@ -49,6 +26,8 @@ const ProblemsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -79,13 +58,20 @@ const ProblemsPage = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDeleteClick = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
     try {
-      const { error } = await supabase.from('problems').delete().eq('id', id);
+      const { error } = await supabase.from('problems').delete().eq('id', deleteTarget);
 
       if (error) throw error;
 
-      setProblems((prev) => prev.filter((p) => p.id !== id));
+      setProblems((prev) => prev.filter((p) => p.id !== deleteTarget));
       toast({
         title: 'Problem deleted',
         description: 'The problem has been removed.',
@@ -97,6 +83,9 @@ const ProblemsPage = () => {
         description: 'Failed to delete problem',
         variant: 'destructive',
       });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -108,17 +97,6 @@ const ProblemsPage = () => {
     const matchesCategory = categoryFilter === 'all' || problem.category === categoryFilter;
     return matchesSearch && matchesStatus && matchesCategory;
   });
-
-  const getStatusBadge = (status: ProblemStatus) => {
-    const variants: Record<ProblemStatus, 'status_open' | 'status_in_review' | 'status_matched' | 'status_closed' | 'outline'> = {
-      draft: 'outline',
-      open: 'status_open',
-      in_review: 'status_in_review',
-      matched: 'status_matched',
-      closed: 'status_closed',
-    };
-    return variants[status];
-  };
 
   return (
     <div className="space-y-6">
@@ -182,108 +160,79 @@ const ProblemsPage = () => {
         </CardContent>
       </Card>
 
-      {/* Problems Table */}
-      <Card>
-        <CardContent className="p-0">
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-              <p className="text-muted-foreground mt-4">Loading problems...</p>
-            </div>
-          ) : filteredProblems.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Problem</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Solutions</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProblems.map((problem) => (
-                    <TableRow key={problem.id}>
-                      <TableCell>
-                        <div className="max-w-sm">
-                          <p className="font-medium truncate">{problem.title}</p>
-                          <p className="text-sm text-muted-foreground truncate">
-                            {problem.description.substring(0, 100)}...
-                          </p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={problem.category as any}>{problem.category}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getStatusBadge(problem.status)}>{problem.status}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-muted-foreground">--</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm text-muted-foreground">
-                          {format(new Date(problem.created_at), 'MMM d, yyyy')}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem asChild>
-                              <Link to={`/dashboard/problems/${problem.id}`}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                View
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link to={`/dashboard/problems/${problem.id}/edit`}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => handleDelete(problem.id)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="p-12 text-center">
-              <FileText className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No problems found</h3>
-              <p className="text-muted-foreground mb-6">
-                {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all'
-                  ? 'Try adjusting your filters'
-                  : 'Start by posting your first problem'}
-              </p>
-              {!searchQuery && statusFilter === 'all' && categoryFilter === 'all' && (
-                <Button variant="hero" asChild>
-                  <Link to="/dashboard/problems/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Post Your First Problem
-                  </Link>
-                </Button>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Results Count */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          {filteredProblems.length} problem{filteredProblems.length !== 1 ? 's' : ''} found
+        </p>
+      </div>
+
+      {/* Problems Grid */}
+      {isLoading ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-5">
+                <div className="space-y-4 animate-pulse">
+                  <div className="flex gap-2">
+                    <div className="h-5 bg-secondary rounded w-1/4" />
+                    <div className="h-5 bg-secondary rounded w-1/4" />
+                  </div>
+                  <div className="h-5 bg-secondary rounded w-3/4" />
+                  <div className="space-y-2">
+                    <div className="h-3 bg-secondary rounded" />
+                    <div className="h-3 bg-secondary rounded w-5/6" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : filteredProblems.length > 0 ? (
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProblems.map((problem) => (
+            <ProblemCard
+              key={problem.id}
+              problem={problem}
+              onDelete={handleDeleteClick}
+              showOwnerActions
+              basePath="/dashboard/problems"
+            />
+          ))}
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <FileText className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No problems found</h3>
+            <p className="text-muted-foreground mb-6">
+              {searchQuery || statusFilter !== 'all' || categoryFilter !== 'all'
+                ? 'Try adjusting your filters'
+                : 'Start by posting your first problem'}
+            </p>
+            {!searchQuery && statusFilter === 'all' && categoryFilter === 'all' && (
+              <Button variant="hero" asChild>
+                <Link to="/dashboard/problems/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Post Your First Problem
+                </Link>
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Problem"
+        description="Are you sure you want to delete this problem? This action cannot be undone and will also remove all associated solutions."
+        confirmLabel="Yes, Delete"
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        variant="destructive"
+      />
     </div>
   );
 };

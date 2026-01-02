@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,9 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, Calendar, DollarSign, Bookmark, ArrowRight, Target } from 'lucide-react';
-import { Problem, ProblemCategory } from '@/types';
-import { format } from 'date-fns';
+import { Search, Target } from 'lucide-react';
+import { Problem } from '@/types';
+import { ProblemCard } from '@/components/dashboard/ProblemCard';
+import { useBookmarks } from '@/hooks/useBookmarks';
 
 const BrowseProblemsPage = () => {
   const [problems, setProblems] = useState<Problem[]>([]);
@@ -22,6 +20,7 @@ const BrowseProblemsPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('newest');
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   useEffect(() => {
     fetchProblems();
@@ -68,11 +67,8 @@ const BrowseProblemsPage = () => {
       }
     });
 
-  const formatBudget = (min: number | null, max: number | null) => {
-    if (!min && !max) return 'Budget not specified';
-    if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
-    if (max) return `Up to $${max.toLocaleString()}`;
-    return `From $${min?.toLocaleString()}`;
+  const handleBookmark = (problemId: string) => {
+    toggleBookmark(problemId, undefined);
   };
 
   return (
@@ -141,10 +137,13 @@ const BrowseProblemsPage = () => {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i}>
-              <CardContent className="p-6">
+              <CardContent className="p-5">
                 <div className="space-y-4 animate-pulse">
-                  <div className="h-4 bg-secondary rounded w-3/4" />
-                  <div className="h-3 bg-secondary rounded w-1/4" />
+                  <div className="flex gap-2">
+                    <div className="h-5 bg-secondary rounded w-1/4" />
+                    <div className="h-5 bg-secondary rounded w-1/4" />
+                  </div>
+                  <div className="h-5 bg-secondary rounded w-3/4" />
                   <div className="space-y-2">
                     <div className="h-3 bg-secondary rounded" />
                     <div className="h-3 bg-secondary rounded w-5/6" />
@@ -157,64 +156,14 @@ const BrowseProblemsPage = () => {
       ) : filteredProblems.length > 0 ? (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProblems.map((problem) => (
-            <Card key={problem.id} variant="interactive" className="group">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <Badge variant={problem.category as any}>{problem.category}</Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2">
-                    <Bookmark className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2 group-hover:text-primary transition-colors">
-                  {problem.title}
-                </h3>
-
-                <p className="text-sm text-muted-foreground mb-4 line-clamp-3">
-                  {problem.description}
-                </p>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    <span>{formatBudget(problem.budget_min, problem.budget_max)}</span>
-                  </div>
-                  {problem.deadline && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>Due {format(new Date(problem.deadline), 'MMM d, yyyy')}</span>
-                    </div>
-                  )}
-                </div>
-
-                {problem.tags && problem.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {problem.tags.slice(0, 3).map((tag) => (
-                      <Badge key={tag} variant="outline" className="text-xs">
-                        {tag}
-                      </Badge>
-                    ))}
-                    {problem.tags.length > 3 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{problem.tags.length - 3}
-                      </Badge>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-4 border-t border-border/50">
-                  <span className="text-xs text-muted-foreground">
-                    {format(new Date(problem.created_at), 'MMM d, yyyy')}
-                  </span>
-                  <Button variant="ghost" size="sm" asChild>
-                    <Link to={`/explore/${problem.id}`}>
-                      View Details
-                      <ArrowRight className="h-4 w-4 ml-1" />
-                    </Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <ProblemCard
+              key={problem.id}
+              problem={problem}
+              onBookmark={handleBookmark}
+              isBookmarked={isBookmarked(problem.id)}
+              showOwnerActions={false}
+              basePath="/dashboard/browse"
+            />
           ))}
         </div>
       ) : (
