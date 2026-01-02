@@ -110,7 +110,7 @@ const DashboardRoutes = () => {
         <Route path="solutions" element={<SolutionsPage />} />
         <Route path="solutions/:solutionId" element={<SolutionDetailPage />} />
         <Route path="solutions/:solutionId/edit" element={<EditSolutionPage />} />
-        <Route path="bookmarks" element={<DashboardOverview />} />
+        <Route path="bookmarks" element={<BookmarksPage />} />
         <Route path="settings" element={<DashboardOverview />} />
         <Route path="investments" element={<DashboardOverview />} />
         <Route path="organizations" element={<DashboardOverview />} />
