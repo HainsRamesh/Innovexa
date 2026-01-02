@@ -13,10 +13,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search, Sparkles, Target } from 'lucide-react';
-import { Solution, SolutionStatus } from '@/types';
+import { Solution } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionCard } from '@/components/dashboard/SolutionCard';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
+import { useBookmarks } from '@/hooks/useBookmarks';
 
 const SolutionsPage = () => {
   const { user } = useAuth();
@@ -27,6 +28,7 @@ const SolutionsPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   useEffect(() => {
     if (user) {
@@ -86,6 +88,10 @@ const SolutionsPage = () => {
       setIsDeleting(false);
       setDeleteTarget(null);
     }
+  };
+
+  const handleToggleBookmark = (solutionId: string) => {
+    toggleBookmark(undefined, solutionId);
   };
 
   const filteredSolutions = solutions.filter((solution) => {
@@ -176,6 +182,8 @@ const SolutionsPage = () => {
               key={solution.id}
               solution={solution as any}
               onDelete={handleDeleteClick}
+              isBookmarked={isBookmarked(undefined, solution.id)}
+              onToggleBookmark={handleToggleBookmark}
             />
           ))}
         </div>
