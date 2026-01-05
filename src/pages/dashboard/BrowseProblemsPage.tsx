@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,35 +13,79 @@ import {
 import { Search, Target } from 'lucide-react';
 import { Problem } from '@/types';
 import { ProblemCard } from '@/components/dashboard/ProblemCard';
-import { useBookmarks } from '@/hooks/useBookmarks';
+import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
+import { useToast } from '@/hooks/use-toast';
 
 const BrowseProblemsPage = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [problems, setProblems] = useState<Problem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('newest');
-  const { isBookmarked, toggleBookmark } = useBookmarks();
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    fetchProblems();
-  }, []);
+    if (user) {
+      fetchProblems();
+    }
+  }, [user]);
 
   const fetchProblems = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('problems')
         .select('*')
-        .eq('status', 'open')
+        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       setProblems((data as Problem[]) || []);
     } catch (error) {
       console.error('Error fetching problems:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load problems',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (id: string) => {
+    setDeleteTarget(id);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    setIsDeleting(true);
+    try {
+      const { error } = await supabase.from('problems').delete().eq('id', deleteTarget);
+
+      if (error) throw error;
+
+      setProblems((prev) => prev.filter((p) => p.id !== deleteTarget));
+      toast({
+        title: 'Problem deleted',
+        description: 'The problem has been removed.',
+      });
+    } catch (error) {
+      console.error('Error deleting problem:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete problem',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -67,17 +112,13 @@ const BrowseProblemsPage = () => {
       }
     });
 
-  const handleBookmark = (problemId: string) => {
-    toggleBookmark(problemId, undefined);
-  };
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">Browse Problems</h1>
+        <h1 className="text-2xl font-bold">My Problems</h1>
         <p className="text-muted-foreground">
-          Discover real-world challenges looking for innovative solutions
+          Manage and track your posted problems
         </p>
       </div>
 
@@ -159,9 +200,8 @@ const BrowseProblemsPage = () => {
             <ProblemCard
               key={problem.id}
               problem={problem}
-              onBookmark={handleBookmark}
-              isBookmarked={isBookmarked(problem.id)}
-              showOwnerActions={false}
+              onDelete={handleDeleteClick}
+              showOwnerActions={true}
               basePath="/dashboard/browse"
             />
           ))}
@@ -174,11 +214,23 @@ const BrowseProblemsPage = () => {
             <p className="text-muted-foreground">
               {searchQuery || categoryFilter !== 'all'
                 ? 'Try adjusting your search or filters'
-                : 'Check back later for new challenges'}
+                : "You haven't posted any problems yet"}
             </p>
           </CardContent>
         </Card>
       )}
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        title="Delete Problem"
+        description="Are you sure you want to delete this problem? This action cannot be undone."
+        confirmLabel="Yes, Delete"
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        variant="destructive"
+      />
     </div>
   );
 };

@@ -82,11 +82,11 @@ const EditSolutionPage = () => {
       title: 'Solution updated',
       description: 'Your solution has been saved successfully.',
     });
-    navigate(`/dashboard/solutions/${solutionId}`);
+    navigate('/dashboard/solutions');
   };
 
   const handleCancel = () => {
-    navigate(`/dashboard/solutions/${solutionId}`);
+    navigate('/dashboard/solutions');
   };
 
   if (isLoading) {
@@ -138,10 +138,10 @@ const EditSolutionPage = () => {
           variant="ghost"
           size="sm"
           className="mb-4"
-          onClick={() => navigate(`/dashboard/solutions/${solutionId}`)}
+          onClick={() => navigate('/dashboard/solutions')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Solution
+          Back to My Solutions
         </Button>
 
         <h1 className="text-2xl font-bold">Edit Solution</h1>
