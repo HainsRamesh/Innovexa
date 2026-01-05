@@ -95,7 +95,7 @@ export const ProblemCard = ({
                 <DropdownMenuItem asChild>
                   <Link to={`${basePath}/${problem.id}`}>
                     <Eye className="h-4 w-4 mr-2" />
-                    View Details
+                    View
                   </Link>
                 </DropdownMenuItem>
                 {showOwnerActions && (
@@ -152,16 +152,11 @@ export const ProblemCard = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-3 border-t border-border/50">
+        <div className="flex items-center pt-3 border-t border-border/50">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
-            {format(new Date(problem.created_at), 'MMM d, yyyy')}
+            {format(new Date(problem.created_at), 'MMM d, yyyy, h:mm a')}
           </div>
-          <Button variant="ghost" size="sm" asChild>
-            <Link to={`${basePath}/${problem.id}`}>
-              View Details
-            </Link>
-          </Button>
         </div>
       </CardContent>
     </Card>

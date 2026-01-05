@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,13 +11,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, User } from 'lucide-react';
+import { ArrowLeft, Save, Camera, Loader2 } from 'lucide-react';
 
 const Profile = () => {
-  const { profile, updateProfile, isLoading: authLoading } = useAuth();
+  const { profile, user, updateProfile, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
@@ -34,6 +38,80 @@ const Profile = () => {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: 'Invalid file type',
+        description: 'Please select an image file',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: 'File too large',
+        description: 'Please select an image smaller than 2MB',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to storage
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new avatar URL
+      const { error: updateError } = await updateProfile({ avatar_url: publicUrl });
+      if (updateError) throw updateError;
+
+      toast({
+        title: 'Avatar updated',
+        description: 'Your profile picture has been updated.',
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      setAvatarPreview(null);
+      toast({
+        title: 'Upload failed',
+        description: 'Failed to upload avatar. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,6 +145,8 @@ const Profile = () => {
     );
   }
 
+  const displayAvatarUrl = avatarPreview || profile?.avatar_url || '';
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -89,18 +169,47 @@ const Profile = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Profile Picture</CardTitle>
+                <CardDescription>Click on your avatar to upload a new picture</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center gap-6">
-                <Avatar className="h-20 w-20 border-2 border-border">
-                  <AvatarImage src={profile?.avatar_url || ''} />
-                  <AvatarFallback className="bg-secondary text-foreground text-xl">
-                    {getInitials(profile?.full_name)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative group">
+                  <Avatar className="h-20 w-20 border-2 border-border cursor-pointer" onClick={handleAvatarClick}>
+                    <AvatarImage src={displayAvatarUrl} />
+                    <AvatarFallback className="bg-secondary text-foreground text-xl">
+                      {getInitials(profile?.full_name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    onClick={handleAvatarClick}
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
+                    ) : (
+                      <Camera className="h-6 w-6 text-white" />
+                    )}
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">
-                    {profile?.email}
-                  </p>
+                  <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                  <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={handleAvatarClick}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? 'Uploading...' : 'Change Picture'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
