@@ -202,7 +202,7 @@ const BrowseProblemsPage = () => {
               problem={problem}
               onDelete={handleDeleteClick}
               showOwnerActions={true}
-              basePath="/dashboard/browse"
+              basePath="/dashboard/problems"
             />
           ))}
         </div>
