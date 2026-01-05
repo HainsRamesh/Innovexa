@@ -75,7 +75,7 @@ export function Footer() {
 
             {/* Mission */}
             <p className="text-sm text-white/70 max-w-xs leading-relaxed">
-              Connecting enterprises with global innovators to solve real-world challenges through AI-powered matching and evaluation.
+              Connecting enterprises with global innovators to solve real-world challenges through AI-powered matching .
             </p>
 
             {/* Social Links */}
