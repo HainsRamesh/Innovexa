@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, FileText, Image as ImageIcon, Video, Save, Send, Loader2, Plus, Minus } from "lucide-react";
-import AiIcon from "@/assets/ai-icon.png";
 import { InnovationCategory } from "@/types";
 
 const innovationSchema = z.object({
@@ -74,8 +73,6 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>(initialData?.gallery_urls || []);
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [pdfNames, setPdfNames] = useState<string[]>(initialData?.pdf_urls?.map((_, i) => `Document ${i + 1}`) || []);
-  const [isGeneratingTaglines, setIsGeneratingTaglines] = useState(false);
-  const [taglineSuggestions, setTaglineSuggestions] = useState<string[]>([]);
 
   const form = useForm<InnovationFormData>({
     resolver: zodResolver(innovationSchema),
@@ -137,36 +134,6 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     setPdfFiles((prev) => prev.filter((_, i) => i !== index));
     setPdfNames((prev) => prev.filter((_, i) => i !== index));
   };
-
-  const handleGenerateTaglines = async () => {
-    const title = (form.getValues("title") ?? "").trim();
-    if (!title || title.length < 3) {
-      toast.error("Please enter an innovation title first");
-      return;
-    }
-
-    setIsGeneratingTaglines(true);
-    setTaglineSuggestions([]);
-
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-taglines", {
-        body: { title, count: 5 },
-      });
-
-      if (error) throw error;
-
-      const taglines = data?.taglines ?? data;
-      if (!Array.isArray(taglines)) throw new Error("Invalid tagline response");
-
-      setTaglineSuggestions(taglines.slice(0, 5));
-    } catch (error: any) {
-      console.error("Error generating taglines:", error);
-      toast.error(error?.message || "Failed to generate taglines");
-    } finally {
-      setIsGeneratingTaglines(false);
-    }
-  };
-
 
   const onSubmit = async (data: InnovationFormData, asDraft: boolean) => {
     if (!user) {
@@ -288,46 +255,10 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
               name="tagline"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="flex items-center justify-between gap-3">
-                    <span>Short Tagline *</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={handleGenerateTaglines}
-                      disabled={isGeneratingTaglines}
-                      className="gap-2"
-                    >
-                      {isGeneratingTaglines ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <img src={AiIcon} className="h-5 w-5" alt="AI" />
-                      )}
-                      AI Suggest
-                    </Button>
-                  </FormLabel>
+                  <FormLabel>Short Tagline *</FormLabel>
                   <FormControl>
                     <Input placeholder="A compelling one-liner about your innovation" {...field} />
                   </FormControl>
-                  {taglineSuggestions.length > 0 && (
-                    <div className="flex flex-wrap gap-2 pt-2">
-                      {taglineSuggestions.map((suggestion, index) => (
-                        <button
-                          key={`${suggestion}-${index}`}
-                          type="button"
-                          onClick={() =>
-                            form.setValue("tagline", suggestion, {
-                              shouldDirty: true,
-                              shouldValidate: true,
-                            })
-                          }
-                          className="rounded-full border border-border px-3 py-1 text-xs text-foreground transition-colors hover:bg-accent"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                   <FormDescription>Max 200 characters</FormDescription>
                   <FormMessage />
                 </FormItem>
