@@ -42,6 +42,7 @@ import SolutionsPage from "./pages/dashboard/SolutionsPage";
 import SolutionDetailPage from "./pages/dashboard/SolutionDetailPage";
 import EditSolutionPage from "./pages/dashboard/EditSolutionPage";
 import BookmarksPage from "./pages/dashboard/BookmarksPage";
+import SettingsPage from "./pages/dashboard/SettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -111,7 +112,7 @@ const DashboardRoutes = () => {
         <Route path="solutions/:solutionId" element={<SolutionDetailPage />} />
         <Route path="solutions/:solutionId/edit" element={<EditSolutionPage />} />
         <Route path="bookmarks" element={<BookmarksPage />} />
-        <Route path="settings" element={<DashboardOverview />} />
+        <Route path="settings" element={<SettingsPage />} />
         <Route path="investments" element={<DashboardOverview />} />
         <Route path="organizations" element={<DashboardOverview />} />
         <Route path="users" element={<DashboardOverview />} />

@@ -119,7 +119,7 @@ export const SolutionCard = ({ solution, onDelete, isBookmarked, onToggleBookmar
         <div className="flex items-center justify-between pt-3 border-t border-border/50">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5" />
-            {format(new Date(solution.created_at), 'MMM d, yyyy')}
+            {format(new Date(solution.created_at), 'MMM d, yyyy, h:mm a')}
           </div>
           {solution.ai_match_score && (
             <div className="flex items-center gap-1 text-xs">
