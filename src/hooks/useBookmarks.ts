@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Bookmark } from '@/types';
 
 export const useBookmarks = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
-  const { toast } = useToast();
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,10 +51,8 @@ export const useBookmarks = () => {
   const toggleBookmark = useCallback(
     async (problemId?: string, solutionId?: string) => {
       if (!user) {
-        toast({
-          title: 'Sign in required',
+        toast.error('Sign in required', {
           description: 'Please sign in to bookmark items',
-          variant: 'destructive',
         });
         return;
       }
@@ -74,9 +73,9 @@ export const useBookmarks = () => {
 
           if (error) throw error;
           setBookmarks((prev) => prev.filter((b) => b.id !== existingBookmark.id));
-          toast({
-            title: 'Bookmark removed',
+          toast.success('Bookmark removed', {
             description: 'Item removed from your bookmarks',
+            duration: 3000,
           });
         } else {
           // Add bookmark
@@ -92,21 +91,23 @@ export const useBookmarks = () => {
 
           if (error) throw error;
           setBookmarks((prev) => [...prev, data as Bookmark]);
-          toast({
-            title: 'Bookmarked',
+          toast.success('Bookmarked', {
             description: 'Item added to your bookmarks',
+            duration: 4000,
+            action: {
+              label: 'View Bookmarks',
+              onClick: () => navigate('/dashboard/bookmarks'),
+            },
           });
         }
       } catch (error) {
         console.error('Error toggling bookmark:', error);
-        toast({
-          title: 'Error',
+        toast.error('Error', {
           description: 'Failed to update bookmark',
-          variant: 'destructive',
         });
       }
     },
-    [user, bookmarks, toast]
+    [user, bookmarks, navigate]
   );
 
   return {
