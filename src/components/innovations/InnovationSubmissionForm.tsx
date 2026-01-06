@@ -76,6 +76,9 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const [pdfNames, setPdfNames] = useState<string[]>(initialData?.pdf_urls?.map((_, i) => `Document ${i + 1}`) || []);
   const [isGeneratingTaglines, setIsGeneratingTaglines] = useState(false);
   const [taglineSuggestions, setTaglineSuggestions] = useState<string[]>([]);
+  const [isRewritingDescription, setIsRewritingDescription] = useState(false);
+  const [prevDescription, setPrevDescription] = useState<string | null>(null);
+  const [canUndoDescription, setCanUndoDescription] = useState(false);
 
   const form = useForm<InnovationFormData>({
     resolver: zodResolver(innovationSchema),
@@ -165,6 +168,47 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     } finally {
       setIsGeneratingTaglines(false);
     }
+  };
+
+  const handleRewriteDescription = async () => {
+    const currentDescription = form.getValues("description") ?? "";
+    const description = currentDescription.trim();
+    if (!description) {
+      toast.error("Please enter a description first");
+      return;
+    }
+
+    setPrevDescription(currentDescription);
+    setIsRewritingDescription(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("rewrite-description", {
+        body: { text: description, tone: "professional", maxWords: 150 },
+      });
+
+      if (error) throw error;
+
+      const rewritten = data?.rewritten ?? data;
+      if (!rewritten || typeof rewritten !== "string") {
+        throw new Error("Invalid rewrite response");
+      }
+
+      form.setValue("description", rewritten, { shouldValidate: true });
+      setCanUndoDescription(true);
+      toast.success("Description improved");
+    } catch (error: any) {
+      console.error("Error rewriting description:", error);
+      toast.error(error?.message || "Failed to improve description");
+    } finally {
+      setIsRewritingDescription(false);
+    }
+  };
+
+  const handleUndoDescription = () => {
+    if (!prevDescription) return;
+    form.setValue("description", prevDescription, { shouldValidate: true });
+    setCanUndoDescription(false);
+    toast.success("Restored original description");
   };
 
 
@@ -381,7 +425,38 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Detailed Description *</FormLabel>
+                  <FormLabel className="flex items-center justify-between gap-3">
+                    <span>Detailed Description *</span>
+                    <div className="flex items-center gap-2">
+                      {canUndoDescription && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleUndoDescription}
+                          disabled={isRewritingDescription}
+                          className="gap-2"
+                        >
+                          Undo
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRewriteDescription}
+                        disabled={isRewritingDescription}
+                        className="gap-2"
+                      >
+                        {isRewritingDescription ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <img src={AiIcon} className="h-5 w-5" alt="AI" />
+                        )}
+                        AI Improve
+                      </Button>
+                    </div>
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe your innovation in detail..."

@@ -2,3 +2,6 @@ project_id = "sbfbwchqtpzqihkrfgxa"
 
 [functions.generate-taglines]
 verify_jwt = false
+
+[functions.rewrite-description]
+verify_jwt = false
