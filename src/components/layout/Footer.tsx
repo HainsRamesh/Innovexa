@@ -67,11 +67,7 @@ export function Footer() {
           <div className="lg:col-span-4 space-y-6">
             {/* Logo */}
             <Link to="/" className="inline-flex items-center gap-2 group">
-              <img 
-                src="/zynovexa-logo.png" 
-                alt="Zynovexa" 
-                className="h-10 w-10 object-contain"
-              />
+              <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-10 w-10 object-contain" />
               <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
             </Link>
 
@@ -104,9 +100,7 @@ export function Footer() {
           <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
             {footerColumns.map((column) => (
               <div key={column.title}>
-                <h4 className="text-sm font-semibold text-white mb-4 tracking-wide">
-                  {column.title}
-                </h4>
+                <h4 className="text-sm font-semibold text-white mb-4 tracking-wide">{column.title}</h4>
                 <ul className="space-y-3">
                   {column.links.map((link) => (
                     <li key={link.label}>
