@@ -255,7 +255,7 @@ const DashboardOverview = () => {
   }));
 
   const handleViewAllProducts = () => {
-    navigate('/dashboard/solutions?tab=innovations');
+    navigate('/dashboard/innovations');
   };
 
   const handleProductView = (id: string) => {

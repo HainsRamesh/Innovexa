@@ -79,10 +79,10 @@ const InnovationEditPage = () => {
   const handleBack = () => {
     if (fromLocation === 'overview') {
       navigate('/dashboard');
-    } else if (fromLocation === 'innovations-tab') {
-      navigate('/dashboard/solutions?tab=innovations');
+    } else if (fromLocation === 'my-innovations') {
+      navigate('/dashboard/innovations');
     } else {
-      navigate('/dashboard/solutions?tab=innovations');
+      navigate('/dashboard/innovations');
     }
   };
 
