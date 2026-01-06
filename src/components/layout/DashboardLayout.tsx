@@ -25,6 +25,8 @@ import {
   TrendingUp,
   Building2,
   Rocket,
+  Bell,
+  MessageSquare,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AppRole } from '@/types';
@@ -42,9 +44,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, roles: ['admin', 'innovator', 'enterprise', 'investor'] },
-  { label: 'My Problems', href: '/dashboard/problems', icon: <FileText className="h-4 w-4" />, roles: ['enterprise', 'admin'] },
+  { label: 'My Innovations', href: '/dashboard/innovations', icon: <Lightbulb className="h-4 w-4" />, roles: ['innovator', 'admin'] },
   { label: 'My Solutions', href: '/dashboard/solutions', icon: <Sparkles className="h-4 w-4" />, roles: ['innovator', 'admin'] },
-  { label: 'Browse Problems', href: '/dashboard/browse', icon: <Rocket className="h-4 w-4" />, roles: ['innovator', 'investor'] },
+  { label: 'My Problems', href: '/dashboard/problems', icon: <FileText className="h-4 w-4" />, roles: ['enterprise', 'admin'] },
+  { label: 'Explore Problems', href: '/dashboard/browse', icon: <Rocket className="h-4 w-4" />, roles: ['innovator', 'investor'] },
   { label: 'Investments', href: '/dashboard/investments', icon: <TrendingUp className="h-4 w-4" />, roles: ['investor'] },
   { label: 'Organizations', href: '/dashboard/organizations', icon: <Building2 className="h-4 w-4" />, roles: ['admin'] },
   { label: 'Users', href: '/dashboard/users', icon: <Users className="h-4 w-4" />, roles: ['admin'] },
@@ -79,6 +82,16 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     if (href === '/dashboard') {
       return location.pathname === '/dashboard' || location.pathname === `/dashboard/${role}`;
     }
+    if (href === '/dashboard/browse') {
+      return location.pathname.startsWith('/dashboard/browse');
+    }
+    if (href === '/dashboard/innovations') {
+      // Match /dashboard/innovations but NOT /dashboard/innovations/:id (view/edit pages return to innovations list)
+      return location.pathname === '/dashboard/innovations';
+    }
+    if (href === '/dashboard/solutions') {
+      return location.pathname === '/dashboard/solutions';
+    }
     return location.pathname.startsWith(href);
   };
 
@@ -95,10 +108,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Lightbulb className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold text-sidebar-foreground">INNOVEXA</span>
+              <img 
+                src="/zynovexa-logo.png" 
+                alt="Zynovexa" 
+                className="h-8 w-8 object-contain"
+              />
+              <span className="text-lg font-bold text-sidebar-foreground">ZYNOVEXA</span>
             </Link>
           </div>
 
@@ -166,7 +181,18 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
             <div className="flex-1" />
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {/* Notification Icon */}
+              <Button variant="ghost" size="icon" className="relative h-9 w-9">
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+              </Button>
+              
+              {/* Message Icon */}
+              <Button variant="ghost" size="icon" className="h-9 w-9">
+                <MessageSquare className="h-5 w-5 text-muted-foreground" />
+              </Button>
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">

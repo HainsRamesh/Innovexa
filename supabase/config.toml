@@ -1,4 +1,4 @@
-project_id = "sbfbwchqtpzqihkrfgxa"
+project_id = "iehuqvjappjdgmfjzkoa"
 
 [functions.generate-taglines]
 verify_jwt = false

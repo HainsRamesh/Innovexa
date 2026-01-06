@@ -257,9 +257,9 @@ export function InnovexaPageSkeleton({ message = "Loading..." }: { message?: str
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center gap-8 w-full max-w-2xl">
         {/* Logo */}
-        <div className="text-2xl font-bold tracking-tight">
-          <span className="text-gradient-primary">Inno</span>
-          <span className="text-foreground">vexa</span>
+        <div className="flex items-center gap-2">
+          <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-8 w-8 object-contain" />
+          <span className="text-2xl font-bold tracking-tight text-foreground">ZYNOVEXA</span>
         </div>
         
         {/* Skeleton list preview */}

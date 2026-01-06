@@ -66,16 +66,14 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-4 space-y-6">
             {/* Logo */}
-            <Link to="/" className="inline-flex items-center gap-2 group">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">INNOVEXA</span>
+            <Link to="/" className="inline-flex items-center group">
+              <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-12 w-12 object-contain" />
+              <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
             </Link>
 
             {/* Mission */}
             <p className="text-sm text-white/70 max-w-xs leading-relaxed">
-              Connecting enterprises with global innovators to solve real-world challenges through AI-powered matching .
+              Connecting enterprises with global innovators to solve real-world challenges through AI-powered matching.
             </p>
 
             {/* Social Links */}
@@ -102,9 +100,7 @@ export function Footer() {
           <div className="lg:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-8">
             {footerColumns.map((column) => (
               <div key={column.title}>
-                <h4 className="text-sm font-semibold text-white mb-4 tracking-wide">
-                  {column.title}
-                </h4>
+                <h4 className="text-sm font-semibold text-white mb-4 tracking-wide">{column.title}</h4>
                 <ul className="space-y-3">
                   {column.links.map((link) => (
                     <li key={link.label}>
@@ -127,7 +123,7 @@ export function Footer() {
       <div className="relative border-t border-white/10">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/50">
-            <span>© {currentYear} Innovexa. All rights reserved.</span>
+            <span>© {currentYear} Zynovexa. All rights reserved.</span>
             <nav aria-label="Legal links">
               <ul className="flex items-center gap-6">
                 <li>
