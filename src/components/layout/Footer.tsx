@@ -70,7 +70,7 @@ export function Footer() {
               <img 
                 src="/zynovexa-logo.png" 
                 alt="Zynovexa" 
-                className="h-10 w-10 rounded-xl shadow-lg shadow-primary/20 group-hover:shadow-primary/40 transition-shadow"
+                className="h-10 w-10 object-contain"
               />
               <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
             </Link>
