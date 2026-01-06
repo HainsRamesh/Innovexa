@@ -1,8 +1,8 @@
-import { ReactNode, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ReactNode, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   Lightbulb,
   LayoutDashboard,
@@ -27,9 +27,9 @@ import {
   Rocket,
   Bell,
   MessageSquare,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { AppRole } from '@/types';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { AppRole } from "@/types";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -43,16 +43,61 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, roles: ['admin', 'innovator', 'enterprise', 'investor'] },
-  { label: 'My Innovations', href: '/dashboard/innovations', icon: <Lightbulb className="h-4 w-4" />, roles: ['innovator', 'admin'] },
-  { label: 'My Solutions', href: '/dashboard/solutions', icon: <Sparkles className="h-4 w-4" />, roles: ['innovator', 'admin'] },
-  { label: 'My Problems', href: '/dashboard/problems', icon: <FileText className="h-4 w-4" />, roles: ['enterprise', 'admin'] },
-  { label: 'Explore Problems', href: '/dashboard/browse', icon: <Rocket className="h-4 w-4" />, roles: ['innovator', 'investor'] },
-  { label: 'Investments', href: '/dashboard/investments', icon: <TrendingUp className="h-4 w-4" />, roles: ['investor'] },
-  { label: 'Organizations', href: '/dashboard/organizations', icon: <Building2 className="h-4 w-4" />, roles: ['admin'] },
-  { label: 'Users', href: '/dashboard/users', icon: <Users className="h-4 w-4" />, roles: ['admin'] },
-  { label: 'Bookmarks', href: '/dashboard/bookmarks', icon: <Bookmark className="h-4 w-4" />, roles: ['admin', 'innovator', 'enterprise', 'investor'] },
-  { label: 'Settings', href: '/dashboard/settings', icon: <Settings className="h-4 w-4" />, roles: ['admin', 'innovator', 'enterprise', 'investor'] },
+  {
+    label: "Overview",
+    href: "/dashboard",
+    icon: <LayoutDashboard className="h-4 w-4" />,
+    roles: ["admin", "innovator", "enterprise", "investor"],
+  },
+  {
+    label: "My Innovations",
+    href: "/dashboard/innovations",
+    icon: <Lightbulb className="h-4 w-4" />,
+    roles: ["innovator", "admin"],
+  },
+  {
+    label: "My Solutions",
+    href: "/dashboard/solutions",
+    icon: <Sparkles className="h-4 w-4" />,
+    roles: ["innovator", "admin"],
+  },
+  {
+    label: "My Problems",
+    href: "/dashboard/problems",
+    icon: <FileText className="h-4 w-4" />,
+    roles: ["enterprise", "admin"],
+  },
+  {
+    label: "Explore Problems",
+    href: "/dashboard/browse",
+    icon: <Rocket className="h-4 w-4" />,
+    roles: ["innovator", "investor"],
+  },
+  {
+    label: "Investments",
+    href: "/dashboard/investments",
+    icon: <TrendingUp className="h-4 w-4" />,
+    roles: ["investor"],
+  },
+  {
+    label: "Organizations",
+    href: "/dashboard/organizations",
+    icon: <Building2 className="h-4 w-4" />,
+    roles: ["admin"],
+  },
+  { label: "Users", href: "/dashboard/users", icon: <Users className="h-4 w-4" />, roles: ["admin"] },
+  {
+    label: "Bookmarks",
+    href: "/dashboard/bookmarks",
+    icon: <Bookmark className="h-4 w-4" />,
+    roles: ["admin", "innovator", "enterprise", "investor"],
+  },
+  {
+    label: "Settings",
+    href: "/dashboard/settings",
+    icon: <Settings className="h-4 w-4" />,
+    roles: ["admin", "innovator", "enterprise", "investor"],
+  },
 ];
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
@@ -63,15 +108,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
   const getInitials = (name: string | null) => {
-    if (!name) return 'U';
+    if (!name) return "U";
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -79,18 +124,18 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const filteredNavItems = navItems.filter((item) => role && item.roles.includes(role));
 
   const isActive = (href: string) => {
-    if (href === '/dashboard') {
-      return location.pathname === '/dashboard' || location.pathname === `/dashboard/${role}`;
+    if (href === "/dashboard") {
+      return location.pathname === "/dashboard" || location.pathname === `/dashboard/${role}`;
     }
-    if (href === '/dashboard/browse') {
-      return location.pathname.startsWith('/dashboard/browse');
+    if (href === "/dashboard/browse") {
+      return location.pathname.startsWith("/dashboard/browse");
     }
-    if (href === '/dashboard/innovations') {
+    if (href === "/dashboard/innovations") {
       // Match /dashboard/innovations but NOT /dashboard/innovations/:id (view/edit pages return to innovations list)
-      return location.pathname === '/dashboard/innovations';
+      return location.pathname === "/dashboard/innovations";
     }
-    if (href === '/dashboard/solutions') {
-      return location.pathname === '/dashboard/solutions';
+    if (href === "/dashboard/solutions") {
+      return location.pathname === "/dashboard/solutions";
     }
     return location.pathname.startsWith(href);
   };
@@ -100,19 +145,15 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 lg:translate-x-0',
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          "fixed inset-y-0 left-0 z-50 w-64 bg-sidebar border-r border-sidebar-border transition-transform duration-300 lg:translate-x-0",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
-            <Link to="/" className="flex items-center gap-2 group">
-              <img 
-                src="/zynovexa-logo.png" 
-                alt="Zynovexa" 
-                className="h-8 w-8 object-contain"
-              />
+            <Link to="/" className="flex items-center group">
+              <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-12 w-12 object-contain" />
               <span className="text-lg font-bold text-sidebar-foreground">ZYNOVEXA</span>
             </Link>
           </div>
@@ -125,10 +166,10 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 to={item.href}
                 onClick={() => setSidebarOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200',
+                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
                   isActive(item.href)
-                    ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                    : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                 )}
               >
                 {item.icon}
@@ -141,15 +182,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="p-4 border-t border-sidebar-border">
             <div className="flex items-center gap-3 px-2">
               <Avatar className="h-9 w-9 border border-sidebar-border">
-                <AvatarImage src={profile?.avatar_url || ''} />
+                <AvatarImage src={profile?.avatar_url || ""} />
                 <AvatarFallback className="bg-sidebar-accent text-sidebar-foreground text-xs">
                   {getInitials(profile?.full_name)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {profile?.full_name || 'User'}
-                </p>
+                <p className="text-sm font-medium text-sidebar-foreground truncate">{profile?.full_name || "User"}</p>
                 <p className="text-xs text-sidebar-foreground/60 capitalize">{role}</p>
               </div>
             </div>
@@ -170,12 +209,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         {/* Top Bar */}
         <header className="h-16 bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-30">
           <div className="flex items-center justify-between h-full px-4 lg:px-8">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
+            <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setSidebarOpen(true)}>
               <Menu className="h-5 w-5" />
             </Button>
 
@@ -187,17 +221,17 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <Bell className="h-5 w-5 text-muted-foreground" />
                 <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
               </Button>
-              
+
               {/* Message Icon */}
               <Button variant="ghost" size="icon" className="h-9 w-9">
                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
               </Button>
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                     <Avatar className="h-9 w-9 border border-border">
-                      <AvatarImage src={profile?.avatar_url || ''} />
+                      <AvatarImage src={profile?.avatar_url || ""} />
                       <AvatarFallback className="bg-secondary text-foreground text-xs">
                         {getInitials(profile?.full_name)}
                       </AvatarFallback>
@@ -207,7 +241,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                      <p className="text-sm font-medium">{profile?.full_name || "User"}</p>
                       <p className="text-xs text-muted-foreground">{profile?.email}</p>
                     </div>
                   </DropdownMenuLabel>
