@@ -66,8 +66,8 @@ export function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-4 space-y-6">
             {/* Logo */}
-            <Link to="/" className="inline-flex items-center gap-2 group">
-              <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-10 w-10 object-contain" />
+            <Link to="/" className="inline-flex items-center group">
+              <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-12 w-12 object-contain" />
               <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
             </Link>
 
