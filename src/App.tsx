@@ -38,7 +38,8 @@ import ProblemDetailPage from "./pages/dashboard/ProblemDetailPage";
 import EditProblemPage from "./pages/dashboard/EditProblemPage";
 import NewProblemPage from "./pages/dashboard/NewProblemPage";
 import BrowseProblemsPage from "./pages/dashboard/BrowseProblemsPage";
-import InnovatorSolutionsPage from "./pages/dashboard/InnovatorSolutionsPage";
+import MySolutionsPage from "./pages/dashboard/MySolutionsPage";
+import MyInnovationsPage from "./pages/dashboard/MyInnovationsPage";
 import SolutionDetailPage from "./pages/dashboard/SolutionDetailPage";
 import EditSolutionPage from "./pages/dashboard/EditSolutionPage";
 import InnovationViewPage from "./pages/dashboard/InnovationViewPage";
@@ -112,9 +113,10 @@ const DashboardRoutes = () => {
         <Route path="browse" element={<BrowseProblemsPage />} />
         <Route path="browse/:problemId" element={<ProblemDetailPage />} />
         <Route path="browse/:problemId/edit" element={<EditProblemPage />} />
-        <Route path="solutions" element={<InnovatorSolutionsPage />} />
+        <Route path="solutions" element={<MySolutionsPage />} />
         <Route path="solutions/:solutionId" element={<SolutionDetailPage />} />
         <Route path="solutions/:solutionId/edit" element={<EditSolutionPage />} />
+        <Route path="innovations" element={<MyInnovationsPage />} />
         <Route path="innovations/:innovationId" element={<InnovationViewPage />} />
         <Route path="innovations/:innovationId/edit" element={<InnovationEditPage />} />
         <Route path="bookmarks" element={<BookmarksPage />} />

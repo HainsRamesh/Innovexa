@@ -1,9 +1,11 @@
+import { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Innovation } from '@/types';
 import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
+import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 import { 
   Play, 
   Download, 
@@ -71,9 +73,19 @@ export const InnovationDetailModal = ({
   open,
   onOpenChange,
 }: InnovationDetailModalProps) => {
+  const [hasTrackedPlay, setHasTrackedPlay] = useState(false);
+  const { trackDemoPlay } = useDemoPlayTracker(innovation?.id || '');
+  
   if (!innovation) return null;
 
   const embedUrl = innovation.video_url ? getVideoEmbedUrl(innovation.video_url) : null;
+
+  const handleVideoInteraction = () => {
+    if (!hasTrackedPlay && embedUrl) {
+      trackDemoPlay();
+      setHasTrackedPlay(true);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,14 +109,28 @@ export const InnovationDetailModal = ({
 
             {/* Video Section */}
             {embedUrl && (
-              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                <iframe
-                  src={embedUrl}
-                  title={innovation.title}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                />
+              <div className="space-y-3">
+                <div 
+                  className="aspect-video rounded-lg overflow-hidden bg-muted"
+                  onClick={handleVideoInteraction}
+                >
+                  <iframe
+                    src={embedUrl}
+                    title={innovation.title}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleVideoInteraction}
+                  className="gap-2"
+                >
+                  <Play className="h-4 w-4" />
+                  Track Demo View
+                </Button>
               </div>
             )}
 

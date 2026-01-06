@@ -44,9 +44,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Overview', href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, roles: ['admin', 'innovator', 'enterprise', 'investor'] },
-  { label: 'My Problems', href: '/dashboard/problems', icon: <FileText className="h-4 w-4" />, roles: ['enterprise', 'admin'] },
+  { label: 'My Innovations', href: '/dashboard/innovations', icon: <Lightbulb className="h-4 w-4" />, roles: ['innovator', 'admin'] },
   { label: 'My Solutions', href: '/dashboard/solutions', icon: <Sparkles className="h-4 w-4" />, roles: ['innovator', 'admin'] },
-  { label: 'Browse Problems', href: '/dashboard/browse', icon: <Rocket className="h-4 w-4" />, roles: ['innovator', 'investor'] },
+  { label: 'My Problems', href: '/dashboard/problems', icon: <FileText className="h-4 w-4" />, roles: ['enterprise', 'admin'] },
+  { label: 'Explore Problems', href: '/dashboard/browse', icon: <Rocket className="h-4 w-4" />, roles: ['innovator', 'investor'] },
   { label: 'Investments', href: '/dashboard/investments', icon: <TrendingUp className="h-4 w-4" />, roles: ['investor'] },
   { label: 'Organizations', href: '/dashboard/organizations', icon: <Building2 className="h-4 w-4" />, roles: ['admin'] },
   { label: 'Users', href: '/dashboard/users', icon: <Users className="h-4 w-4" />, roles: ['admin'] },
@@ -83,6 +84,13 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     }
     if (href === '/dashboard/browse') {
       return location.pathname.startsWith('/dashboard/browse');
+    }
+    if (href === '/dashboard/innovations') {
+      // Match /dashboard/innovations but NOT /dashboard/innovations/:id (view/edit pages return to innovations list)
+      return location.pathname === '/dashboard/innovations';
+    }
+    if (href === '/dashboard/solutions') {
+      return location.pathname === '/dashboard/solutions';
     }
     return location.pathname.startsWith(href);
   };

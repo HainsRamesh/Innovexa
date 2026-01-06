@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -12,16 +11,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Sparkles, Target } from 'lucide-react';
+import { Search, Sparkles, Target, Rocket } from 'lucide-react';
 import { Solution } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { SolutionCard } from '@/components/dashboard/SolutionCard';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
 import { useBookmarks } from '@/hooks/useBookmarks';
+import { Button } from '@/components/ui/button';
 
-const SolutionsPage = () => {
+const MySolutionsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -112,8 +113,8 @@ const SolutionsPage = () => {
         </div>
         <Button variant="hero" asChild>
           <Link to="/dashboard/browse">
-            <Target className="h-4 w-4 mr-2" />
-            Find Problems to Solve
+            <Rocket className="h-4 w-4 mr-2" />
+            Explore Problems
           </Link>
         </Button>
       </div>
@@ -195,7 +196,7 @@ const SolutionsPage = () => {
             <p className="text-muted-foreground mb-6">
               {searchQuery || statusFilter !== 'all'
                 ? 'Try adjusting your filters'
-                : "Start by finding a problem to solve"}
+                : 'Start by finding a problem to solve'}
             </p>
             {!searchQuery && statusFilter === 'all' && (
               <Button variant="hero" asChild>
@@ -224,4 +225,4 @@ const SolutionsPage = () => {
   );
 };
 
-export default SolutionsPage;
+export default MySolutionsPage;

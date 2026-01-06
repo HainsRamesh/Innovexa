@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Play, Heart, Eye, Edit, Calendar, ExternalLink } from 'lucide-react';
+import { Loader2, ArrowLeft, Play, Heart, Edit, Calendar } from 'lucide-react';
 import { Innovation } from '@/types';
 import { getCategoryColor, getCategoryLabel } from '@/lib/categoryColors';
 import { format } from 'date-fns';
+import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 
 const InnovationViewPage = () => {
   const { innovationId } = useParams();
@@ -17,8 +18,10 @@ const InnovationViewPage = () => {
   const location = useLocation();
   const [innovation, setInnovation] = useState<Innovation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [viewCount, setViewCount] = useState(0);
 
   const fromLocation = location.state?.from;
+  const { trackDemoPlay } = useDemoPlayTracker(innovationId || '');
 
   useEffect(() => {
     if (innovationId) {
@@ -36,7 +39,9 @@ const InnovationViewPage = () => {
         .single();
 
       if (error) throw error;
-      setInnovation(data as Innovation);
+      const innovationData = data as Innovation;
+      setInnovation(innovationData);
+      setViewCount(innovationData.view_count || 0);
     } catch (error) {
       console.error('Error fetching innovation:', error);
     } finally {
@@ -44,13 +49,18 @@ const InnovationViewPage = () => {
     }
   };
 
+  const handleVideoPlay = useCallback(() => {
+    trackDemoPlay();
+    setViewCount((prev) => prev + 1);
+  }, [trackDemoPlay]);
+
   const handleBack = () => {
     if (fromLocation === 'overview') {
       navigate('/dashboard');
-    } else if (fromLocation === 'innovations-tab') {
-      navigate('/dashboard/solutions?tab=innovations');
+    } else if (fromLocation === 'my-innovations') {
+      navigate('/dashboard/innovations');
     } else {
-      navigate('/dashboard/solutions?tab=innovations');
+      navigate('/dashboard/innovations');
     }
   };
 
@@ -138,8 +148,20 @@ const InnovationViewPage = () => {
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
+                    onLoad={(e) => {
+                      // Track play when iframe loads (YouTube embeds don't have direct play events)
+                      // We'll track the first interaction
+                    }}
                   />
                 </div>
+                <Button
+                  variant="outline"
+                  className="mt-4 w-full"
+                  onClick={handleVideoPlay}
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  Track Demo Play
+                </Button>
               </CardContent>
             </Card>
           )}
@@ -178,7 +200,7 @@ const InnovationViewPage = () => {
                   <Play className="h-4 w-4" />
                   Demo Plays
                 </div>
-                <span className="font-semibold">{innovation.view_count || 0}</span>
+                <span className="font-semibold">{viewCount}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -186,13 +208,6 @@ const InnovationViewPage = () => {
                   Hearts
                 </div>
                 <span className="font-semibold">{innovation.like_count || 0}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Eye className="h-4 w-4" />
-                  Views
-                </div>
-                <span className="font-semibold">{innovation.view_count || 0}</span>
               </div>
             </CardContent>
           </Card>
