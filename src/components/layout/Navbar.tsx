@@ -104,7 +104,7 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to={getLogoRedirect()} className="flex items-center gap-2 group">
+          <Link to={getLogoRedirect()} className="flex items-center gap-1 group">
             <img
               src="/zynovexa-logo.png"
               alt="Zynovexa"
