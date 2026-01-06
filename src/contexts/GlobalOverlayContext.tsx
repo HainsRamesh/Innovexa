@@ -200,7 +200,7 @@ export function GlobalOverlayProvider({ children }: { children: ReactNode }) {
             {/* Logo/Title */}
             <div className="text-center mb-6">
               <div className="flex items-center justify-center gap-2">
-                <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-8 w-8 rounded-lg" />
+                <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-8 w-8 object-contain" />
                 <h2 className="text-2xl font-bold text-white tracking-tight">ZYNOVEXA</h2>
               </div>
             </div>

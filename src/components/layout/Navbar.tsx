@@ -108,7 +108,7 @@ export const Navbar = () => {
             <img 
               src="/zynovexa-logo.png" 
               alt="Zynovexa" 
-              className="h-9 w-9 rounded-lg transition-transform group-hover:scale-105"
+              className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
             />
             <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
           </Link>

@@ -111,7 +111,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <img 
                 src="/zynovexa-logo.png" 
                 alt="Zynovexa" 
-                className="h-8 w-8 rounded-lg"
+                className="h-8 w-8 object-contain"
               />
               <span className="text-lg font-bold text-sidebar-foreground">ZYNOVEXA</span>
             </Link>
