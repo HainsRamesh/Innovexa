@@ -1,6 +1,6 @@
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,11 +8,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Lightbulb, Menu, X } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Lightbulb, Menu, X } from "lucide-react";
+import { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
   label: string;
@@ -27,20 +27,20 @@ export const Navbar = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate('/');
+    navigate("/");
   };
 
   // Get logo redirect based on role
   const getLogoRedirect = () => {
-    if (!user) return '/';
+    if (!user) return "/";
     switch (role) {
-      case 'innovator':
-      case 'investor':
-        return '/innovations';
-      case 'enterprise':
-        return '/explore';
+      case "innovator":
+      case "investor":
+        return "/innovations";
+      case "enterprise":
+        return "/explore";
       default:
-        return '/innovations';
+        return "/innovations";
     }
   };
 
@@ -53,50 +53,50 @@ export const Navbar = () => {
 
     // Post-login: Show role-specific navigation in correct order
     switch (role) {
-      case 'innovator':
+      case "innovator":
         return [
-          { label: 'Innovations', path: '/innovations' },
-          { label: 'Explore Problems', path: '/explore' },
-          { label: 'Solutions', path: '/solutions' },
+          { label: "Innovations", path: "/innovations" },
+          { label: "Explore Problems", path: "/explore" },
+          { label: "Solutions", path: "/solutions" },
         ];
-      case 'enterprise':
+      case "enterprise":
         return [
-          { label: 'Explore Problems', path: '/explore' },
-          { label: 'Innovations', path: '/innovations' },
-          { label: 'Solutions', path: '/solutions' },
+          { label: "Explore Problems", path: "/explore" },
+          { label: "Innovations", path: "/innovations" },
+          { label: "Solutions", path: "/solutions" },
         ];
-      case 'investor':
+      case "investor":
         return [
-          { label: 'Innovations', path: '/innovations' },
-          { label: 'Explore Problems', path: '/explore' },
-          { label: 'Solutions', path: '/solutions' },
+          { label: "Innovations", path: "/innovations" },
+          { label: "Explore Problems", path: "/explore" },
+          { label: "Solutions", path: "/solutions" },
         ];
       default:
         return [
-          { label: 'Innovations', path: '/innovations' },
-          { label: 'Explore Problems', path: '/explore' },
-          { label: 'Solutions', path: '/solutions' },
+          { label: "Innovations", path: "/innovations" },
+          { label: "Explore Problems", path: "/explore" },
+          { label: "Solutions", path: "/solutions" },
         ];
     }
   }, [user, role]);
 
   const getDashboardLink = () => {
-    if (!role) return '/dashboard';
+    if (!role) return "/dashboard";
     return `/dashboard/${role}`;
   };
 
   const getInitials = (name: string | null) => {
-    if (!name) return 'U';
+    if (!name) return "U";
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
 
   const isActiveRoute = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
   return (
@@ -105,12 +105,10 @@ export const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to={getLogoRedirect()} className="flex items-center gap-2 group">
-            <img 
-              src="/zynovexa-logo.png" 
-              alt="Zynovexa" 
-              className="h-9 w-9 object-contain transition-transform group-hover:scale-105"
-            />
-            <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
+            <div className="h-10 w-10 rounded-lg bg-gradient-primary flex items-center justify-center transition-transform group-hover:scale-105">
+              <Lightbulb className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-bold tracking-tight">INNOVEXA</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -121,9 +119,7 @@ export const Navbar = () => {
                 to={item.path}
                 className={cn(
                   "text-sm transition-colors relative py-1",
-                  isActiveRoute(item.path)
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground"
+                  isActiveRoute(item.path) ? "text-primary font-medium" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {item.label}
@@ -145,7 +141,7 @@ export const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10 border-2 border-primary/30">
-                        <AvatarImage src={profile?.avatar_url || ''} alt={profile?.full_name || ''} />
+                        <AvatarImage src={profile?.avatar_url || ""} alt={profile?.full_name || ""} />
                         <AvatarFallback className="bg-secondary text-foreground">
                           {getInitials(profile?.full_name)}
                         </AvatarFallback>
@@ -155,7 +151,7 @@ export const Navbar = () => {
                   <DropdownMenuContent className="w-56" align="end">
                     <DropdownMenuLabel>
                       <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
+                        <p className="text-sm font-medium">{profile?.full_name || "User"}</p>
                         <p className="text-xs text-muted-foreground">{profile?.email}</p>
                         <p className="text-xs text-primary capitalize">{role}</p>
                       </div>
@@ -187,12 +183,7 @@ export const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
         </div>
@@ -209,7 +200,7 @@ export const Navbar = () => {
                     "text-sm transition-colors pl-2 border-l-2",
                     isActiveRoute(item.path)
                       ? "text-primary font-medium border-primary"
-                      : "text-muted-foreground hover:text-foreground border-transparent"
+                      : "text-muted-foreground hover:text-foreground border-transparent",
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
