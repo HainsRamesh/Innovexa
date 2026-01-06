@@ -66,7 +66,7 @@ export default function ProblemDetailPage() {
       });
     } else {
       toast({ title: "Problem deleted" });
-      navigate("/dashboard/problems");
+      navigate("/dashboard/browse");
     }
   };
 
@@ -83,7 +83,7 @@ export default function ProblemDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" asChild>
-          <Link to="/dashboard/problems">
+          <Link to="/dashboard/browse">
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Link>

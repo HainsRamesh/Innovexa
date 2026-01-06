@@ -23,7 +23,7 @@ export interface ProductData {
   name: string;
   category: string;
   demoPlays: number;
-  status: 'active' | 'pending' | 'draft' | 'archived';
+  status: 'active' | 'pending' | 'draft' | 'archived' | 'featured' | 'published';
   dateUploaded: string;
 }
 
