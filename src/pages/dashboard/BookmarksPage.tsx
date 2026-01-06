@@ -340,7 +340,7 @@ const BookmarksPage = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem asChild>
-                              <Link to={`/dashboard/browse/${problem.id}`}>
+                              <Link to={`/dashboard/browse/${problem.id}`} state={{ from: 'bookmarks' }}>
                                 <Eye className="h-4 w-4 mr-2" />
                                 View Details
                               </Link>
@@ -394,7 +394,7 @@ const BookmarksPage = () => {
                           {format(new Date(problem.created_at), 'MMM d, yyyy')}
                         </div>
                         <Button variant="ghost" size="sm" asChild>
-                          <Link to={`/dashboard/browse/${problem.id}`}>View Details</Link>
+                          <Link to={`/dashboard/browse/${problem.id}`} state={{ from: 'bookmarks' }}>View Details</Link>
                         </Button>
                       </div>
                     </CardContent>

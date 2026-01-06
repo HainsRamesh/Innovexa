@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 import { format } from "date-fns";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,6 +18,16 @@ export default function ProblemDetailPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLocation = location.state?.from;
+
+  const handleBack = () => {
+    if (fromLocation === 'bookmarks') {
+      navigate('/dashboard/bookmarks');
+    } else {
+      navigate('/dashboard/browse');
+    }
+  };
 
   const [problem, setProblem] = useState<Problem | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,7 +76,7 @@ export default function ProblemDetailPage() {
       });
     } else {
       toast({ title: "Problem deleted" });
-      navigate("/dashboard/browse");
+      handleBack();
     }
   };
 
@@ -82,11 +92,9 @@ export default function ProblemDetailPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/dashboard/browse">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Link>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
         </Button>
       </div>
 

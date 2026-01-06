@@ -15,15 +15,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Eye, Edit, Trash2, Play } from 'lucide-react';
+import { MoreHorizontal, Eye, Edit, Trash2, Play, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { getCategoryColor } from '@/lib/categoryColors';
 
 export interface ProductData {
   id: string;
   name: string;
   category: string;
   demoPlays: number;
-  status: 'active' | 'pending' | 'draft' | 'archived' | 'featured' | 'published';
   dateUploaded: string;
 }
 
@@ -32,30 +32,22 @@ interface ProductTrackerTableProps {
   onView?: (id: string) => void;
   onEdit?: (id: string) => void;
   onDelete?: (id: string) => void;
+  onViewAll?: () => void;
+  showViewAll?: boolean;
+  limit?: number;
 }
 
-const getStatusBadge = (status: ProductData['status']) => {
-  const styles: Record<string, string> = {
-    active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-    pending: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    draft: 'bg-slate-500/20 text-slate-400 border-slate-500/30',
-    archived: 'bg-rose-500/20 text-rose-400 border-rose-500/30',
-  };
-  return styles[status] || styles.draft;
-};
-
-const getCategoryBadge = (category: string) => {
-  const colors: Record<string, string> = {
-    'AI & ML': 'bg-violet-500/10 text-violet-400',
-    'HealthTech': 'bg-emerald-500/10 text-emerald-400',
-    'EdTech': 'bg-blue-500/10 text-blue-400',
-    'Sustainability': 'bg-green-500/10 text-green-400',
-    'Others': 'bg-slate-500/10 text-slate-400',
-  };
-  return colors[category] || colors['Others'];
-};
-
-export const ProductTrackerTable = ({ data, onView, onEdit, onDelete }: ProductTrackerTableProps) => {
+export const ProductTrackerTable = ({ 
+  data, 
+  onView, 
+  onEdit, 
+  onDelete, 
+  onViewAll,
+  showViewAll = false,
+  limit
+}: ProductTrackerTableProps) => {
+  const displayData = limit ? data.slice(0, limit) : data;
+  
   return (
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-4">
@@ -64,9 +56,22 @@ export const ProductTrackerTable = ({ data, onView, onEdit, onDelete }: ProductT
             <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
             Product Tracker
           </CardTitle>
-          <Badge variant="secondary" className="text-xs">
-            {data.length} Products
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {data.length} Products
+            </Badge>
+            {showViewAll && data.length > (limit || 0) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={onViewAll}
+                className="text-primary hover:text-primary/80"
+              >
+                View All
+                <ExternalLink className="h-3 w-3 ml-1" />
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -78,13 +83,12 @@ export const ProductTrackerTable = ({ data, onView, onEdit, onDelete }: ProductT
                 <TableHead className="text-muted-foreground font-semibold">Product Name</TableHead>
                 <TableHead className="text-muted-foreground font-semibold">Category</TableHead>
                 <TableHead className="text-muted-foreground font-semibold text-center">Demo Plays</TableHead>
-                <TableHead className="text-muted-foreground font-semibold text-center">Status</TableHead>
                 <TableHead className="text-muted-foreground font-semibold">Date Uploaded</TableHead>
                 <TableHead className="text-muted-foreground font-semibold text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {data.map((product, index) => (
+              {displayData.map((product, index) => (
                 <TableRow 
                   key={product.id} 
                   className="hover:bg-muted/20 transition-colors border-border/30"
@@ -101,17 +105,12 @@ export const ProductTrackerTable = ({ data, onView, onEdit, onDelete }: ProductT
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="secondary" className={getCategoryBadge(product.category)}>
+                    <Badge variant="outline" className={getCategoryColor(product.category, 'dashboard')}>
                       {product.category}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-center">
                     <span className="font-medium">{product.demoPlays.toLocaleString()}</span>
-                  </TableCell>
-                  <TableCell className="text-center">
-                    <Badge variant="outline" className={getStatusBadge(product.status)}>
-                      {product.status.charAt(0).toUpperCase() + product.status.slice(1)}
-                    </Badge>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {format(new Date(product.dateUploaded), 'MMM d, yyyy')}

@@ -81,6 +81,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     if (href === '/dashboard') {
       return location.pathname === '/dashboard' || location.pathname === `/dashboard/${role}`;
     }
+    if (href === '/dashboard/browse') {
+      return location.pathname.startsWith('/dashboard/browse');
+    }
     return location.pathname.startsWith(href);
   };
 

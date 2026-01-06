@@ -10,6 +10,7 @@ interface InvestorMetrics {
   innovationsTrend: number;
   portfolioTrend: number;
   roiTrend: number;
+  trendLabel: string;
 }
 
 interface InvestorMetricsPanelProps {
@@ -38,18 +39,21 @@ export const InvestorMetricsPanel = ({ metrics }: InvestorMetricsPanelProps) => 
         value={metrics.totalInvestments}
         icon={<Wallet className="h-6 w-6" />}
         trend={metrics.investmentsTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Active Innovations"
         value={metrics.activeInnovations}
         icon={<Lightbulb className="h-6 w-6" />}
         trend={metrics.innovationsTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Portfolio Value"
         value={metrics.totalPortfolioValue}
         icon={<TrendingUp className="h-6 w-6" />}
         trend={metrics.portfolioTrend}
+        trendLabel={metrics.trendLabel}
         formatValue={formatCurrency}
       />
       <AnimatedMetricCard
@@ -57,6 +61,7 @@ export const InvestorMetricsPanel = ({ metrics }: InvestorMetricsPanelProps) => 
         value={metrics.averageROI}
         icon={<Percent className="h-6 w-6" />}
         trend={metrics.roiTrend}
+        trendLabel={metrics.trendLabel}
         suffix="%"
         formatValue={formatROI}
       />
