@@ -475,6 +475,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_innovation_view_count: {
+        Args: { _innovation_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "innovator" | "enterprise" | "investor"
