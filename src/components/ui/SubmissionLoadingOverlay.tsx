@@ -137,9 +137,10 @@ export function SubmissionLoadingOverlay({
       <div className="relative z-10 w-full max-w-md mx-4 p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl">
         {/* Logo/Title */}
         <div className="text-center mb-6">
-          <h2 className="text-2xl font-bold text-white tracking-tight">
-            <span className="text-primary">Innov</span>exa
-          </h2>
+          <div className="flex items-center justify-center gap-2">
+            <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-8 w-8 rounded-lg" />
+            <h2 className="text-2xl font-bold text-white tracking-tight">ZYNOVEXA</h2>
+          </div>
         </div>
 
         {/* Status indicator */}

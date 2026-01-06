@@ -199,9 +199,10 @@ export function GlobalOverlayProvider({ children }: { children: ReactNode }) {
           <div className="relative z-10 w-full max-w-md mx-4 p-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl">
             {/* Logo/Title */}
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                <span className="text-primary">Innov</span>exa
-              </h2>
+              <div className="flex items-center justify-center gap-2">
+                <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-8 w-8 rounded-lg" />
+                <h2 className="text-2xl font-bold text-white tracking-tight">ZYNOVEXA</h2>
+              </div>
             </div>
 
             {/* Status indicator */}
@@ -287,28 +288,6 @@ export function GlobalOverlayProvider({ children }: { children: ReactNode }) {
                   {status === "error" && (lastError || "Please try again.")}
                 </p>
               </div>
-
-              {/* Error actions */}
-              {status === "error" && (
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={handleRetry}
-                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-medium flex items-center gap-2 transition-colors"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 4v6h6M23 20v-6h-6" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Try Again
-                  </button>
-                  <button
-                    onClick={handleClose}
-                    className="px-4 py-2 border border-white/20 hover:bg-white/10 text-white rounded-lg font-medium transition-colors"
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
             </div>
 
             {/* Visually hidden loading text for screen readers */}

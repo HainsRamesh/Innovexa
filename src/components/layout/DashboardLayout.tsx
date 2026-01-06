@@ -108,10 +108,12 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
             <Link to="/" className="flex items-center gap-2 group">
-              <div className="h-8 w-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-                <Lightbulb className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold text-sidebar-foreground">INNOVEXA</span>
+              <img 
+                src="/zynovexa-logo.png" 
+                alt="Zynovexa" 
+                className="h-8 w-8 rounded-lg"
+              />
+              <span className="text-lg font-bold text-sidebar-foreground">ZYNOVEXA</span>
             </Link>
           </div>
 

@@ -105,10 +105,12 @@ export const Navbar = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to={getLogoRedirect()} className="flex items-center gap-2 group">
-            <div className="h-9 w-9 rounded-lg bg-gradient-primary flex items-center justify-center transition-transform group-hover:scale-105">
-              <Lightbulb className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">INNOVEXA</span>
+            <img 
+              src="/zynovexa-logo.png" 
+              alt="Zynovexa" 
+              className="h-9 w-9 rounded-lg transition-transform group-hover:scale-105"
+            />
+            <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
           </Link>
 
           {/* Desktop Navigation */}
