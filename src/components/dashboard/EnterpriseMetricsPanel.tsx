@@ -10,6 +10,7 @@ interface EnterpriseMetrics {
   solutionsTrend: number;
   approvedTrend: number;
   budgetTrend: number;
+  trendLabel: string;
 }
 
 interface EnterpriseMetricsPanelProps {
@@ -34,24 +35,28 @@ export const EnterpriseMetricsPanel = ({ metrics }: EnterpriseMetricsPanelProps)
         value={metrics.problemsPosted}
         icon={<FileText className="h-6 w-6" />}
         trend={metrics.problemsTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Solutions Received"
         value={metrics.totalSolutionsReceived}
         icon={<Inbox className="h-6 w-6" />}
         trend={metrics.solutionsTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Solutions Approved"
         value={metrics.solutionsApproved}
         icon={<CheckCircle2 className="h-6 w-6" />}
         trend={metrics.approvedTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Budget Allotted"
         value={metrics.totalBudgetAllotted}
         icon={<DollarSign className="h-6 w-6" />}
         trend={metrics.budgetTrend}
+        trendLabel={metrics.trendLabel}
         formatValue={formatBudget}
       />
     </div>

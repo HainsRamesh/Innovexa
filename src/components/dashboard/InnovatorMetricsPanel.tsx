@@ -10,6 +10,7 @@ interface InnovatorMetrics {
   demoPlaysTrend: number;
   heartsTrend: number;
   problemsTrend: number;
+  trendLabel: string;
 }
 
 interface InnovatorMetricsPanelProps {
@@ -24,24 +25,28 @@ export const InnovatorMetricsPanel = ({ metrics }: InnovatorMetricsPanelProps) =
         value={metrics.totalInnovations}
         icon={<Lightbulb className="h-6 w-6" />}
         trend={metrics.innovationsTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Demo Plays"
         value={metrics.demoPlays}
         icon={<Play className="h-6 w-6" />}
         trend={metrics.demoPlaysTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Total Hearts"
         value={metrics.totalHearts}
         icon={<Heart className="h-6 w-6" />}
         trend={metrics.heartsTrend}
+        trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
         title="Problems Uploaded"
         value={metrics.problemsUploaded}
         icon={<FileText className="h-6 w-6" />}
         trend={metrics.problemsTrend}
+        trendLabel={metrics.trendLabel}
       />
     </div>
   );

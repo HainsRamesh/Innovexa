@@ -20,11 +20,11 @@ import { toast } from 'sonner';
 
 // Market spread data (dummy allowed per requirements)
 const marketSpreadData: CategoryData[] = [
-  { category: 'AI & ML', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'Global', momentumChange: 15 },
-  { category: 'HealthTech', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'NA, EU', momentumChange: 8 },
-  { category: 'EdTech', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'APAC', momentumChange: -3 },
-  { category: 'Sustainability', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'EU, NA', momentumChange: 22 },
-  { category: 'Others', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'Global', momentumChange: 0 },
+  { category: 'AI & ML', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'Global' },
+  { category: 'HealthTech', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'NA, EU' },
+  { category: 'EdTech', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'APAC' },
+  { category: 'Sustainability', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'EU, NA' },
+  { category: 'Others', productsUploaded: 0, demoPlays: 0, targetMarketSpread: 'Global' },
 ];
 
 const DashboardOverview = () => {
@@ -100,16 +100,15 @@ const DashboardOverview = () => {
       productsUploaded: innovs.filter(i => getCategoryLabel(i.category) === cat).length,
       demoPlays: data.views,
       targetMarketSpread: 'Global', // Dummy
-      momentumChange: Math.floor(Math.random() * 30) - 5, // Mock momentum
     }));
     setCategoryPerformance(catPerf.length > 0 ? catPerf : marketSpreadData);
 
     // Category momentum from real data
     const catMomentum = Array.from(categoryMap.entries()).map(([cat, data]) => ({
       category: cat,
-      momentum: Math.floor(Math.random() * 30) - 5, // Mock for now
+      momentum: Math.floor((data.views + data.likes) / Math.max(innovs.length, 1)),
     }));
-    setCategoryMomentum(catMomentum.length > 0 ? catMomentum : marketSpreadData.map(m => ({ category: m.category, momentum: m.momentumChange })));
+    setCategoryMomentum(catMomentum.length > 0 ? catMomentum : marketSpreadData.map(m => ({ category: m.category, momentum: 0 })));
 
     // Build chart data from innovations
     buildChartData(innovs);
@@ -131,7 +130,7 @@ const DashboardOverview = () => {
       .in('problem_id', (problemsData || []).map(p => p.id));
 
     buildChartDataFromSolutions(solutionsData || []);
-    setCategoryMomentum(marketSpreadData.map(m => ({ category: m.category, momentum: m.momentumChange })));
+    setCategoryMomentum(marketSpreadData.map(m => ({ category: m.category, momentum: 0 })));
   };
 
   const fetchInvestorData = async () => {
@@ -145,7 +144,7 @@ const DashboardOverview = () => {
 
     // Build chart data from investments
     buildChartDataFromInvestments(investmentsData || []);
-    setCategoryMomentum(marketSpreadData.map(m => ({ category: m.category, momentum: m.momentumChange })));
+    setCategoryMomentum(marketSpreadData.map(m => ({ category: m.category, momentum: 0 })));
   };
 
   const buildChartData = (innovs: any[]) => {
@@ -246,22 +245,25 @@ const DashboardOverview = () => {
     return labels[category] || 'Others';
   };
 
-  // Product Tracker data for innovators
+  // Product Tracker data for innovators (removed status column)
   const productTrackerData: ProductData[] = innovations.map((inn) => ({
     id: inn.id,
     name: inn.title,
     category: getCategoryLabel(inn.category),
     demoPlays: inn.view_count || 0,
-    status: inn.status === 'published' ? 'active' : inn.status === 'draft' ? 'draft' : inn.status === 'archived' ? 'archived' : 'pending',
     dateUploaded: inn.created_at,
   }));
 
+  const handleViewAllProducts = () => {
+    navigate('/dashboard/solutions?tab=innovations');
+  };
+
   const handleProductView = (id: string) => {
-    navigate(`/dashboard/innovations/${id}`);
+    navigate(`/dashboard/innovations/${id}`, { state: { from: 'overview' } });
   };
 
   const handleProductEdit = (id: string) => {
-    navigate(`/dashboard/innovations/${id}/edit`);
+    navigate(`/dashboard/innovations/${id}/edit`, { state: { from: 'overview' } });
   };
 
   const handleProductDelete = (id: string) => {
@@ -352,6 +354,9 @@ const DashboardOverview = () => {
             onView={handleProductView}
             onEdit={handleProductEdit}
             onDelete={handleProductDelete}
+            onViewAll={handleViewAllProducts}
+            showViewAll={true}
+            limit={5}
           />
         </>
       )}

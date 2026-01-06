@@ -7,17 +7,16 @@ interface AnimatedMetricCardProps {
   value: number;
   icon: React.ReactNode;
   trend?: number;
+  trendLabel?: string;
   suffix?: string;
   formatValue?: (value: number) => string;
 }
 
 const useCountUp = (end: number, duration: number = 1500) => {
   const [count, setCount] = useState(0);
-  const countRef = useRef(0);
   const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    countRef.current = 0;
     startTimeRef.current = null;
     
     const animate = (currentTime: number) => {
@@ -62,11 +61,31 @@ export const AnimatedMetricCard = ({
   value,
   icon,
   trend,
+  trendLabel = 'this month',
   suffix = '',
   formatValue,
 }: AnimatedMetricCardProps) => {
   const animatedValue = useCountUp(value);
   const displayValue = formatValue ? formatValue(animatedValue) : formatLargeNumber(animatedValue);
+
+  const getTrendText = () => {
+    if (trendLabel === 'New account') {
+      return 'New account';
+    }
+    if (trend === undefined || trend === null) {
+      return null;
+    }
+    const arrow = trend >= 0 ? '↑' : '↓';
+    const absPercentage = Math.abs(trend);
+    
+    if (trendLabel === 'Since yesterday') {
+      return `${arrow} ${absPercentage}% since yesterday`;
+    }
+    
+    return `${arrow} ${absPercentage}% ${trendLabel}`;
+  };
+
+  const trendText = getTrendText();
 
   return (
     <Card className="bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 group">
@@ -77,12 +96,13 @@ export const AnimatedMetricCard = ({
             <p className="text-3xl font-bold tracking-tight">
               {displayValue}{suffix}
             </p>
-            {trend !== undefined && (
+            {trendText && (
               <p className={cn(
                 'text-xs font-medium',
-                trend >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                trendLabel === 'New account' ? 'text-muted-foreground' :
+                trend !== undefined && trend >= 0 ? 'text-emerald-400' : 'text-rose-400'
               )}>
-                {trend >= 0 ? '↑' : '↓'} {Math.abs(trend)}% this month
+                {trendText}
               </p>
             )}
           </div>
