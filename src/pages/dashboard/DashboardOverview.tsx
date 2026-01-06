@@ -2,25 +2,25 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
-  FileText,
-  Sparkles,
-  Bookmark,
   Plus,
   Target,
   Calendar,
-  CheckCircle2,
-  Clock,
   User,
-  XCircle,
   TrendingUp,
+  Zap,
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { MetricsPanel } from '@/components/dashboard/MetricsPanel';
+import { CategoryPerformanceTable, CategoryData } from '@/components/dashboard/CategoryPerformanceTable';
+import { ProductTrackerTable, ProductData } from '@/components/dashboard/ProductTrackerTable';
+import { DemoTrendsChart } from '@/components/dashboard/DemoTrendsChart';
+import { CategoryMomentumChart } from '@/components/dashboard/CategoryMomentumChart';
+import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 
 interface DashboardStats {
   totalProblems: number;
@@ -33,15 +33,54 @@ interface DashboardStats {
   solutionBookmarks: number;
 }
 
-const CHART_COLORS = {
-  primary: 'hsl(var(--primary))',
-  accent: 'hsl(var(--accent))',
-  muted: 'hsl(var(--muted-foreground))',
-  destructive: 'hsl(var(--destructive))',
-  success: 'hsl(142 76% 36%)',
-  warning: 'hsl(45 93% 47%)',
-  info: 'hsl(221 83% 53%)',
-};
+// Sample data for the new dashboard
+const sampleCategoryData: CategoryData[] = [
+  { category: 'AI & ML', productsUploaded: 12, demoPlays: 2450, targetMarketSpread: 'Global', momentumChange: 15 },
+  { category: 'HealthTech', productsUploaded: 8, demoPlays: 1890, targetMarketSpread: 'NA, EU', momentumChange: 8 },
+  { category: 'EdTech', productsUploaded: 6, demoPlays: 1240, targetMarketSpread: 'APAC', momentumChange: -3 },
+  { category: 'Sustainability', productsUploaded: 4, demoPlays: 890, targetMarketSpread: 'EU, NA', momentumChange: 22 },
+  { category: 'Others', productsUploaded: 3, demoPlays: 456, targetMarketSpread: 'Global', momentumChange: 0 },
+];
+
+const sampleProductData: ProductData[] = [
+  { id: '1', name: 'SmartVision AI', category: 'AI & ML', demoPlays: 1245, status: 'active', dateUploaded: '2025-12-15' },
+  { id: '2', name: 'EcoTrack', category: 'Sustainability', demoPlays: 890, status: 'active', dateUploaded: '2025-12-10' },
+  { id: '3', name: 'MedAssist XR', category: 'HealthTech', demoPlays: 567, status: 'pending', dateUploaded: '2025-12-08' },
+  { id: '4', name: 'LearnFlow Pro', category: 'EdTech', demoPlays: 423, status: 'active', dateUploaded: '2025-12-05' },
+  { id: '5', name: 'DataSync Hub', category: 'AI & ML', demoPlays: 312, status: 'draft', dateUploaded: '2025-12-01' },
+];
+
+const dailyChartData = [
+  { name: 'Mon', demoPlays: 320, momentum: 120 },
+  { name: 'Tue', demoPlays: 450, momentum: 180 },
+  { name: 'Wed', demoPlays: 380, momentum: 150 },
+  { name: 'Thu', demoPlays: 520, momentum: 210 },
+  { name: 'Fri', demoPlays: 680, momentum: 280 },
+  { name: 'Sat', demoPlays: 420, momentum: 160 },
+  { name: 'Sun', demoPlays: 380, momentum: 140 },
+];
+
+const weeklyChartData = [
+  { name: 'Week 1', demoPlays: 2400, momentum: 900 },
+  { name: 'Week 2', demoPlays: 2800, momentum: 1100 },
+  { name: 'Week 3', demoPlays: 3200, momentum: 1400 },
+  { name: 'Week 4', demoPlays: 3600, momentum: 1600 },
+];
+
+const monthlyChartData = [
+  { name: 'Sep', demoPlays: 8500, momentum: 3200 },
+  { name: 'Oct', demoPlays: 9800, momentum: 3800 },
+  { name: 'Nov', demoPlays: 11200, momentum: 4500 },
+  { name: 'Dec', demoPlays: 12800, momentum: 5200 },
+];
+
+const categoryMomentumData = [
+  { category: 'AI & ML', momentum: 15 },
+  { category: 'HealthTech', momentum: 8 },
+  { category: 'EdTech', momentum: -3 },
+  { category: 'Sustainability', momentum: 22 },
+  { category: 'Others', momentum: 0 },
+];
 
 const DashboardOverview = () => {
   const { user, profile, role } = useAuth();
@@ -97,152 +136,54 @@ const DashboardOverview = () => {
     return 'Good evening';
   };
 
-  // Pie chart data - Solutions Status Distribution
-  const solutionStatusData = [
-    { name: 'Accepted', value: stats.acceptedSolutions, color: CHART_COLORS.success },
-    { name: 'Pending', value: stats.pendingSolutions, color: CHART_COLORS.warning },
-    { name: 'Rejected', value: stats.rejectedSolutions, color: CHART_COLORS.destructive },
-  ].filter((d) => d.value > 0);
-
-  // Pie chart data - User Activity Breakdown
-  const activityBreakdownData = [
-    { name: 'Problems', value: stats.totalProblems, color: CHART_COLORS.primary },
-    { name: 'Solutions', value: stats.totalSolutions, color: CHART_COLORS.accent },
-    { name: 'Bookmarks', value: stats.bookmarksCount, color: CHART_COLORS.warning },
-  ].filter((d) => d.value > 0);
-
-  // Pie chart data - Bookmark Distribution
-  const bookmarkDistributionData = [
-    { name: 'Problems', value: stats.problemBookmarks, color: CHART_COLORS.info },
-    { name: 'Solutions', value: stats.solutionBookmarks, color: CHART_COLORS.accent },
-  ].filter((d) => d.value > 0);
-
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-lg">
-          <p className="text-sm font-medium">{payload[0].name}</p>
-          <p className="text-sm text-muted-foreground">{payload[0].value} items</p>
-        </div>
-      );
-    }
-    return null;
+  const handleProductView = (id: string) => {
+    console.log('View product:', id);
   };
 
-  const renderPieChart = (data: any[], title: string, icon: React.ReactNode) => {
-    if (data.length === 0) {
-      return (
-        <Card className="h-full">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              {icon}
-              {title}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-center h-40">
-            <p className="text-sm text-muted-foreground">No data yet</p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <Card className="h-full">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            {icon}
-            {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width={120} height={120}>
-              <PieChart>
-                <Pie
-                  data={data}
-                  dataKey="value"
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={35}
-                  outerRadius={50}
-                  paddingAngle={2}
-                >
-                  {data.map((entry, i) => (
-                    <Cell key={i} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip content={<CustomTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="space-y-2 flex-1">
-              {data.map((item, i) => (
-                <div key={i} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div 
-                      className="w-3 h-3 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-muted-foreground">{item.name}</span>
-                  </div>
-                  <span className="font-medium">{item.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+  const handleProductEdit = (id: string) => {
+    console.log('Edit product:', id);
   };
+
+  const handleProductDelete = (id: string) => {
+    console.log('Delete product:', id);
+  };
+
+  // Calculate metrics from sample data
+  const totalProducts = sampleCategoryData.reduce((sum, cat) => sum + cat.productsUploaded, 0);
+  const totalDemoPlays = sampleCategoryData.reduce((sum, cat) => sum + cat.demoPlays, 0);
+  const totalCategories = sampleCategoryData.length;
+  const totalMarkets = 4; // Global, NA, EU, APAC
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl lg:text-3xl font-bold">
-            {getGreeting()}, {profile?.full_name?.split(' ')[0] || 'there'}
-          </h1>
-          <p className="text-muted-foreground mt-1">Here's your activity overview</p>
-        </div>
-        <div className="flex gap-3">
-          {(role === 'enterprise' || role === 'admin') && (
-            <Button variant="hero" asChild>
-              <Link to="/dashboard/problems/new">
-                <Plus className="h-4 w-4 mr-2" />
-                Post Problem
-              </Link>
-            </Button>
-          )}
-          {(role === 'innovator' || role === 'admin') && (
-            <Button variant="secondary" asChild>
-              <Link to="/dashboard/browse">
-                <Target className="h-4 w-4 mr-2" />
-                Find Problems
-              </Link>
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Profile + Stats Grid */}
-      <div className="grid lg:grid-cols-5 gap-6">
-        {/* Profile Summary Card */}
-        <Card className="lg:col-span-2 lg:row-span-2">
+    <div className="space-y-6">
+      {/* Header with Profile Summary */}
+      <div className="grid lg:grid-cols-12 gap-6">
+        {/* Profile Card - Left Side */}
+        <Card className="lg:col-span-4 bg-gradient-to-br from-card/80 to-card/40 border-border/50 backdrop-blur-sm">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
-              <Avatar className="h-24 w-24 mb-4 border-4 border-primary/20 shadow-lg">
-                <AvatarImage src={profile?.avatar_url || ''} />
-                <AvatarFallback className="text-2xl bg-primary/10 text-primary">
-                  {profile?.full_name?.charAt(0) || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              <h3 className="font-bold text-xl">{profile?.full_name || 'User'}</h3>
-              <Badge variant="secondary" className="mt-2 capitalize text-sm px-3 py-1">
-                {role}
-              </Badge>
+              <div className="relative">
+                <Avatar className="h-20 w-20 border-4 border-primary/20 shadow-lg shadow-primary/10">
+                  <AvatarImage src={profile?.avatar_url || ''} />
+                  <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+                    {profile?.full_name?.charAt(0) || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center">
+                  <Zap className="h-3 w-3 text-white" />
+                </div>
+              </div>
               
-              <div className="w-full mt-6 space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+              <div className="mt-4 space-y-1">
+                <p className="text-sm text-muted-foreground">{getGreeting()}</p>
+                <h3 className="font-bold text-xl">{profile?.full_name || 'User'}</h3>
+                <Badge variant="secondary" className="capitalize text-xs px-3 py-0.5 bg-primary/10 text-primary border-primary/20">
+                  {role}
+                </Badge>
+              </div>
+              
+              <div className="w-full mt-6 space-y-2">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     <span className="text-sm">Joined</span>
@@ -252,18 +193,18 @@ const DashboardOverview = () => {
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <TrendingUp className="h-4 w-4" />
-                    <span className="text-sm">Total Activity</span>
+                    <span className="text-sm">Activity Score</span>
                   </div>
-                  <span className="text-sm font-medium">
-                    {stats.totalProblems + stats.totalSolutions + stats.bookmarksCount}
+                  <span className="text-sm font-medium text-emerald-400">
+                    +{stats.totalProblems + stats.totalSolutions + stats.bookmarksCount}
                   </span>
                 </div>
               </div>
 
-              <Button variant="outline" size="sm" className="mt-6 w-full" asChild>
+              <Button variant="outline" size="sm" className="mt-4 w-full hover:bg-primary/10 hover:text-primary hover:border-primary/30" asChild>
                 <Link to="/profile">
                   <User className="h-4 w-4 mr-2" />
                   Edit Profile
@@ -273,131 +214,98 @@ const DashboardOverview = () => {
           </CardContent>
         </Card>
 
-        {/* Stats Cards Row */}
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Problems Posted</p>
-                <p className="text-3xl font-bold mt-1">{stats.totalProblems}</p>
-              </div>
-              <div className="h-14 w-14 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                <FileText className="h-7 w-7" />
-              </div>
+        {/* Right Side - Header + Metrics */}
+        <div className="lg:col-span-8 space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text">
+                Dashboard Overview
+              </h1>
+              <p className="text-muted-foreground mt-1">Track your products, demos, and market performance</p>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Solutions Submitted</p>
-                <p className="text-3xl font-bold mt-1">{stats.totalSolutions}</p>
-              </div>
-              <div className="h-14 w-14 rounded-xl bg-accent/10 text-accent flex items-center justify-center">
-                <Sparkles className="h-7 w-7" />
-              </div>
+            <div className="flex gap-3">
+              {(role === 'enterprise' || role === 'admin') && (
+                <Button variant="hero" asChild>
+                  <Link to="/dashboard/problems/new">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Post Problem
+                  </Link>
+                </Button>
+              )}
+              {(role === 'innovator' || role === 'admin') && (
+                <Button variant="secondary" asChild>
+                  <Link to="/dashboard/browse">
+                    <Target className="h-4 w-4 mr-2" />
+                    Find Problems
+                  </Link>
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card className="hover:shadow-md transition-shadow">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Bookmarks</p>
-                <p className="text-3xl font-bold mt-1">{stats.bookmarksCount}</p>
-              </div>
-              <div className="h-14 w-14 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                <Bookmark className="h-7 w-7" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pie Charts Row */}
-        {renderPieChart(
-          solutionStatusData,
-          'Solutions Status',
-          <Sparkles className="h-4 w-4 text-primary" />
-        )}
-
-        {renderPieChart(
-          activityBreakdownData,
-          'Activity Breakdown',
-          <TrendingUp className="h-4 w-4 text-primary" />
-        )}
-
-        {renderPieChart(
-          bookmarkDistributionData,
-          'Bookmark Distribution',
-          <Bookmark className="h-4 w-4 text-amber-500" />
-        )}
+          {/* Metrics Panel */}
+          <MetricsPanel
+            productsUploaded={totalProducts}
+            demoPlays={totalDemoPlays}
+            categoriesRepresented={totalCategories}
+            targetMarketsReached={totalMarkets}
+          />
+        </div>
       </div>
 
-      {/* Status Summary Cards */}
-      <div className="grid sm:grid-cols-3 gap-4">
-        <Card className="bg-green-500/5 border-green-500/20 hover:border-green-500/40 transition-colors">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-              <CheckCircle2 className="h-6 w-6 text-green-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Accepted Solutions</p>
-              <p className="text-2xl font-bold">{stats.acceptedSolutions}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Filters */}
+      <DashboardFilters />
 
-        <Card className="bg-amber-500/5 border-amber-500/20 hover:border-amber-500/40 transition-colors">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-amber-500/10 flex items-center justify-center">
-              <Clock className="h-6 w-6 text-amber-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending Review</p>
-              <p className="text-2xl font-bold">{stats.pendingSolutions}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-destructive/5 border-destructive/20 hover:border-destructive/40 transition-colors">
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-12 w-12 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <XCircle className="h-6 w-6 text-destructive" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Rejected</p>
-              <p className="text-2xl font-bold">{stats.rejectedSolutions}</p>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Charts Row */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        <DemoTrendsChart
+          dailyData={dailyChartData}
+          weeklyData={weeklyChartData}
+          monthlyData={monthlyChartData}
+        />
+        <CategoryMomentumChart data={categoryMomentumData} />
       </div>
 
-      {/* Quick Links */}
+      {/* Tables */}
+      <CategoryPerformanceTable data={sampleCategoryData} />
+      
+      <ProductTrackerTable
+        data={sampleProductData}
+        onView={handleProductView}
+        onEdit={handleProductEdit}
+        onDelete={handleProductDelete}
+      />
+
+      {/* Quick Actions */}
       <div className="grid md:grid-cols-3 gap-4">
-        <Button variant="outline" className="h-auto p-5 justify-start hover:border-primary/50 transition-colors" asChild>
+        <Button variant="outline" className="h-auto p-5 justify-start hover:border-primary/50 hover:bg-primary/5 transition-all group" asChild>
           <Link to="/dashboard/solutions">
-            <Sparkles className="h-6 w-6 mr-4 text-primary" />
+            <div className="h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors mr-4">
+              <TrendingUp className="h-5 w-5" />
+            </div>
             <div className="text-left">
               <div className="font-semibold">My Solutions</div>
               <div className="text-xs text-muted-foreground">View all your submissions</div>
             </div>
           </Link>
         </Button>
-        <Button variant="outline" className="h-auto p-5 justify-start hover:border-primary/50 transition-colors" asChild>
+        <Button variant="outline" className="h-auto p-5 justify-start hover:border-accent/50 hover:bg-accent/5 transition-all group" asChild>
           <Link to="/dashboard/browse">
-            <Target className="h-6 w-6 mr-4 text-accent" />
+            <div className="h-10 w-10 rounded-xl bg-accent/10 text-accent flex items-center justify-center group-hover:bg-accent/20 transition-colors mr-4">
+              <Target className="h-5 w-5" />
+            </div>
             <div className="text-left">
               <div className="font-semibold">Browse Problems</div>
               <div className="text-xs text-muted-foreground">Find new challenges</div>
             </div>
           </Link>
         </Button>
-        <Button variant="outline" className="h-auto p-5 justify-start hover:border-primary/50 transition-colors" asChild>
+        <Button variant="outline" className="h-auto p-5 justify-start hover:border-amber-500/50 hover:bg-amber-500/5 transition-all group" asChild>
           <Link to="/dashboard/bookmarks">
-            <Bookmark className="h-6 w-6 mr-4 text-amber-500" />
+            <div className="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors mr-4">
+              <Zap className="h-5 w-5" />
+            </div>
             <div className="text-left">
               <div className="font-semibold">Bookmarks</div>
               <div className="text-xs text-muted-foreground">Your saved items</div>
