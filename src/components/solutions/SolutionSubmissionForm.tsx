@@ -258,9 +258,17 @@ export function SolutionSubmissionForm({
       }, 600);
     } catch (err) {
       console.error("Submission error:", err);
-      setLastError(err instanceof Error ? err.message : "Please try again later.");
-      setOverlayStatus("error");
+      const errorMessage = err instanceof Error ? err.message : "Please try again later.";
+      setLastError(errorMessage);
+      // Hide overlay and show toast instead of error popup
+      hideOverlay();
+      setIsSubmitting(false);
       setIsUploading(false);
+      toast({
+        title: "Submission failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   }, [isEditing, existingSolution, newAttachments, problemId, form, toast, onSuccess, setOverlayStatus, hideOverlay]);
 
