@@ -1,1 +1,7 @@
-project_id = "rnbpkpirnmhjehutqlzn"
+project_id = "iehuqvjappjdgmfjzkoa"
+
+[functions.generate-taglines]
+verify_jwt = false
+
+[functions.rewrite-description]
+verify_jwt = false

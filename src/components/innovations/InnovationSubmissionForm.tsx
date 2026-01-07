@@ -15,6 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, FileText, Image as ImageIcon, Video, Save, Send, Loader2, Plus, Minus } from "lucide-react";
 import { InnovationCategory } from "@/types";
+import aiIcon from "@/assets/ai_icon.png";
+
+
 
 const innovationSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must be less than 100 characters"),
@@ -73,6 +76,11 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const [galleryPreviews, setGalleryPreviews] = useState<string[]>(initialData?.gallery_urls || []);
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [pdfNames, setPdfNames] = useState<string[]>(initialData?.pdf_urls?.map((_, i) => `Document ${i + 1}`) || []);
+  const [isGeneratingTaglines, setIsGeneratingTaglines] = useState(false);
+  const [taglineSuggestions, setTaglineSuggestions] = useState<string[]>([]);
+  const [isRewritingDescription, setIsRewritingDescription] = useState(false);
+  const [prevDescription, setPrevDescription] = useState<string | null>(null);
+  const [canUndoDescription, setCanUndoDescription] = useState(false);
 
   const form = useForm<InnovationFormData>({
     resolver: zodResolver(innovationSchema),
@@ -134,6 +142,77 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     setPdfFiles((prev) => prev.filter((_, i) => i !== index));
     setPdfNames((prev) => prev.filter((_, i) => i !== index));
   };
+
+  const handleGenerateTaglines = async () => {
+    const title = (form.getValues("title") ?? "").trim();
+    if (!title || title.length < 3) {
+      toast.error("Please enter an innovation title first");
+      return;
+    }
+
+    setIsGeneratingTaglines(true);
+    setTaglineSuggestions([]);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-taglines", {
+        body: { title, count: 5 },
+      });
+
+      if (error) throw error;
+
+      const taglines = data?.taglines ?? data;
+      if (!Array.isArray(taglines)) throw new Error("Invalid tagline response");
+
+      setTaglineSuggestions(taglines.slice(0, 5));
+    } catch (error: any) {
+      console.error("Error generating taglines:", error);
+      toast.error(error?.message || "Failed to generate taglines");
+    } finally {
+      setIsGeneratingTaglines(false);
+    }
+  };
+
+  const handleRewriteDescription = async () => {
+    const currentDescription = form.getValues("description") ?? "";
+    const description = currentDescription.trim();
+    if (!description) {
+      toast.error("Please enter a description first");
+      return;
+    }
+
+    setPrevDescription(currentDescription);
+    setIsRewritingDescription(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("rewrite-description", {
+        body: { text: description, tone: "professional", maxWords: 150 },
+      });
+
+      if (error) throw error;
+
+      const rewritten = data?.rewritten ?? data;
+      if (!rewritten || typeof rewritten !== "string") {
+        throw new Error("Invalid rewrite response");
+      }
+
+      form.setValue("description", rewritten, { shouldValidate: true });
+      setCanUndoDescription(true);
+      toast.success("Description improved");
+    } catch (error: any) {
+      console.error("Error rewriting description:", error);
+      toast.error(error?.message || "Failed to improve description");
+    } finally {
+      setIsRewritingDescription(false);
+    }
+  };
+
+  const handleUndoDescription = () => {
+    if (!prevDescription) return;
+    form.setValue("description", prevDescription, { shouldValidate: true });
+    setCanUndoDescription(false);
+    toast.success("Restored original description");
+  };
+
 
   const onSubmit = async (data: InnovationFormData, asDraft: boolean) => {
     if (!user) {
@@ -255,15 +334,77 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
               name="tagline"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Short Tagline *</FormLabel>
+                  <FormLabel className="flex items-center justify-between gap-3">
+                    <span>Short Tagline *</span>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateTaglines}
+                      disabled={isGeneratingTaglines}
+                      className="gap-2"
+                    >
+                      {isGeneratingTaglines ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <img src={aiIcon} alt="AI" className="h-4 w-4" />
+                      )}
+                      AI Suggest
+                    </Button>
+                  </FormLabel>
+
                   <FormControl>
-                    <Input placeholder="A compelling one-liner about your innovation" {...field} />
+                    <Input
+                      placeholder="A compelling one-liner about your innovation"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // if user starts typing manually, hide old suggestions
+                        if (taglineSuggestions.length) setTaglineSuggestions([]);
+                      }}
+                    />
                   </FormControl>
+
                   <FormDescription>Max 200 characters</FormDescription>
                   <FormMessage />
+
+                  {/* Suggestions as pill buttons */}
+                  {taglineSuggestions.length > 0 && (
+                    <div className="pt-2 space-y-2">
+                      <div className="text-xs text-muted-foreground">
+                        Suggestions (click to use):
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {taglineSuggestions.map((t, idx) => (
+                          <button
+                            key={`${t}-${idx}`}
+                            type="button"
+                            onClick={() => {
+                              const clean = (t ?? "").trim();
+                              if (!clean) return;
+
+                              form.setValue("tagline", clean, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+
+                              toast.success("Tagline applied");
+                            }}
+                            className="px-3 py-1.5 rounded-full border border-border bg-secondary/30 hover:bg-secondary/50 text-sm transition-colors"
+                            title="Click to use this tagline"
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
+
 
             <FormField
               control={form.control}
@@ -312,7 +453,38 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Detailed Description *</FormLabel>
+                  <FormLabel className="flex items-center justify-between gap-3">
+                    <span>Detailed Description *</span>
+                    <div className="flex items-center gap-2">
+                      {canUndoDescription && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleUndoDescription}
+                          disabled={isRewritingDescription}
+                          className="gap-2"
+                        >
+                          Undo
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRewriteDescription}
+                        disabled={isRewritingDescription}
+                        className="gap-2"
+                      >
+                        {isRewritingDescription ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <img src={aiIcon} alt="AI" className="h-4 w-4" />
+                        )}
+                        AI Improve
+                      </Button>
+                    </div>
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Describe your innovation in detail..."
