@@ -24,6 +24,8 @@ export default function ProblemDetailPage() {
   const handleBack = () => {
     if (fromLocation === 'bookmarks') {
       navigate('/dashboard/bookmarks');
+    } else if (fromLocation === 'overview') {
+      navigate('/dashboard');
     } else {
       navigate('/dashboard/browse');
     }

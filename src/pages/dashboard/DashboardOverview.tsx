@@ -271,11 +271,11 @@ const DashboardOverview = () => {
   };
 
   const handleProblemView = (id: string) => {
-    navigate(`/dashboard/problems/${id}`);
+    navigate(`/dashboard/problems/${id}`, { state: { from: 'overview' } });
   };
 
   const handleProblemEdit = (id: string) => {
-    navigate(`/dashboard/problems/${id}/edit`);
+    navigate(`/dashboard/problems/${id}/edit`, { state: { from: 'overview' } });
   };
 
   const handleProblemDelete = (id: string) => {

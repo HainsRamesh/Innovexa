@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams, useNavigate } from "react-router-dom";
+import { Link, useParams, useNavigate, useLocation } from "react-router-dom";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -39,6 +39,8 @@ export default function EditProblemPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLocation = location.state?.from;
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -157,6 +159,18 @@ export default function EditProblemPage() {
       });
     } else {
       toast({ title: "Problem updated" });
+      if (fromLocation === 'overview') {
+        navigate('/dashboard');
+      } else {
+        navigate('/dashboard/browse');
+      }
+    }
+  };
+
+  const handleBack = () => {
+    if (fromLocation === 'overview') {
+      navigate('/dashboard');
+    } else {
       navigate('/dashboard/browse');
     }
   };
@@ -172,11 +186,9 @@ export default function EditProblemPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/dashboard/browse">
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            Back
-          </Link>
+        <Button variant="ghost" size="sm" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
         </Button>
       </div>
 
@@ -307,8 +319,8 @@ export default function EditProblemPage() {
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" asChild>
-                <Link to="/dashboard/browse">Cancel</Link>
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Cancel
               </Button>
               <Button type="submit" disabled={isSaving}>
                 {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}

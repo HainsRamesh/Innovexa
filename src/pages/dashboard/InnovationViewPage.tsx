@@ -141,27 +141,18 @@ const InnovationViewPage = () => {
                 <CardTitle className="text-lg">Demo Video</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                <div 
+                  className="aspect-video rounded-lg overflow-hidden bg-muted"
+                  onMouseDown={handleVideoPlay}
+                >
                   <iframe
-                    src={innovation.video_url.replace('watch?v=', 'embed/')}
+                    src={`${innovation.video_url.replace('watch?v=', 'embed/')}?enablejsapi=1`}
                     title={innovation.title}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
-                    onLoad={(e) => {
-                      // Track play when iframe loads (YouTube embeds don't have direct play events)
-                      // We'll track the first interaction
-                    }}
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  className="mt-4 w-full"
-                  onClick={handleVideoPlay}
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  Track Demo Play
-                </Button>
               </CardContent>
             </Card>
           )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGlobalLoading } from '@/contexts/LoadingContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,6 +33,8 @@ const SolutionDetailPage = () => {
   const { toast } = useToast();
   const { startLoading, stopLoading } = useGlobalLoading();
   const navigate = useNavigate();
+  const location = useLocation();
+  const fromLocation = location.state?.from;
 
   const [solution, setSolution] = useState<Solution | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
@@ -142,10 +144,16 @@ const SolutionDetailPage = () => {
           variant="ghost"
           size="sm"
           className="w-fit"
-          onClick={() => navigate('/dashboard/solutions')}
+          onClick={() => {
+            if (fromLocation === 'bookmarks') {
+              navigate('/dashboard/bookmarks');
+            } else {
+              navigate('/dashboard/solutions');
+            }
+          }}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to My Solutions
+          {fromLocation === 'bookmarks' ? 'Back to Bookmarks' : 'Back to My Solutions'}
         </Button>
 
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
