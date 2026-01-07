@@ -248,7 +248,7 @@ const BookmarksPage = () => {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem asChild>
-                            <Link to={`/dashboard/solutions/${solution.id}`}>
+                            <Link to={`/dashboard/solutions/${solution.id}`} state={{ from: 'bookmarks' }}>
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </Link>

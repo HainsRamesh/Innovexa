@@ -1,4 +1,3 @@
-import { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -7,12 +6,9 @@ import { Innovation } from '@/types';
 import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 import { 
-  Play, 
   Download, 
   Bookmark, 
   Mail, 
-  ExternalLink,
-  X as XIcon,
   Minus,
   Plus,
   FileText
@@ -73,19 +69,14 @@ export const InnovationDetailModal = ({
   open,
   onOpenChange,
 }: InnovationDetailModalProps) => {
-  const [hasTrackedPlay, setHasTrackedPlay] = useState(false);
   const { trackDemoPlay } = useDemoPlayTracker(innovation?.id || '');
   
   if (!innovation) return null;
 
   const embedUrl = innovation.video_url ? getVideoEmbedUrl(innovation.video_url) : null;
-
-  const handleVideoInteraction = () => {
-    if (!hasTrackedPlay && embedUrl) {
-      trackDemoPlay();
-      setHasTrackedPlay(true);
-    }
-  };
+  
+  // Add enablejsapi=1 to enable YouTube JS API for play detection
+  const embedUrlWithApi = embedUrl ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}enablejsapi=1` : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -108,29 +99,16 @@ export const InnovationDetailModal = ({
             </DialogHeader>
 
             {/* Video Section */}
-            {embedUrl && (
-              <div className="space-y-3">
-                <div 
-                  className="aspect-video rounded-lg overflow-hidden bg-muted"
-                  onClick={handleVideoInteraction}
-                >
-                  <iframe
-                    src={embedUrl}
-                    title={innovation.title}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleVideoInteraction}
-                  className="gap-2"
-                >
-                  <Play className="h-4 w-4" />
-                  Track Demo View
-                </Button>
+            {embedUrlWithApi && (
+              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                <iframe
+                  src={embedUrlWithApi}
+                  title={innovation.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  onMouseDown={trackDemoPlay}
+                />
               </div>
             )}
 
