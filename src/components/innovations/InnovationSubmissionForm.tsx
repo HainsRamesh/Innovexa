@@ -15,6 +15,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, X, FileText, Image as ImageIcon, Video, Save, Send, Loader2, Plus, Minus } from "lucide-react";
 import { InnovationCategory } from "@/types";
+import aiIcon from "@/assets/ai_icon.png";
+
+
 
 const innovationSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(100, "Title must be less than 100 characters"),
@@ -331,15 +334,77 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
               name="tagline"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Short Tagline *</FormLabel>
+                  <FormLabel className="flex items-center justify-between gap-3">
+                    <span>Short Tagline *</span>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleGenerateTaglines}
+                      disabled={isGeneratingTaglines}
+                      className="gap-2"
+                    >
+                      {isGeneratingTaglines ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <img src={aiIcon} alt="AI" className="h-4 w-4" />
+                      )}
+                      AI Suggest
+                    </Button>
+                  </FormLabel>
+
                   <FormControl>
-                    <Input placeholder="A compelling one-liner about your innovation" {...field} />
+                    <Input
+                      placeholder="A compelling one-liner about your innovation"
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        // if user starts typing manually, hide old suggestions
+                        if (taglineSuggestions.length) setTaglineSuggestions([]);
+                      }}
+                    />
                   </FormControl>
+
                   <FormDescription>Max 200 characters</FormDescription>
                   <FormMessage />
+
+                  {/* Suggestions as pill buttons */}
+                  {taglineSuggestions.length > 0 && (
+                    <div className="pt-2 space-y-2">
+                      <div className="text-xs text-muted-foreground">
+                        Suggestions (click to use):
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {taglineSuggestions.map((t, idx) => (
+                          <button
+                            key={`${t}-${idx}`}
+                            type="button"
+                            onClick={() => {
+                              const clean = (t ?? "").trim();
+                              if (!clean) return;
+
+                              form.setValue("tagline", clean, {
+                                shouldValidate: true,
+                                shouldDirty: true,
+                              });
+
+                              toast.success("Tagline applied");
+                            }}
+                            className="px-3 py-1.5 rounded-full border border-border bg-secondary/30 hover:bg-secondary/50 text-sm transition-colors"
+                            title="Click to use this tagline"
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </FormItem>
               )}
             />
+
 
             <FormField
               control={form.control}
@@ -414,7 +479,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                         {isRewritingDescription ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
-                          <img src={AiIcon} className="h-5 w-5" alt="AI" />
+                          <img src={aiIcon} alt="AI" className="h-4 w-4" />
                         )}
                         AI Improve
                       </Button>
