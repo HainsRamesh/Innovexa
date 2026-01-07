@@ -14,7 +14,7 @@ type RewriteRequest = {
 };
 
 function extractOutputText(result: any): string | null {
-  // Most common: output_text is a string
+  // Responses API commonly returns output_text as a string
   if (typeof result?.output_text === "string" && result.output_text.trim()) {
     return result.output_text.trim();
   }
@@ -38,8 +38,9 @@ function extractOutputText(result: any): string | null {
 }
 
 Deno.serve(async (req) => {
+  // ✅ CORS preflight must return OK (2xx) + CORS headers
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { status: 204, headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
@@ -77,7 +78,7 @@ Deno.serve(async (req) => {
       `- Keep it within ${maxWords} words.\n\n` +
       `Original:\n${text.trim()}`;
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
+    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -85,16 +86,19 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
-        // ✅ simplest + correct for Responses API
         input: prompt,
         max_output_tokens: 400,
       }),
     });
 
-    const raw = await response.text();
-    if (!response.ok) {
-      console.error("OpenAI error:", response.status, raw);
-      throw new Error(raw || "OpenAI request failed");
+    const raw = await openaiRes.text();
+
+    if (!openaiRes.ok) {
+      console.error("OpenAI error:", openaiRes.status, raw);
+      return new Response(JSON.stringify({ error: "OpenAI request failed" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const result = JSON.parse(raw);
@@ -102,7 +106,13 @@ Deno.serve(async (req) => {
 
     if (!rewritten) {
       console.error("Unexpected OpenAI response:", result);
-      throw new Error("Model response did not contain rewritten text");
+      return new Response(
+        JSON.stringify({ error: "Model response missing rewritten text" }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     return new Response(JSON.stringify({ rewritten }), {

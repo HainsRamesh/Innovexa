@@ -7,25 +7,62 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type ReqBody = {
-  title?: string;
-  count?: number;
-};
+type ReqBody = { title?: string; count?: number };
 
-function extractOutputText(result: any): string {
-  if (typeof result?.output_text === "string") return result.output_text;
-  const out = result?.output;
-  if (Array.isArray(out)) {
-    for (const item of out) {
-      const content = item?.content;
-      if (Array.isArray(content)) {
-        for (const c of content) {
-          if (typeof c?.text === "string") return c.text;
-        }
-      }
+function stripCodeFences(s: string): string {
+  return (s || "")
+    .replace(/```json\s*/gi, "")
+    .replace(/```\s*/g, "")
+    .trim();
+}
+
+function extractJsonArray(s: string): string[] {
+  const cleaned = stripCodeFences(s);
+
+  // Try direct JSON parse first
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (Array.isArray(parsed)) {
+      return parsed.map((x) => String(x).trim()).filter(Boolean);
     }
+  } catch {}
+
+  // Fallback: find first [...] block and parse it
+  const start = cleaned.indexOf("[");
+  const end = cleaned.lastIndexOf("]");
+  if (start !== -1 && end !== -1 && end > start) {
+    const slice = cleaned.slice(start, end + 1);
+    try {
+      const parsed = JSON.parse(slice);
+      if (Array.isArray(parsed)) {
+        return parsed.map((x) => String(x).trim()).filter(Boolean);
+      }
+    } catch {}
   }
-  return "";
+
+  // Last fallback: split lines and clean bullets
+  return cleaned
+    .split("\n")
+    .map((l) => l.replace(/^[\s,*\-–\d.)]+/, "").trim())
+    .filter((l) => l.length >= 8 && !["[", "]"].includes(l));
+}
+
+function cleanTaglines(taglines: string[], count: number): string[] {
+  const banned = new Set(["```json", "```", "json", "[", "]"]);
+
+  return taglines
+    .map((t) => String(t ?? "").trim())
+    // remove wrapping quotes from strings like "\"Tagline\""
+    .map((t) => t.replace(/^"+|"+$/g, "").trim())
+    // drop fence tokens / brackets / junk
+    .filter((t) => t.length > 0)
+    .filter((t) => !banned.has(t))
+    .filter((t) => !t.includes("```"))
+    // remove any leftover leading/trailing commas
+    .map((t) => t.replace(/^,+|,+$/g, "").trim())
+    // basic quality gate so schema doesn’t fail
+    .filter((t) => t.length >= 10 && t.length <= 200)
+    .slice(0, count);
 }
 
 Deno.serve(async (req) => {
@@ -42,12 +79,10 @@ Deno.serve(async (req) => {
 
   try {
     const { title, count = 5 } = (await req.json()) as ReqBody;
-
     const cleanTitle = (title ?? "").trim();
-    const n = Math.max(1, Math.min(10, Number(count) || 5));
 
     if (!cleanTitle) {
-      return new Response(JSON.stringify({ error: "title is required" }), {
+      return new Response(JSON.stringify({ error: "Title is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -61,14 +96,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    const prompt =
-      `Generate ${n} short, catchy taglines for this innovation title: "${cleanTitle}".\n` +
-      `Rules:\n` +
-      `- Each tagline should be 6–12 words.\n` +
-      `- Professional, clear, no hype, no emojis.\n` +
-      `- Return ONLY a JSON array of strings.\n`;
+    const prompt = [
+      `Generate exactly ${count} short, catchy, professional taglines for: "${cleanTitle}".`,
+      `Rules:`,
+      `- Each tagline under 12 words`,
+      `- No numbering, no bullets, no code fences`,
+      `- Return ONLY a valid JSON array of strings (no extra text)`,
+      `Example: ["Tagline 1","Tagline 2"]`,
+    ].join("\n");
 
-    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+    const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -77,42 +114,42 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "gpt-4o-mini",
         input: prompt,
-        max_output_tokens: 300,
+        max_output_tokens: 200,
       }),
     });
 
-    const raw = await openaiRes.text();
-    if (!openaiRes.ok) {
-      console.error("OpenAI error:", openaiRes.status, raw);
+    const raw = await response.text();
+    if (!response.ok) {
+      console.error("OpenAI error:", response.status, raw);
       return new Response(JSON.stringify({ error: "OpenAI request failed" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const result = JSON.parse(raw);
-    const text = extractOutputText(result).trim();
+    const json = JSON.parse(raw);
+    const outputText: string =
+      (typeof json?.output_text === "string" && json.output_text) ||
+      json?.output?.[0]?.content?.[0]?.text ||
+      "";
 
-    let taglines: string[] = [];
-    try {
-      const parsed = JSON.parse(text);
-      if (Array.isArray(parsed)) taglines = parsed.map(String);
-    } catch {
-      // fallback: split lines if model didn't return JSON
-      taglines = text
-        .split("\n")
-        .map((s) => s.replace(/^[\-\d\.\)\s]+/, "").trim())
-        .filter(Boolean);
+    const parsed = extractJsonArray(outputText);
+    const cleaned = cleanTaglines(parsed, count);
+
+    if (cleaned.length === 0) {
+      console.error("No taglines parsed/cleaned. Raw output:", outputText);
+      return new Response(JSON.stringify({ error: "Failed to parse taglines" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    taglines = taglines.slice(0, n);
-
-    return new Response(JSON.stringify({ taglines }), {
+    return new Response(JSON.stringify({ taglines: cleaned }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
-    console.error("generate-taglines error:", e);
+  } catch (err) {
+    console.error("generate-taglines error:", err);
     return new Response(JSON.stringify({ error: "Failed to generate taglines" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
