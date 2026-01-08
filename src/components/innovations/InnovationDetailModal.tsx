@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Innovation } from '@/types';
 import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
+import { VideoThumbnailPlayer } from './VideoThumbnailPlayer';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 import { 
   Download, 
@@ -45,24 +46,6 @@ const categoryColors: Record<string, string> = {
   other: 'bg-muted text-muted-foreground',
 };
 
-const getVideoEmbedUrl = (url: string): string | null => {
-  if (!url) return null;
-  
-  // YouTube
-  const youtubeMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-  if (youtubeMatch) {
-    return `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-  }
-  
-  // Vimeo
-  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
-  if (vimeoMatch) {
-    return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
-  }
-  
-  // Return original URL if it's already an embed or direct video
-  return url;
-};
 
 export const InnovationDetailModal = ({
   innovation,
@@ -72,11 +55,6 @@ export const InnovationDetailModal = ({
   const { trackDemoPlay } = useDemoPlayTracker(innovation?.id || '');
   
   if (!innovation) return null;
-
-  const embedUrl = innovation.video_url ? getVideoEmbedUrl(innovation.video_url) : null;
-  
-  // Add enablejsapi=1 to enable YouTube JS API for play detection
-  const embedUrlWithApi = embedUrl ? `${embedUrl}${embedUrl.includes('?') ? '&' : '?'}enablejsapi=1` : null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -99,17 +77,12 @@ export const InnovationDetailModal = ({
             </DialogHeader>
 
             {/* Video Section */}
-            {embedUrlWithApi && (
-              <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                <iframe
-                  src={embedUrlWithApi}
-                  title={innovation.title}
-                  className="w-full h-full"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  onMouseDown={trackDemoPlay}
-                />
-              </div>
+            {innovation.video_url && (
+              <VideoThumbnailPlayer
+                videoUrl={innovation.video_url}
+                title={innovation.title}
+                onPlay={trackDemoPlay}
+              />
             )}
 
             {/* Description */}

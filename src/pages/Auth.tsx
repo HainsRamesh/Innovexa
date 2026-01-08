@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { Lightbulb, ArrowLeft, Building2, Rocket, TrendingUp, Shield } from "lucide-react";
+import { Lightbulb, ArrowLeft, Building2, Rocket, TrendingUp, Shield, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Footer } from "@/components/layout/Footer";
 import { AppRole } from "@/types";
 import { z } from "zod";
@@ -49,7 +49,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
   const [isLoading, setIsLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -80,6 +82,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user && role) {
+      setIsNavigating(true);
       navigate(getRedirectPath(role));
     }
   }, [user, role, navigate, searchParams]);
@@ -202,7 +205,7 @@ const Auth = () => {
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder="John Doe"
-                        disabled={isLoading}
+                        disabled={isLoading || isNavigating}
                       />
                       {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
                     </div>
@@ -253,26 +256,47 @@ const Auth = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
-                    disabled={isLoading}
+                    disabled={isLoading || isNavigating}
                   />
                   {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    disabled={isLoading}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      disabled={isLoading || isNavigating}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                 </div>
 
-                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
+                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading || isNavigating}>
+                  {isNavigating ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Redirecting...
+                    </span>
+                  ) : isLoading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Please wait...
+                    </span>
+                  ) : isSignUp ? "Create Account" : "Sign In"}
                 </Button>
               </form>
 

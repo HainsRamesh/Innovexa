@@ -10,6 +10,7 @@ import { Innovation } from '@/types';
 import { getCategoryColor, getCategoryLabel } from '@/lib/categoryColors';
 import { format } from 'date-fns';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
+import { VideoThumbnailPlayer } from '@/components/innovations/VideoThumbnailPlayer';
 
 const InnovationViewPage = () => {
   const { innovationId } = useParams();
@@ -141,18 +142,11 @@ const InnovationViewPage = () => {
                 <CardTitle className="text-lg">Demo Video</CardTitle>
               </CardHeader>
               <CardContent>
-                <div 
-                  className="aspect-video rounded-lg overflow-hidden bg-muted"
-                  onMouseDown={handleVideoPlay}
-                >
-                  <iframe
-                    src={`${innovation.video_url.replace('watch?v=', 'embed/')}?enablejsapi=1`}
-                    title={innovation.title}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
+                <VideoThumbnailPlayer
+                  videoUrl={innovation.video_url}
+                  title={innovation.title}
+                  onPlay={handleVideoPlay}
+                />
               </CardContent>
             </Card>
           )}
