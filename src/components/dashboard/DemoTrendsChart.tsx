@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AreaChart,
   Area,
@@ -12,7 +13,8 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, BarChart3, LineChart } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type TimeRange = 'daily' | 'weekly' | 'monthly';
 type ChartType = 'line' | 'bar';
@@ -28,6 +30,10 @@ interface DemoTrendsChartProps {
   weeklyData: ChartDataPoint[];
   monthlyData: ChartDataPoint[];
 }
+
+// Generate year options (current year and past 5 years)
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i);
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -48,6 +54,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTrendsChartProps) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('weekly');
   const [chartType, setChartType] = useState<ChartType>('line');
+  const [fromYear, setFromYear] = useState<number>(currentYear);
+  const [toYear, setToYear] = useState<number>(currentYear);
 
   const getData = () => {
     switch (timeRange) {
@@ -67,37 +75,87 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
   return (
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            Demo Play Trends
-          </CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center bg-muted/50 rounded-lg p-1">
-              {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((range) => (
-                <Button
-                  key={range}
-                  variant={timeRange === range ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setTimeRange(range)}
-                  className="text-xs capitalize"
-                >
-                  {range}
-                </Button>
-              ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle className="text-lg font-semibold flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Demo Play Trends
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Time Range Selector */}
+              <div className="flex items-center bg-muted/50 rounded-lg p-1">
+                {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((range) => (
+                  <Button
+                    key={range}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setTimeRange(range)}
+                    className={cn(
+                      "text-xs capitalize transition-all duration-200",
+                      timeRange === range 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    {range}
+                  </Button>
+                ))}
+              </div>
+              
+              {/* Chart Type Selector */}
+              <div className="flex items-center bg-muted/50 rounded-lg p-1">
+                {(['line', 'bar'] as ChartType[]).map((type) => (
+                  <Button
+                    key={type}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setChartType(type)}
+                    className={cn(
+                      "text-xs capitalize transition-all duration-200 gap-1.5",
+                      chartType === type 
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
+                        : "hover:bg-muted"
+                    )}
+                  >
+                    {type === 'line' ? <LineChart className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}
+                    {type}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="flex items-center bg-muted/50 rounded-lg p-1">
-              {(['line', 'bar'] as ChartType[]).map((type) => (
-                <Button
-                  key={type}
-                  variant={chartType === type ? 'secondary' : 'ghost'}
-                  size="sm"
-                  onClick={() => setChartType(type)}
-                  className="text-xs capitalize"
-                >
-                  {type}
-                </Button>
-              ))}
+          </div>
+          
+          {/* Year Range Selectors */}
+          <div className="flex items-center gap-3 text-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">From:</span>
+              <Select value={fromYear.toString()} onValueChange={(v) => setFromYear(parseInt(v))}>
+                <SelectTrigger className="w-[100px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground">To:</span>
+              <Select value={toYear.toString()} onValueChange={(v) => setToYear(parseInt(v))}>
+                <SelectTrigger className="w-[100px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {yearOptions.filter(y => y >= fromYear).map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
