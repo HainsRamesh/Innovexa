@@ -58,12 +58,13 @@ export interface Solution {
   estimated_cost: number | null;
   attachments: string[] | null;
   status: SolutionStatus;
+  visibility: string;
   ai_match_score: number | null;
   ai_evaluation: string | null;
   created_at: string;
   updated_at: string;
   profiles?: Profile;
-  problems?: Problem;
+  problems?: Partial<Problem> | { title: string; category: string };
 }
 
 export type InvestmentStatus = 'proposed' | 'under_review' | 'accepted' | 'rejected' | 'withdrawn';
