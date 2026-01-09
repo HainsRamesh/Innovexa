@@ -33,6 +33,7 @@ const Solutions = () => {
 
   const isInnovator = role === 'innovator';
   const isEnterprise = role === 'enterprise';
+  const isInvestor = role === 'investor';
 
   useEffect(() => {
     fetchSolutions();
@@ -41,7 +42,7 @@ const Solutions = () => {
   const fetchSolutions = async () => {
     setIsLoading(true);
     try {
-      // Fetch all approved solutions
+      // Fetch all approved public solutions (for investors and general users)
       const { data: approved, error: approvedError } = await supabase
         .from('solutions')
         .select(`
@@ -49,6 +50,7 @@ const Solutions = () => {
           problems:problem_id (title, category)
         `)
         .eq('status', 'accepted')
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false });
 
       if (approvedError) throw approvedError;
@@ -280,12 +282,16 @@ const Solutions = () => {
       <section className="pt-24 pb-12 px-4">
         <div className="container mx-auto text-center">
           <Badge variant="secondary" className="mb-4">
-            {isEnterprise ? "My Problems' Solutions" : 'Accepted Solutions'}
+            {isEnterprise ? "My Problems' Solutions" : isInvestor ? 'Investment Opportunities' : 'Accepted Solutions'}
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             {isEnterprise ? (
               <>
                 Solutions for <span className="text-gradient">My Problems</span>
+              </>
+            ) : isInvestor ? (
+              <>
+                Discover <span className="text-gradient">Investment Opportunities</span>
               </>
             ) : (
               <>
@@ -296,6 +302,8 @@ const Solutions = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {isEnterprise
               ? 'Review solutions submitted to your posted problems'
+              : isInvestor
+              ? 'Browse approved solutions from innovators solving real-world challenges'
               : 'Discover accepted solutions from innovators tackling real-world challenges'}
           </p>
         </div>
@@ -388,8 +396,24 @@ const Solutions = () => {
                 renderSolutionsGrid(filteredMyProblems, true)
               )}
             </>
+          ) : isInvestor ? (
+            // Investors see all approved public solutions
+            <>
+              {isLoading ? (
+                <InnovexaSolutionsGridSkeleton cards={6} />
+              ) : filteredApproved.length === 0 ? (
+                <EmptyState 
+                  message={searchQuery || categoryFilter !== 'all'
+                    ? 'Try adjusting your search or filters'
+                    : 'No approved solutions available yet.'}
+                  showExplore={false}
+                />
+              ) : (
+                renderSolutionsGrid(filteredApproved, true)
+              )}
+            </>
           ) : (
-            // Non-innovators and non-enterprise only see approved solutions
+            // Non-authenticated users see approved solutions
             <>
               {isLoading ? (
                 <InnovexaSolutionsGridSkeleton cards={6} />

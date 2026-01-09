@@ -392,6 +392,7 @@ export type Database = {
           timeline_weeks: number | null
           title: string
           updated_at: string
+          visibility: string
         }
         Insert: {
           ai_evaluation?: string | null
@@ -409,6 +410,7 @@ export type Database = {
           timeline_weeks?: number | null
           title: string
           updated_at?: string
+          visibility?: string
         }
         Update: {
           ai_evaluation?: string | null
@@ -426,6 +428,7 @@ export type Database = {
           timeline_weeks?: number | null
           title?: string
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {
