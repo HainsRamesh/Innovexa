@@ -58,6 +58,15 @@ export const useBookmarks = () => {
         return;
       }
 
+      // Validate that at least one entity ID is provided
+      if (!problemId && !solutionId && !innovationId) {
+        console.error('toggleBookmark called without any entity ID');
+        toast.error('Error', {
+          description: 'No item specified to bookmark',
+        });
+        return;
+      }
+
       const existingBookmark = bookmarks.find(
         (b) =>
           (problemId && b.problem_id === problemId) ||
@@ -67,7 +76,7 @@ export const useBookmarks = () => {
 
       try {
         if (existingBookmark) {
-          // Remove bookmark
+          // Remove bookmark (DELETE)
           const { error } = await supabase
             .from('bookmarks')
             .delete()
@@ -80,19 +89,46 @@ export const useBookmarks = () => {
             duration: 3000,
           });
         } else {
-          // Add bookmark
+          // Add bookmark (INSERT) - only set the specific entity ID, others remain null
+          const insertData: {
+            user_id: string;
+            problem_id?: string | null;
+            solution_id?: string | null;
+            innovation_id?: string | null;
+          } = {
+            user_id: user.id,
+          };
+
+          // Only set the relevant entity ID
+          if (problemId) {
+            insertData.problem_id = problemId;
+          }
+          if (solutionId) {
+            insertData.solution_id = solutionId;
+          }
+          if (innovationId) {
+            insertData.innovation_id = innovationId;
+          }
+
           const { data, error } = await supabase
             .from('bookmarks')
-            .insert({
-              user_id: user.id,
-              problem_id: problemId || null,
-              solution_id: solutionId || null,
-              innovation_id: innovationId || null,
-            })
+            .insert(insertData)
             .select()
             .single();
 
-          if (error) throw error;
+          if (error) {
+            // Handle duplicate constraint error gracefully
+            if (error.code === '23505') {
+              toast.info('Already bookmarked', {
+                description: 'This item is already in your bookmarks',
+              });
+              // Refetch to sync state
+              fetchBookmarks();
+              return;
+            }
+            throw error;
+          }
+          
           setBookmarks((prev) => [...prev, data as Bookmark]);
           toast.success('Bookmarked', {
             description: 'Item added to your bookmarks',
@@ -103,14 +139,16 @@ export const useBookmarks = () => {
             },
           });
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error toggling bookmark:', error);
-        toast.error('Error', {
-          description: 'Failed to update bookmark',
+        // Show detailed error message for debugging
+        const errorMessage = error?.message || 'Failed to update bookmark';
+        toast.error('Bookmark Error', {
+          description: errorMessage,
         });
       }
     },
-    [user, bookmarks, navigate]
+    [user, bookmarks, navigate, fetchBookmarks]
   );
 
   return {
