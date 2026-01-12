@@ -74,7 +74,7 @@ const Auth = () => {
       case "investor":
         return "/innovations";
       case "enterprise":
-        return "/explore/problems";
+        return "/explore";
       default:
         return "/innovations";
     }

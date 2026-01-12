@@ -87,7 +87,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
       case 'investor':
         return <Navigate to="/innovations" replace />;
       case 'enterprise':
-        return <Navigate to="/explore/problems" replace />;
+        return <Navigate to="/explore" replace />;
       default:
         return <Navigate to="/innovations" replace />;
     }
@@ -161,10 +161,10 @@ const AppRoutes = () => {
       <Route path="/innovations/:innovationId/edit" element={
         <ProtectedRoute><EditInnovation /></ProtectedRoute>
       } />
-      <Route path="/explore" element={<Navigate to="/explore/problems" replace />} />
-      <Route path="/explore/problems" element={
+      <Route path="/explore" element={
         <ProtectedRoute><ExploreProblems /></ProtectedRoute>
       } />
+      <Route path="/explore/problems" element={<Navigate to="/explore" replace />} />
       <Route path="/explore/:problemId" element={
         <ProtectedRoute><ProblemDetails /></ProtectedRoute>
       } />
