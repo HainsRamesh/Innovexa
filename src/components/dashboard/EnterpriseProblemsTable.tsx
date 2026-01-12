@@ -25,6 +25,9 @@ interface EnterpriseProblemsTableProps {
   onView: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onViewAll?: () => void;
+  showViewAll?: boolean;
+  limit?: number;
 }
 
 const getStatusBadge = (status: ProblemStatus) => {
@@ -50,7 +53,13 @@ export const EnterpriseProblemsTable = ({
   onView,
   onEdit,
   onDelete,
+  onViewAll,
+  showViewAll = false,
+  limit,
 }: EnterpriseProblemsTableProps) => {
+  // Apply limit if specified
+  const displayedProblems = limit ? problems.slice(0, limit) : problems;
+
   return (
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-4">
@@ -59,9 +68,21 @@ export const EnterpriseProblemsTable = ({
             <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
             My Problems
           </CardTitle>
-          <Badge variant="secondary" className="text-xs">
-            {problems.length} Problems
-          </Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary" className="text-xs">
+              {problems.length} Problems
+            </Badge>
+            {showViewAll && onViewAll && problems.length > (limit || 0) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onViewAll}
+                className="text-xs h-7"
+              >
+                View All
+              </Button>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent>
@@ -79,14 +100,14 @@ export const EnterpriseProblemsTable = ({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {problems.length === 0 ? (
+              {displayedProblems.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     No problems posted yet
                   </TableCell>
                 </TableRow>
               ) : (
-                problems.map((problem, index) => (
+                displayedProblems.map((problem, index) => (
                   <TableRow
                     key={problem.id}
                     className="hover:bg-muted/20 transition-colors border-border/30"
