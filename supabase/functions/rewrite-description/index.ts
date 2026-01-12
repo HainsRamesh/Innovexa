@@ -1,4 +1,5 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+// Edge runtime types are provided by the platform.
+
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
