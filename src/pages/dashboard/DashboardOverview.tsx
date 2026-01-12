@@ -338,13 +338,17 @@ const DashboardOverview = () => {
       <DashboardFilters />
 
       {/* Charts Row - Aligned with consistent heights */}
-      <div className="grid lg:grid-cols-2 gap-4 items-stretch">
-        <DemoTrendsChart
-          dailyData={chartData.daily}
-          weeklyData={chartData.weekly}
-          monthlyData={chartData.monthly}
-        />
-        <RoleAwareProgressChart role={role} data={roleProgressData} isLoading={progressLoading} />
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="min-h-[340px]">
+          <DemoTrendsChart
+            dailyData={chartData.daily}
+            weeklyData={chartData.weekly}
+            monthlyData={chartData.monthly}
+          />
+        </div>
+        <div className="min-h-[340px]">
+          <RoleAwareProgressChart role={role} data={roleProgressData} isLoading={progressLoading} />
+        </div>
       </div>
 
       {/* Role-specific Tables */}
