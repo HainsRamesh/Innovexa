@@ -15,10 +15,12 @@ import { Problem } from '@/types';
 import { ProblemCard } from '@/components/dashboard/ProblemCard';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
 import { useToast } from '@/hooks/use-toast';
+import { useBookmarks } from '@/hooks/useBookmarks';
 
 const BrowseProblemsPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
   const [problems, setProblems] = useState<Problem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +89,10 @@ const BrowseProblemsPage = () => {
       setIsDeleting(false);
       setDeleteTarget(null);
     }
+  };
+
+  const handleToggleBookmark = (problemId: string) => {
+    toggleBookmark(problemId, undefined, undefined);
   };
 
   const filteredProblems = problems
@@ -203,6 +209,8 @@ const BrowseProblemsPage = () => {
               onDelete={handleDeleteClick}
               showOwnerActions={true}
               basePath="/dashboard/problems"
+              isBookmarked={isBookmarked(problem.id)}
+              onBookmark={handleToggleBookmark}
             />
           ))}
         </div>

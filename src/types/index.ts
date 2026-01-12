@@ -91,6 +91,7 @@ export interface Bookmark {
   user_id: string;
   problem_id: string | null;
   solution_id: string | null;
+  innovation_id: string | null;
   created_at: string;
 }
 

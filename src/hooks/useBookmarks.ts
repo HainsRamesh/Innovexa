@@ -38,18 +38,19 @@ export const useBookmarks = () => {
   }, [fetchBookmarks]);
 
   const isBookmarked = useCallback(
-    (problemId?: string, solutionId?: string) => {
+    (problemId?: string, solutionId?: string, innovationId?: string) => {
       return bookmarks.some(
         (b) =>
           (problemId && b.problem_id === problemId) ||
-          (solutionId && b.solution_id === solutionId)
+          (solutionId && b.solution_id === solutionId) ||
+          (innovationId && b.innovation_id === innovationId)
       );
     },
     [bookmarks]
   );
 
   const toggleBookmark = useCallback(
-    async (problemId?: string, solutionId?: string) => {
+    async (problemId?: string, solutionId?: string, innovationId?: string) => {
       if (!user) {
         toast.error('Sign in required', {
           description: 'Please sign in to bookmark items',
@@ -60,7 +61,8 @@ export const useBookmarks = () => {
       const existingBookmark = bookmarks.find(
         (b) =>
           (problemId && b.problem_id === problemId) ||
-          (solutionId && b.solution_id === solutionId)
+          (solutionId && b.solution_id === solutionId) ||
+          (innovationId && b.innovation_id === innovationId)
       );
 
       try {
@@ -85,6 +87,7 @@ export const useBookmarks = () => {
               user_id: user.id,
               problem_id: problemId || null,
               solution_id: solutionId || null,
+              innovation_id: innovationId || null,
             })
             .select()
             .single();

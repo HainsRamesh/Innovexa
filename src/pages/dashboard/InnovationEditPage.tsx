@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, ArrowLeft, Save } from 'lucide-react';
+import { Loader2, ArrowLeft, Save, Upload, ImageIcon, X } from 'lucide-react';
 import { Innovation, InnovationCategory, InnovationStatus } from '@/types';
 import { toast } from 'sonner';
 
@@ -23,8 +23,10 @@ const InnovationEditPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     tagline: '',
@@ -83,6 +85,47 @@ const InnovationEditPage = () => {
       navigate('/dashboard/innovations');
     } else {
       navigate('/dashboard/innovations');
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image must be less than 5MB');
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user?.id}/${innovationId}/cover-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('innovations')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('innovations')
+        .getPublicUrl(fileName);
+
+      setFormData(prev => ({ ...prev, cover_image_url: publicUrl }));
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -232,18 +275,76 @@ const InnovationEditPage = () => {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Media</CardTitle>
+              <CardTitle>Cover Image *</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="cover_image_url">Cover Image URL *</Label>
-                <Input
-                  id="cover_image_url"
-                  value={formData.cover_image_url}
-                  onChange={(e) => setFormData(prev => ({ ...prev, cover_image_url: e.target.value }))}
-                  placeholder="https://example.com/image.jpg"
-                />
+              {/* Image Preview */}
+              <div className="aspect-video rounded-lg overflow-hidden bg-muted relative">
+                {formData.cover_image_url ? (
+                  <>
+                    <img 
+                      src={formData.cover_image_url} 
+                      alt="Cover preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute top-2 right-2 h-8 w-8"
+                      onClick={() => setFormData(prev => ({ ...prev, cover_image_url: '' }))}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+                    <ImageIcon className="h-12 w-12 mb-2" />
+                    <p className="text-sm">No cover image</p>
+                  </div>
+                )}
               </div>
+
+              {/* Upload Button */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    {formData.cover_image_url ? 'Change Image' : 'Upload Image'}
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center">
+                Supports JPG, PNG, GIF up to 5MB
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Video</CardTitle>
+            </CardHeader>
+            <CardContent>
               <div className="space-y-2">
                 <Label htmlFor="video_url">Video URL (YouTube/Vimeo)</Label>
                 <Input
@@ -253,18 +354,6 @@ const InnovationEditPage = () => {
                   placeholder="https://youtube.com/watch?v=..."
                 />
               </div>
-              {formData.cover_image_url && (
-                <div className="aspect-video rounded-lg overflow-hidden bg-muted">
-                  <img 
-                    src={formData.cover_image_url} 
-                    alt="Cover preview" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
             </CardContent>
           </Card>
 
