@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, Save, Camera, Loader2 } from 'lucide-react';
 
@@ -20,6 +21,8 @@ const Profile = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
@@ -48,6 +51,9 @@ const Profile = () => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
 
+    // Reset file input so same file can be selected again
+    e.target.value = '';
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({
@@ -58,33 +64,44 @@ const Profile = () => {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 5MB for original, will be compressed after crop)
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: 'File too large',
-        description: 'Please select an image smaller than 2MB',
+        description: 'Please select an image smaller than 5MB',
         variant: 'destructive',
       });
       return;
     }
 
-    // Create preview
+    // Read file and open crop modal
     const reader = new FileReader();
     reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
+      setSelectedImageSrc(reader.result as string);
+      setCropModalOpen(true);
     };
     reader.readAsDataURL(file);
+  };
 
-    // Upload to storage
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      // Create preview from cropped blob
+      const previewUrl = URL.createObjectURL(croppedBlob);
+      setAvatarPreview(previewUrl);
+
+      // Upload cropped image to storage
+      const fileName = `${Date.now()}.jpg`;
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg',
+        });
 
       if (uploadError) throw uploadError;
 
@@ -96,6 +113,9 @@ const Profile = () => {
       // Update profile with new avatar URL
       const { error: updateError } = await updateProfile({ avatar_url: publicUrl });
       if (updateError) throw updateError;
+
+      setCropModalOpen(false);
+      setSelectedImageSrc(null);
 
       toast({
         title: 'Avatar updated',
@@ -111,6 +131,13 @@ const Profile = () => {
       });
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleCropModalClose = () => {
+    if (!isUploading) {
+      setCropModalOpen(false);
+      setSelectedImageSrc(null);
     }
   };
 
@@ -208,11 +235,22 @@ const Profile = () => {
                     onClick={handleAvatarClick}
                     disabled={isUploading}
                   >
-                    {isUploading ? 'Uploading...' : 'Change Picture'}
+                    Change Picture
                   </Button>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Avatar Crop Modal */}
+            {selectedImageSrc && (
+              <AvatarCropModal
+                open={cropModalOpen}
+                onClose={handleCropModalClose}
+                imageSrc={selectedImageSrc}
+                onCropComplete={handleCropComplete}
+                isUploading={isUploading}
+              />
+            )}
 
             {/* Personal Info */}
             <Card>
