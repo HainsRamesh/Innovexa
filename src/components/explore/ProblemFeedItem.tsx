@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Heart, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar } from "lucide-react";
+import { Heart, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Problem, Solution } from "@/types";
 import { SolutionDetailDialog } from "@/components/solutions/SolutionDetailDialog";
+import { InvestorInterestModal } from "@/components/investor/InvestorInterestModal";
+import { InvestorReadyBadge } from "@/components/investor/InvestorReadyBadge";
+import { useHasApprovedSolutions, useInvestorInterests } from "@/hooks/useInvestorInterests";
 
 interface ProblemFeedItemProps {
   problem: Problem & { like_count?: number; solutions_count?: number };
@@ -40,8 +43,14 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
   const [showSolutionDetail, setShowSolutionDetail] = useState(false);
 
+  // Investor interest state
+  const [showInvestorModal, setShowInvestorModal] = useState(false);
+  const { hasApproved } = useHasApprovedSolutions(problem.id);
+  const { count: interestCount, hasUserInterest, refetch: refetchInterests } = useInvestorInterests("problem", problem.id);
+
   const isInnovator = role === "innovator";
   const isEnterprise = role === "enterprise";
+  const isInvestor = role === "investor";
   const isProblemOwner = user?.id === problem.owner_id;
   
   const descriptionLimit = 300;
@@ -178,9 +187,18 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
               · {format(new Date(problem.created_at), "MMM d, yyyy")}
             </span>
           </div>
-          <Badge variant={problem.category as any} className="mt-1">
-            {problem.category}
-          </Badge>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <Badge variant={problem.category as any}>
+              {problem.category}
+            </Badge>
+            {hasApproved && (
+              <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Approved Solutions
+              </Badge>
+            )}
+            <InvestorReadyBadge targetType="problem" targetId={problem.id} />
+          </div>
         </div>
       </div>
 
@@ -257,7 +275,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center gap-2 pt-3">
+      <div className="flex items-center gap-2 pt-3 flex-wrap">
         <Button
           variant="ghost"
           size="sm"
@@ -277,6 +295,24 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
           <MessageCircle className="h-5 w-5 mr-2" />
           Solutions ({solutions.length > 0 ? solutions.length : solutionsCount})
         </Button>
+
+        {/* Investor Ready to Invest CTA */}
+        {isInvestor && hasApproved && !hasUserInterest && (
+          <Button
+            size="sm"
+            onClick={() => setShowInvestorModal(true)}
+            className="ml-auto bg-emerald-600 hover:bg-emerald-700"
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Ready to Invest
+          </Button>
+        )}
+        {isInvestor && hasUserInterest && (
+          <Badge variant="outline" className="ml-auto text-emerald-500 border-emerald-500/30">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Interest Submitted
+          </Badge>
+        )}
       </div>
 
       {/* Comments/Solutions Section */}
@@ -378,6 +414,16 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
           onOpenChange={setShowSolutionDetail}
         />
       )}
+
+      {/* Investor Interest Modal */}
+      <InvestorInterestModal
+        open={showInvestorModal}
+        onOpenChange={setShowInvestorModal}
+        targetType="problem"
+        targetId={problem.id}
+        targetTitle={problem.title}
+        onSuccess={refetchInterests}
+      />
     </article>
   );
 }

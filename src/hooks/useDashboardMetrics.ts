@@ -19,11 +19,11 @@ interface EnterpriseMetrics {
   problemsPosted: number;
   totalSolutionsReceived: number;
   solutionsApproved: number;
-  totalBudgetAllotted: number;
+  videosWatched: number;
   problemsTrend: number;
   solutionsTrend: number;
   approvedTrend: number;
-  budgetTrend: number;
+  videosTrend: number;
   trendLabel: string;
 }
 
@@ -162,25 +162,30 @@ export const useDashboardMetrics = (userId: string | undefined, role: AppRole | 
       const problems = problemsData || [];
       const problemIds = problems.map(p => p.id);
 
+      // Fetch solutions for problems
       const { data: solutionsData } = await supabase
         .from('solutions')
         .select('id, status, problem_id, estimated_cost, created_at')
         .in('problem_id', problemIds.length > 0 ? problemIds : ['00000000-0000-0000-0000-000000000000']);
 
+      // Fetch videos watched from enterprise_innovation_views
+      const { data: viewsData } = await supabase
+        .from('enterprise_innovation_views')
+        .select('id, created_at')
+        .eq('enterprise_user_id', userId);
+
       const solutions = solutionsData || [];
+      const views = viewsData || [];
       const problemsPosted = problems.length;
       const totalSolutionsReceived = solutions.length;
       const solutionsApproved = solutions.filter(s => s.status === 'accepted').length;
-      
-      const totalBudgetAllotted = solutions
-        .filter(s => s.status === 'accepted')
-        .reduce((sum, s) => sum + (s.estimated_cost || 0), 0);
+      const videosWatched = views.length;
 
       let trendLabel = 'New account';
       let problemsTrend = 0;
       let solutionsTrend = 0;
       let approvedTrend = 0;
-      let budgetTrend = 0;
+      let videosTrend = 0;
 
       if (dateRanges) {
         trendLabel = dateRanges.type === 'yesterday' ? 'Since yesterday' : 
@@ -206,21 +211,31 @@ export const useDashboardMetrics = (userId: string | undefined, role: AppRole | 
           return date >= dateRanges.previous.start && date <= dateRanges.previous.end;
         }).length;
 
+        const currentViews = views.filter(v => {
+          const date = new Date(v.created_at);
+          return date >= dateRanges.current.start && date <= dateRanges.current.end;
+        }).length;
+        
+        const previousViews = views.filter(v => {
+          const date = new Date(v.created_at);
+          return date >= dateRanges.previous.start && date <= dateRanges.previous.end;
+        }).length;
+
         problemsTrend = calculateTrendByAccountAge(accountCreatedAt, currentProblems, previousProblems).percentage;
         solutionsTrend = calculateTrendByAccountAge(accountCreatedAt, currentSolutions, previousSolutions).percentage;
         approvedTrend = solutionsApproved > 0 ? Math.min(Math.floor((solutionsApproved / Math.max(totalSolutionsReceived, 1)) * 20), 50) : 0;
-        budgetTrend = totalBudgetAllotted > 0 ? Math.min(Math.floor(totalBudgetAllotted / 10000), 25) : 0;
+        videosTrend = calculateTrendByAccountAge(accountCreatedAt, currentViews, previousViews).percentage;
       }
 
       setMetrics({
         problemsPosted,
         totalSolutionsReceived,
         solutionsApproved,
-        totalBudgetAllotted,
+        videosWatched,
         problemsTrend,
         solutionsTrend,
         approvedTrend,
-        budgetTrend,
+        videosTrend,
         trendLabel,
       });
     };
