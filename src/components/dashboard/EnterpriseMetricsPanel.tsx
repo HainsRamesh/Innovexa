@@ -1,31 +1,21 @@
-import { FileText, Inbox, CheckCircle2, DollarSign } from 'lucide-react';
+import { FileText, Inbox, CheckCircle2, PlayCircle } from 'lucide-react';
 import { AnimatedMetricCard } from './AnimatedMetricCard';
 
 interface EnterpriseMetrics {
   problemsPosted: number;
   totalSolutionsReceived: number;
   solutionsApproved: number;
-  totalBudgetAllotted: number;
+  videosWatched: number;
   problemsTrend: number;
   solutionsTrend: number;
   approvedTrend: number;
-  budgetTrend: number;
+  videosTrend: number;
   trendLabel: string;
 }
 
 interface EnterpriseMetricsPanelProps {
   metrics: EnterpriseMetrics;
 }
-
-const formatBudget = (value: number): string => {
-  if (value >= 1000000) {
-    return '$' + (value / 1000000).toFixed(1) + 'M';
-  }
-  if (value >= 1000) {
-    return '$' + (value / 1000).toFixed(1) + 'K';
-  }
-  return '$' + value.toLocaleString();
-};
 
 export const EnterpriseMetricsPanel = ({ metrics }: EnterpriseMetricsPanelProps) => {
   return (
@@ -52,12 +42,11 @@ export const EnterpriseMetricsPanel = ({ metrics }: EnterpriseMetricsPanelProps)
         trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
-        title="Budget Allotted"
-        value={metrics.totalBudgetAllotted}
-        icon={<DollarSign className="h-6 w-6" />}
-        trend={metrics.budgetTrend}
+        title="Videos Watched"
+        value={metrics.videosWatched}
+        icon={<PlayCircle className="h-6 w-6" />}
+        trend={metrics.videosTrend}
         trendLabel={metrics.trendLabel}
-        formatValue={formatBudget}
       />
     </div>
   );

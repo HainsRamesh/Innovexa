@@ -239,6 +239,60 @@ export type Database = {
           },
         ]
       }
+      investor_interests: {
+        Row: {
+          created_at: string
+          id: string
+          innovation_id: string | null
+          interest_type: string
+          investment_range: string | null
+          investor_id: string
+          investor_name: string
+          message: string | null
+          problem_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          innovation_id?: string | null
+          interest_type: string
+          investment_range?: string | null
+          investor_id: string
+          investor_name: string
+          message?: string | null
+          problem_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          innovation_id?: string | null
+          interest_type?: string
+          investment_range?: string | null
+          investor_id?: string
+          investor_name?: string
+          message?: string | null
+          problem_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investor_interests_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_interests_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       problem_likes: {
         Row: {
           created_at: string
