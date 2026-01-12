@@ -55,7 +55,7 @@ const ExploreProblems = () => {
     try {
       let query = supabase
         .from('problems')
-        .select('*')
+        .select('*, like_count, solutions_count')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
@@ -143,7 +143,48 @@ const ExploreProblems = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <main className="pt-24 pb-16">
+      {/* Filters - Sticky directly below navbar */}
+      <div className="sticky top-16 z-30 bg-background border-b border-border">
+        <div className="container mx-auto px-4 max-w-3xl py-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search problems..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="All Categories" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="technology">Technology</SelectItem>
+                <SelectItem value="healthcare">Healthcare</SelectItem>
+                <SelectItem value="sustainability">Sustainability</SelectItem>
+                <SelectItem value="finance">Finance</SelectItem>
+                <SelectItem value="education">Education</SelectItem>
+                <SelectItem value="infrastructure">Infrastructure</SelectItem>
+                <SelectItem value="manufacturing">Manufacturing</SelectItem>
+                <SelectItem value="agriculture">Agriculture</SelectItem>
+              </SelectContent>
+            </Select>
+            {canPostProblems && (
+              <Button asChild>
+                <Link to="/problems/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Post
+                </Link>
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <main className="pt-8 pb-16">
         <div className="container mx-auto px-4 max-w-3xl">
           {/* Header */}
           <div className="text-center mb-8">
@@ -158,46 +199,6 @@ const ExploreProblems = () => {
               Discover challenges and submit your innovative solutions
             </p>
           </div>
-
-          {/* Filters */}
-          <div className="bg-card border border-border rounded-xl p-4 mb-6 sticky top-20 z-10">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search problems..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="All Categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="technology">Technology</SelectItem>
-                  <SelectItem value="healthcare">Healthcare</SelectItem>
-                  <SelectItem value="sustainability">Sustainability</SelectItem>
-                  <SelectItem value="finance">Finance</SelectItem>
-                  <SelectItem value="education">Education</SelectItem>
-                  <SelectItem value="infrastructure">Infrastructure</SelectItem>
-                  <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                  <SelectItem value="agriculture">Agriculture</SelectItem>
-                </SelectContent>
-              </Select>
-              {canPostProblems && (
-                <Button asChild>
-                  <Link to="/problems/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Post
-                  </Link>
-                </Button>
-              )}
-            </div>
-          </div>
-
           {/* Problems Feed */}
           {isLoading ? (
             <div className="flex items-center justify-center py-16">

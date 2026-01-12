@@ -25,7 +25,8 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   const [showComments, setShowComments] = useState(false);
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
-  const [likeCount, setLikeCount] = useState(problem.like_count || 0);
+  const [likeCount, setLikeCount] = useState(problem.like_count ?? 0);
+  const [solutionsCount, setSolutionsCount] = useState(problem.solutions_count ?? 0);
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   
@@ -252,7 +253,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
       {/* Engagement Stats Bar */}
       <div className="flex items-center gap-4 py-3 border-t border-b border-border/50 text-sm text-muted-foreground">
         <span>{likeCount} likes</span>
-        <span>{problem.solutions_count || solutions.length} solutions</span>
+        <span>{solutions.length > 0 ? solutions.length : solutionsCount} solutions</span>
       </div>
 
       {/* Action Buttons */}
@@ -274,7 +275,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
           onClick={() => setShowComments(!showComments)}
         >
           <MessageCircle className="h-5 w-5 mr-2" />
-          Solutions ({problem.solutions_count || solutions.length})
+          Solutions ({solutions.length > 0 ? solutions.length : solutionsCount})
         </Button>
       </div>
 
