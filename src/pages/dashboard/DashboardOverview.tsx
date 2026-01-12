@@ -337,8 +337,8 @@ const DashboardOverview = () => {
       {/* Filters */}
       <DashboardFilters />
 
-      {/* Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      {/* Charts Row - Aligned with consistent heights */}
+      <div className="grid lg:grid-cols-2 gap-4 items-stretch">
         <DemoTrendsChart
           dailyData={chartData.daily}
           weeklyData={chartData.weekly}
