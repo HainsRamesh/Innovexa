@@ -26,7 +26,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
   const [likeCount, setLikeCount] = useState(problem.like_count ?? 0);
-  const [solutionsCount, setSolutionsCount] = useState(problem.solutions_count ?? 0);
+  const solutionsCount = problem.solutions_count ?? 0;
   const [isLiked, setIsLiked] = useState(false);
   const [isLiking, setIsLiking] = useState(false);
   

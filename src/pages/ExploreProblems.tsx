@@ -77,27 +77,51 @@ const ExploreProblems = () => {
       const newProblems = (data as ProblemWithCounts[]) || [];
       setHasMore(newProblems.length === PROBLEMS_PER_PAGE);
 
+      // Ensure accurate solution counts on first render (backend-derived)
+      let solutionCountMap: Record<string, number> = {};
+      if (newProblems.length > 0) {
+        const problemIds = newProblems.map((p) => p.id);
+        const { data: solutionRows, error: solutionsError } = await supabase
+          .from("solutions")
+          .select("problem_id")
+          .in("problem_id", problemIds)
+          .neq("status", "draft");
+
+        if (!solutionsError && solutionRows) {
+          solutionCountMap = solutionRows.reduce((acc, row) => {
+            const pid = row.problem_id as string;
+            acc[pid] = (acc[pid] ?? 0) + 1;
+            return acc;
+          }, {} as Record<string, number>);
+        }
+      }
+
+      const newProblemsWithCounts = newProblems.map((p) => ({
+        ...p,
+        solutions_count: solutionCountMap[p.id] ?? p.solutions_count ?? 0,
+      }));
+
       if (reset) {
-        setProblems(newProblems);
+        setProblems(newProblemsWithCounts);
       } else {
-        setProblems(prev => [...prev, ...newProblems]);
+        setProblems((prev) => [...prev, ...newProblemsWithCounts]);
       }
 
       // Fetch profiles for new problems
-      const ownerIds = [...new Set(newProblems.map(p => p.owner_id))];
+      const ownerIds = [...new Set(newProblemsWithCounts.map((p) => p.owner_id))];
       if (ownerIds.length > 0) {
         const { data: profilesData } = await supabase
-          .from('public_profiles')
-          .select('id, full_name, avatar_url')
-          .in('id', ownerIds);
+          .from("public_profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", ownerIds);
 
         if (profilesData) {
           const profileMap = profilesData.reduce((acc, profile) => {
             acc[profile.id] = { full_name: profile.full_name, avatar_url: profile.avatar_url };
             return acc;
           }, {} as Record<string, { full_name: string | null; avatar_url: string | null }>);
-          
-          setProfiles(prev => ({ ...prev, ...profileMap }));
+
+          setProfiles((prev) => ({ ...prev, ...profileMap }));
         }
       }
     } catch (error) {
