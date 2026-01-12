@@ -11,7 +11,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Explore from "./pages/Explore";
+import ExplorePage from "./pages/Explore";
 import ExploreProblems from "./pages/ExploreProblems";
 import ProblemDetails from "./pages/ProblemDetails";
 import Solutions from "./pages/Solutions";
@@ -163,7 +163,7 @@ const AppRoutes = () => {
         <ProtectedRoute><EditInnovation /></ProtectedRoute>
       } />
       <Route path="/explore" element={
-        <ProtectedRoute><Explore /></ProtectedRoute>
+        <ProtectedRoute><ExplorePage /></ProtectedRoute>
       } />
       <Route path="/explore/problems" element={
         <ProtectedRoute><ExploreProblems /></ProtectedRoute>
