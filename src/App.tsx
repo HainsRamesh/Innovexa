@@ -12,6 +12,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Explore from "./pages/Explore";
+import ExploreProblems from "./pages/ExploreProblems";
 import ProblemDetails from "./pages/ProblemDetails";
 import Solutions from "./pages/Solutions";
 import About from "./pages/About";
@@ -87,7 +88,7 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
       case 'investor':
         return <Navigate to="/innovations" replace />;
       case 'enterprise':
-        return <Navigate to="/explore" replace />;
+        return <Navigate to="/explore/problems" replace />;
       default:
         return <Navigate to="/innovations" replace />;
     }
@@ -163,6 +164,9 @@ const AppRoutes = () => {
       } />
       <Route path="/explore" element={
         <ProtectedRoute><Explore /></ProtectedRoute>
+      } />
+      <Route path="/explore/problems" element={
+        <ProtectedRoute><ExploreProblems /></ProtectedRoute>
       } />
       <Route path="/explore/:problemId" element={
         <ProtectedRoute><ProblemDetails /></ProtectedRoute>

@@ -63,6 +63,30 @@ export type Database = {
           },
         ]
       }
+      enterprise_innovation_views: {
+        Row: {
+          created_at: string
+          enterprise_user_id: string
+          id: string
+          innovation_id: string
+          view_date: string
+        }
+        Insert: {
+          created_at?: string
+          enterprise_user_id: string
+          id?: string
+          innovation_id: string
+          view_date?: string
+        }
+        Update: {
+          created_at?: string
+          enterprise_user_id?: string
+          id?: string
+          innovation_id?: string
+          view_date?: string
+        }
+        Relationships: []
+      }
       innovation_likes: {
         Row: {
           created_at: string
@@ -215,6 +239,38 @@ export type Database = {
           },
         ]
       }
+      problem_likes: {
+        Row: {
+          created_at: string
+          id: string
+          problem_id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          problem_id: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          problem_id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_likes_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       problems: {
         Row: {
           ai_complexity_score: number | null
@@ -227,8 +283,10 @@ export type Database = {
           description: string
           id: string
           industry: string | null
+          like_count: number | null
           owner_id: string
           requirements: string[] | null
+          solutions_count: number | null
           status: Database["public"]["Enums"]["problem_status"]
           tags: string[] | null
           title: string
@@ -246,8 +304,10 @@ export type Database = {
           description: string
           id?: string
           industry?: string | null
+          like_count?: number | null
           owner_id: string
           requirements?: string[] | null
+          solutions_count?: number | null
           status?: Database["public"]["Enums"]["problem_status"]
           tags?: string[] | null
           title: string
@@ -265,8 +325,10 @@ export type Database = {
           description?: string
           id?: string
           industry?: string | null
+          like_count?: number | null
           owner_id?: string
           requirements?: string[] | null
+          solutions_count?: number | null
           status?: Database["public"]["Enums"]["problem_status"]
           tags?: string[] | null
           title?: string
@@ -493,6 +555,10 @@ export type Database = {
         Returns: boolean
       }
       increment_innovation_view_count: {
+        Args: { _innovation_id: string }
+        Returns: undefined
+      }
+      track_enterprise_video_view: {
         Args: { _innovation_id: string }
         Returns: undefined
       }
