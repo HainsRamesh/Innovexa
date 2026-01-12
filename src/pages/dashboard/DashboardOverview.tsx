@@ -12,6 +12,7 @@ import { ProductTrackerTable, ProductData } from '@/components/dashboard/Product
 import { EnterpriseProblemsTable } from '@/components/dashboard/EnterpriseProblemsTable';
 import { InvestorPortfolioTable } from '@/components/dashboard/InvestorPortfolioTable';
 import { DemoTrendsChart } from '@/components/dashboard/DemoTrendsChart';
+import { EnterpriseProblemTrendsChart } from '@/components/dashboard/EnterpriseProblemTrendsChart';
 import { RoleAwareProgressChart } from '@/components/dashboard/RoleAwareProgressChart';
 import { useRoleProgressData } from '@/hooks/useRoleProgressData';
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
@@ -340,11 +341,15 @@ const DashboardOverview = () => {
       {/* Charts Row - Aligned with consistent heights */}
       <div className="grid lg:grid-cols-2 gap-4">
         <div className="min-h-[340px]">
-          <DemoTrendsChart
-            dailyData={chartData.daily}
-            weeklyData={chartData.weekly}
-            monthlyData={chartData.monthly}
-          />
+          {role === 'enterprise' ? (
+            <EnterpriseProblemTrendsChart />
+          ) : (
+            <DemoTrendsChart
+              dailyData={chartData.daily}
+              weeklyData={chartData.weekly}
+              monthlyData={chartData.monthly}
+            />
+          )}
         </div>
         <div className="min-h-[340px]">
           <RoleAwareProgressChart role={role} data={roleProgressData} isLoading={progressLoading} />
