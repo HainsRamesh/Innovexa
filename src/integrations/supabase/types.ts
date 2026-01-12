@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          innovation_id: string | null
           problem_id: string | null
           solution_id: string | null
           user_id: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          innovation_id?: string | null
           problem_id?: string | null
           solution_id?: string | null
           user_id: string
@@ -32,11 +34,19 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          innovation_id?: string | null
           problem_id?: string | null
           solution_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookmarks_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookmarks_problem_id_fkey"
             columns: ["problem_id"]
