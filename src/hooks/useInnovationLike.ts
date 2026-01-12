@@ -1,5 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const getSessionId = (): string => {
   const key = 'innovation_session_id';
@@ -17,62 +20,83 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
   const [isLoading, setIsLoading] = useState(false);
   const sessionId = getSessionId();
 
+  // Create a Supabase client that sends the session header so RLS can see it
+  const supabaseWithSession = useMemo(
+    () =>
+      createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        global: {
+          headers: {
+            'x-innovation-session-id': sessionId,
+          },
+        },
+        auth: {
+          storage: localStorage,
+          persistSession: true,
+          autoRefreshToken: true,
+        },
+      }),
+    [sessionId]
+  );
+
   useEffect(() => {
     const checkIfLiked = async () => {
-      const { data } = await supabase
+      const { data } = await supabaseWithSession
         .from('innovation_likes')
         .select('id')
         .eq('innovation_id', innovationId)
         .eq('session_id', sessionId)
         .maybeSingle();
-      
+
       setIsLiked(!!data);
     };
 
     checkIfLiked();
-  }, [innovationId, sessionId]);
+  }, [innovationId, sessionId, supabaseWithSession]);
 
   useEffect(() => {
     setLikeCount(initialLikeCount);
   }, [initialLikeCount]);
 
-  const toggleLike = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (isLoading) return;
+  const toggleLike = useCallback(
+    async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (isLoading) return;
 
-    setIsLoading(true);
-    const previousIsLiked = isLiked;
-    const previousCount = likeCount;
+      setIsLoading(true);
+      const previousIsLiked = isLiked;
+      const previousCount = likeCount;
 
-    // Optimistic update
-    setIsLiked(!isLiked);
-    setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+      // Optimistic update
+      setIsLiked(!isLiked);
+      setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
 
-    try {
-      if (previousIsLiked) {
-        const { error } = await supabase
-          .from('innovation_likes')
-          .delete()
-          .eq('innovation_id', innovationId)
-          .eq('session_id', sessionId);
+      try {
+        if (previousIsLiked) {
+          const { error } = await supabaseWithSession
+            .from('innovation_likes')
+            .delete()
+            .eq('innovation_id', innovationId)
+            .eq('session_id', sessionId);
 
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from('innovation_likes')
-          .insert({ innovation_id: innovationId, session_id: sessionId });
+          if (error) throw error;
+        } else {
+          const { error } = await supabaseWithSession
+            .from('innovation_likes')
+            .insert({ innovation_id: innovationId, session_id: sessionId });
 
-        if (error) throw error;
+          if (error) throw error;
+        }
+      } catch (error) {
+        // Revert on error
+        setIsLiked(previousIsLiked);
+        setLikeCount(previousCount);
+        console.error('Error toggling like:', error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      // Revert on error
-      setIsLiked(previousIsLiked);
-      setLikeCount(previousCount);
-      console.error('Error toggling like:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [innovationId, sessionId, isLiked, likeCount, isLoading]);
+    },
+    [innovationId, sessionId, isLiked, likeCount, isLoading, supabaseWithSession]
+  );
 
   return { isLiked, likeCount, toggleLike, isLoading };
 };
