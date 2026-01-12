@@ -9,7 +9,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Legend,
   Area,
   AreaChart,
 } from 'recharts';
@@ -27,14 +26,14 @@ interface RoleAwareProgressChartProps {
   isLoading?: boolean;
 }
 
-// Refined color palette for dark theme - softer, more professional
+// Premium dark-theme color palette - muted and professional
 const CHART_COLORS = {
-  // Soft Cool Blue - calm, neutral, readable
-  blue: 'hsl(210, 60%, 55%)',
-  // Muted Amber / Warm Gold - not too bright
-  amber: 'hsl(38, 65%, 50%)',
-  // Soft Emerald / Teal Green - subtle but positive
-  emerald: 'hsl(160, 50%, 45%)',
+  // Muted Slate Blue - calm, professional
+  blue: 'hsl(215, 50%, 50%)',
+  // Soft Amber - warm but not bright
+  amber: 'hsl(35, 55%, 50%)',
+  // Muted Teal/Emerald - positive but subtle
+  emerald: 'hsl(165, 45%, 42%)',
 };
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -54,26 +53,48 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 const EmptyState = ({ message }: { message: string }) => (
-  <div className="flex flex-col items-center justify-center h-[260px] text-muted-foreground">
+  <div className="flex flex-col items-center justify-center h-[220px] text-muted-foreground">
     <TrendingUp className="h-10 w-10 mb-3 opacity-40" />
     <p className="text-xs">{message}</p>
   </div>
 );
 
-// Custom legend component for compact styling
-const CustomLegend = ({ payload }: any) => {
-  if (!payload || payload.length === 0) return null;
-  
+// Stat Chip Legend - readable, responsive
+interface StatChipLegendProps {
+  items: Array<{ name: string; color: string; value?: number }>;
+  data: ChartDataPoint[];
+}
+
+const StatChipLegend = ({ items, data }: StatChipLegendProps) => {
+  // Calculate totals from data
+  const totals = items.map((item) => {
+    const key = item.name.toLowerCase().replace(/ /g, '');
+    const matchingKey = Object.keys(data[0] || {}).find(
+      (k) => k.toLowerCase().replace(/[^a-z]/g, '') === key.replace(/[^a-z]/g, '')
+    );
+    
+    if (matchingKey) {
+      return data.reduce((sum, d) => sum + (Number(d[matchingKey]) || 0), 0);
+    }
+    return 0;
+  });
+
   return (
-    <div className="flex items-center justify-center gap-4 pt-3 flex-wrap">
-      {payload.map((entry: any, index: number) => (
-        <div key={index} className="flex items-center gap-1.5">
-          <div 
-            className="w-2 h-2 rounded-full" 
-            style={{ backgroundColor: entry.color }}
+    <div className="flex flex-wrap gap-2 justify-center">
+      {items.map((item, index) => (
+        <div
+          key={item.name}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border/50"
+        >
+          <div
+            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            style={{ backgroundColor: item.color }}
           />
-          <span className="text-[10px] font-medium text-muted-foreground">
-            {entry.value}
+          <span className="text-xs font-medium text-foreground whitespace-nowrap">
+            {item.name}
+          </span>
+          <span className="text-xs text-muted-foreground font-semibold">
+            {totals[index]}
           </span>
         </div>
       ))}
@@ -89,54 +110,64 @@ const InnovatorChart = ({ data }: { data: ChartDataPoint[] }) => {
     (d.solutionsApproved as number) > 0
   );
 
+  const legendItems = [
+    { name: 'Problems Created', color: CHART_COLORS.blue },
+    { name: 'Solutions Submitted', color: CHART_COLORS.amber },
+    { name: 'Solutions Approved', color: CHART_COLORS.emerald },
+  ];
+
   if (!hasData) {
     return <EmptyState message="Start creating problems and solutions to see progress" />;
   }
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
-        <XAxis 
-          dataKey="name" 
-          stroke="hsl(var(--muted-foreground))" 
-          fontSize={10} 
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis 
-          stroke="hsl(var(--muted-foreground))" 
-          fontSize={10} 
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-          width={30}
-        />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
-        <Legend content={<CustomLegend />} />
-        <Bar 
-          dataKey="problemsCreated" 
-          name="Problems Created" 
-          fill={CHART_COLORS.blue} 
-          radius={[3, 3, 0, 0]} 
-          barSize={16}
-        />
-        <Bar 
-          dataKey="solutionsSubmitted" 
-          name="Solutions Submitted" 
-          fill={CHART_COLORS.amber} 
-          radius={[3, 3, 0, 0]} 
-          barSize={16}
-        />
-        <Bar 
-          dataKey="solutionsApproved" 
-          name="Solutions Approved" 
-          fill={CHART_COLORS.emerald} 
-          radius={[3, 3, 0, 0]} 
-          barSize={16}
-        />
-      </BarChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col h-full">
+      <StatChipLegend items={legendItems} data={data} />
+      <div className="flex-1 mt-3">
+        <ResponsiveContainer width="100%" height={180}>
+          <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
+            <XAxis 
+              dataKey="name" 
+              stroke="hsl(var(--muted-foreground))" 
+              fontSize={10} 
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))" 
+              fontSize={10} 
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+              width={25}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
+            <Bar 
+              dataKey="problemsCreated" 
+              name="Problems Created" 
+              fill={CHART_COLORS.blue} 
+              radius={[3, 3, 0, 0]} 
+              barSize={14}
+            />
+            <Bar 
+              dataKey="solutionsSubmitted" 
+              name="Solutions Submitted" 
+              fill={CHART_COLORS.amber} 
+              radius={[3, 3, 0, 0]} 
+              barSize={14}
+            />
+            <Bar 
+              dataKey="solutionsApproved" 
+              name="Solutions Approved" 
+              fill={CHART_COLORS.emerald} 
+              radius={[3, 3, 0, 0]} 
+              barSize={14}
+            />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 };
 
@@ -148,74 +179,84 @@ const EnterpriseChart = ({ data }: { data: ChartDataPoint[] }) => {
     (d.problemsResolved as number) > 0
   );
 
+  const legendItems = [
+    { name: 'Problems Posted', color: CHART_COLORS.blue },
+    { name: 'Submissions Received', color: CHART_COLORS.amber },
+    { name: 'Problems Resolved', color: CHART_COLORS.emerald },
+  ];
+
   if (!hasData) {
     return <EmptyState message="Post problems to start tracking engagement" />;
   }
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-        <defs>
-          <linearGradient id="colorProblems" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.25}/>
-            <stop offset="95%" stopColor={CHART_COLORS.blue} stopOpacity={0}/>
-          </linearGradient>
-          <linearGradient id="colorSubmissions" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={CHART_COLORS.amber} stopOpacity={0.25}/>
-            <stop offset="95%" stopColor={CHART_COLORS.amber} stopOpacity={0}/>
-          </linearGradient>
-          <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor={CHART_COLORS.emerald} stopOpacity={0.25}/>
-            <stop offset="95%" stopColor={CHART_COLORS.emerald} stopOpacity={0}/>
-          </linearGradient>
-        </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
-        <XAxis 
-          dataKey="name" 
-          stroke="hsl(var(--muted-foreground))" 
-          fontSize={10} 
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis 
-          stroke="hsl(var(--muted-foreground))" 
-          fontSize={10} 
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-          width={30}
-        />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
-        <Legend content={<CustomLegend />} />
-        <Area 
-          type="monotone" 
-          dataKey="problemsPosted" 
-          name="Problems Posted" 
-          stroke={CHART_COLORS.blue} 
-          fillOpacity={1}
-          fill="url(#colorProblems)"
-          strokeWidth={2}
-        />
-        <Area 
-          type="monotone" 
-          dataKey="submissionsReceived" 
-          name="Submissions Received" 
-          stroke={CHART_COLORS.amber} 
-          fillOpacity={1}
-          fill="url(#colorSubmissions)"
-          strokeWidth={2}
-        />
-        <Area 
-          type="monotone" 
-          dataKey="problemsResolved" 
-          name="Problems Resolved" 
-          stroke={CHART_COLORS.emerald} 
-          fillOpacity={1}
-          fill="url(#colorResolved)"
-          strokeWidth={2}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col h-full">
+      <StatChipLegend items={legendItems} data={data} />
+      <div className="flex-1 mt-3">
+        <ResponsiveContainer width="100%" height={180}>
+          <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+            <defs>
+              <linearGradient id="colorProblems" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.25}/>
+                <stop offset="95%" stopColor={CHART_COLORS.blue} stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorSubmissions" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.amber} stopOpacity={0.25}/>
+                <stop offset="95%" stopColor={CHART_COLORS.amber} stopOpacity={0}/>
+              </linearGradient>
+              <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor={CHART_COLORS.emerald} stopOpacity={0.25}/>
+                <stop offset="95%" stopColor={CHART_COLORS.emerald} stopOpacity={0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
+            <XAxis 
+              dataKey="name" 
+              stroke="hsl(var(--muted-foreground))" 
+              fontSize={10} 
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))" 
+              fontSize={10} 
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+              width={25}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
+            <Area 
+              type="monotone" 
+              dataKey="problemsPosted" 
+              name="Problems Posted" 
+              stroke={CHART_COLORS.blue} 
+              fillOpacity={1}
+              fill="url(#colorProblems)"
+              strokeWidth={2}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="submissionsReceived" 
+              name="Submissions Received" 
+              stroke={CHART_COLORS.amber} 
+              fillOpacity={1}
+              fill="url(#colorSubmissions)"
+              strokeWidth={2}
+            />
+            <Area 
+              type="monotone" 
+              dataKey="problemsResolved" 
+              name="Problems Resolved" 
+              stroke={CHART_COLORS.emerald} 
+              fillOpacity={1}
+              fill="url(#colorResolved)"
+              strokeWidth={2}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 };
 
@@ -227,60 +268,70 @@ const InvestorChart = ({ data }: { data: ChartDataPoint[] }) => {
     (d.investmentReady as number) > 0
   );
 
+  const legendItems = [
+    { name: 'Active Problems', color: CHART_COLORS.blue },
+    { name: 'High-Engagement', color: CHART_COLORS.amber },
+    { name: 'Investment-Ready', color: CHART_COLORS.emerald },
+  ];
+
   if (!hasData) {
     return <EmptyState message="No investment opportunities tracked yet" />;
   }
 
   return (
-    <ResponsiveContainer width="100%" height={260}>
-      <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
-        <XAxis 
-          dataKey="name" 
-          stroke="hsl(var(--muted-foreground))" 
-          fontSize={10} 
-          tickLine={false}
-          axisLine={false}
-        />
-        <YAxis 
-          stroke="hsl(var(--muted-foreground))" 
-          fontSize={10} 
-          tickLine={false}
-          axisLine={false}
-          allowDecimals={false}
-          width={30}
-        />
-        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
-        <Legend content={<CustomLegend />} />
-        <Line 
-          type="monotone" 
-          dataKey="activeProblems" 
-          name="Active Problems" 
-          stroke={CHART_COLORS.blue} 
-          strokeWidth={2}
-          dot={{ fill: CHART_COLORS.blue, strokeWidth: 0, r: 3 }}
-          activeDot={{ r: 5, fill: CHART_COLORS.blue }}
-        />
-        <Line 
-          type="monotone" 
-          dataKey="highEngagement" 
-          name="High-Engagement" 
-          stroke={CHART_COLORS.amber} 
-          strokeWidth={2}
-          dot={{ fill: CHART_COLORS.amber, strokeWidth: 0, r: 3 }}
-          activeDot={{ r: 5, fill: CHART_COLORS.amber }}
-        />
-        <Line 
-          type="monotone" 
-          dataKey="investmentReady" 
-          name="Investment-Ready" 
-          stroke={CHART_COLORS.emerald} 
-          strokeWidth={2}
-          dot={{ fill: CHART_COLORS.emerald, strokeWidth: 0, r: 3 }}
-          activeDot={{ r: 5, fill: CHART_COLORS.emerald }}
-        />
-      </LineChart>
-    </ResponsiveContainer>
+    <div className="flex flex-col h-full">
+      <StatChipLegend items={legendItems} data={data} />
+      <div className="flex-1 mt-3">
+        <ResponsiveContainer width="100%" height={180}>
+          <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
+            <XAxis 
+              dataKey="name" 
+              stroke="hsl(var(--muted-foreground))" 
+              fontSize={10} 
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis 
+              stroke="hsl(var(--muted-foreground))" 
+              fontSize={10} 
+              tickLine={false}
+              axisLine={false}
+              allowDecimals={false}
+              width={25}
+            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
+            <Line 
+              type="monotone" 
+              dataKey="activeProblems" 
+              name="Active Problems" 
+              stroke={CHART_COLORS.blue} 
+              strokeWidth={2}
+              dot={{ fill: CHART_COLORS.blue, strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: CHART_COLORS.blue }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="highEngagement" 
+              name="High-Engagement" 
+              stroke={CHART_COLORS.amber} 
+              strokeWidth={2}
+              dot={{ fill: CHART_COLORS.amber, strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: CHART_COLORS.amber }}
+            />
+            <Line 
+              type="monotone" 
+              dataKey="investmentReady" 
+              name="Investment-Ready" 
+              stroke={CHART_COLORS.emerald} 
+              strokeWidth={2}
+              dot={{ fill: CHART_COLORS.emerald, strokeWidth: 0, r: 3 }}
+              activeDot={{ r: 5, fill: CHART_COLORS.emerald }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 };
 
@@ -319,8 +370,8 @@ export const RoleAwareProgressChart = ({ role, data, isLoading }: RoleAwareProgr
   const Icon = config.icon;
 
   return (
-    <Card className="bg-card/50 border-border/50 flex flex-col">
-      <CardHeader className="pb-3 flex-shrink-0">
+    <Card className="bg-card/50 border-border/50 flex flex-col h-full">
+      <CardHeader className="pb-2 flex-shrink-0">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Icon className="h-4 w-4 text-accent" />
           {config.title}
