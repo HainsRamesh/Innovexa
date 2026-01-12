@@ -99,6 +99,31 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Input length validation to prevent excessive API consumption
+    if (text.trim().length > 2000) {
+      return new Response(JSON.stringify({ error: "Text too long (max 2000 characters)" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate maxWords parameter
+    if (maxWords < 10 || maxWords > 500) {
+      return new Response(JSON.stringify({ error: "Max words must be between 10 and 500" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate tone parameter
+    const validTones = ["professional", "friendly", "concise"];
+    if (!validTones.includes(tone)) {
+      return new Response(JSON.stringify({ error: "Invalid tone. Must be professional, friendly, or concise" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
