@@ -7,3 +7,5 @@ export { EmojiPicker } from "./EmojiPicker";
 export { AttachmentPicker, type PendingAttachment } from "./AttachmentPicker";
 export { AttachmentPreview } from "./AttachmentPreview";
 export { MessageAttachment, MessageAttachmentsList, type MessageAttachmentData } from "./MessageAttachment";
+export { ReplyPreview, type ReplyingTo } from "./ReplyPreview";
+export { QuotedMessage } from "./QuotedMessage";

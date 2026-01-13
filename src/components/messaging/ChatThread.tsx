@@ -13,6 +13,8 @@ import { AttachmentPreview } from "./AttachmentPreview";
 import { MessageAttachmentsList, MessageAttachmentData } from "./MessageAttachment";
 import { MessageActions } from "./MessageActions";
 import { MessageEditForm } from "./MessageEditForm";
+import { ReplyPreview, ReplyingTo } from "./ReplyPreview";
+import { QuotedMessage } from "./QuotedMessage";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +30,9 @@ interface Message {
   is_deleted?: boolean;
   deleted_for_user_ids?: string[];
   attachments?: MessageAttachmentData[];
+  reply_to_message_id?: string | null;
+  reply_to_sender_id?: string | null;
+  reply_to_snippet?: string | null;
 }
 
 interface ChatThreadProps {
@@ -63,28 +68,30 @@ export const ChatThread = ({
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
   const [otherUserProfile, setOtherUserProfile] = useState<{
     full_name: string | null;
     avatar_url: string | null;
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Mark messages as read function - persist to database
+  // Mark messages as read using the secure RPC function
   const markMessagesAsRead = useCallback(async (convId: string) => {
     if (!user?.id || !convId) return;
 
     try {
-      // Update all unread messages from other users in this conversation
-      const { error, data } = await supabase
-        .from("messages")
-        .update({ read_at: new Date().toISOString() })
-        .eq("conversation_id", convId)
-        .neq("sender_id", user.id)
-        .is("read_at", null)
-        .select();
+      const { data: updatedCount, error } = await supabase.rpc("mark_conversation_read", {
+        p_conversation_id: convId,
+      });
 
-      if (!error) {
+      if (error) {
+        console.error("Error marking messages as read:", error);
+        return;
+      }
+
+      if (updatedCount && updatedCount > 0) {
         // Update local state
         setMessages(prev => prev.map(msg => ({
           ...msg,
@@ -94,9 +101,7 @@ export const ChatThread = ({
         })));
         
         // Notify parent to update unread counts
-        if (data && data.length > 0) {
-          onMessagesRead?.();
-        }
+        onMessagesRead?.();
       }
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -314,6 +319,7 @@ export const ChatThread = ({
     if (!user?.id) return;
 
     setIsSending(true);
+    const currentReply = replyingTo; // Capture before clearing
 
     try {
       // Upload all attachments first
@@ -361,15 +367,23 @@ export const ChatThread = ({
         }
       }
 
-      // Insert message
+      // Insert message with reply metadata
+      const messagePayload: any = {
+        conversation_id: conversationId,
+        sender_id: user.id,
+        text: messageText.trim() || "",
+        type: messageType,
+      };
+
+      if (currentReply) {
+        messagePayload.reply_to_message_id = currentReply.messageId;
+        messagePayload.reply_to_sender_id = currentReply.senderId;
+        messagePayload.reply_to_snippet = currentReply.snippet.slice(0, 100);
+      }
+
       const { data: newMessage, error: msgError } = await supabase
         .from("messages")
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          text: messageText.trim() || "",
-          type: messageType,
-        })
+        .insert(messagePayload)
         .select()
         .single();
 
@@ -404,6 +418,7 @@ export const ChatThread = ({
       // Clear inputs
       setMessageText("");
       setPendingAttachments([]);
+      setReplyingTo(null);
 
       // Refetch to get attachments with proper URLs
       await fetchMessages(conversationId);
@@ -504,6 +519,7 @@ export const ChatThread = ({
     setConversationId(null);
     setPendingAttachments([]);
     setEditingMessageId(null);
+    setReplyingTo(null);
   }, [targetUserId]);
 
   // Subscribe to real-time messages (INSERT and UPDATE for edits/deletes)
@@ -704,12 +720,49 @@ export const ChatThread = ({
               const hasAttachments = message.attachments && message.attachments.length > 0;
               const isDeleted = message.is_deleted;
               const isEditing = editingMessageId === message.id;
+              const hasReply = message.reply_to_message_id && message.reply_to_snippet;
+
+              // Handler to scroll to the original message
+              const scrollToOriginal = () => {
+                if (!message.reply_to_message_id) return;
+                const el = messageRefs.current[message.reply_to_message_id];
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  el.classList.add("ring-2", "ring-primary");
+                  setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 1500);
+                }
+              };
+
+              // Get sender name for quoted message
+              const getReplySenderName = () => {
+                if (message.reply_to_sender_id === user?.id) return "You";
+                if (message.reply_to_sender_id === targetUserId) return displayName;
+                return "User";
+              };
+
+              // Handle reply action
+              const handleReply = () => {
+                const snippet = message.text?.slice(0, 100) || "";
+                const hasAtt = (message.attachments?.length ?? 0) > 0;
+                const attType = message.attachments?.[0]?.mime_type?.startsWith("image/") ? "image" : "file";
+                
+                setReplyingTo({
+                  messageId: message.id,
+                  senderId: message.sender_id,
+                  senderName: isOwn ? "You" : displayName,
+                  snippet: hasAtt && !snippet ? (attType === "image" ? "Photo" : "File") : snippet,
+                  hasAttachment: hasAtt && !snippet,
+                  attachmentType: attType as "image" | "file",
+                });
+                textareaRef.current?.focus();
+              };
 
               // Render deleted message placeholder
               if (isDeleted) {
                 return (
                   <div
                     key={message.id}
+                    ref={(el) => { messageRefs.current[message.id] = el; }}
                     className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                   >
                     <div className={cn("max-w-[80%] flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
@@ -734,7 +787,8 @@ export const ChatThread = ({
               return (
                 <div
                   key={message.id}
-                  className={`flex ${isOwn ? "justify-end" : "justify-start"} group`}
+                  ref={(el) => { messageRefs.current[message.id] = el; }}
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} group transition-all`}
                 >
                   <div className={cn(
                     "max-w-[80%] flex gap-1",
@@ -747,12 +801,23 @@ export const ChatThread = ({
                       isOwnMessage={isOwn}
                       canEdit={canEditMessage(message.created_at)}
                       onEdit={() => setEditingMessageId(message.id)}
+                      onReply={handleReply}
                       onDeleteForMe={() => handleDeleteForMe(message.id)}
                       onDeleteForEveryone={() => handleDeleteForEveryone(message.id)}
                       className={isOwn ? "mr-1" : "ml-1"}
                     />
                     
                     <div className={cn("flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
+                      {/* Quoted reply block */}
+                      {hasReply && (
+                        <QuotedMessage
+                          senderName={getReplySenderName()}
+                          snippet={message.reply_to_snippet || "Message"}
+                          isOwnBubble={isOwn}
+                          onClick={scrollToOriginal}
+                        />
+                      )}
+                      
                       {/* Attachments */}
                       {hasAttachments && (
                         <MessageAttachmentsList attachments={message.attachments!} isOwn={isOwn} />
@@ -801,6 +866,15 @@ export const ChatThread = ({
           </div>
         )}
       </ScrollArea>
+
+      {/* Reply Preview */}
+      {replyingTo && (
+        <ReplyPreview
+          replyingTo={replyingTo}
+          onCancel={() => setReplyingTo(null)}
+          isOwnMessage={replyingTo.senderId === user?.id}
+        />
+      )}
 
       {/* Attachment Preview */}
       <AttachmentPreview

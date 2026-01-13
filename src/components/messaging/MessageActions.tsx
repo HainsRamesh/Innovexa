@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Copy, Pencil, Trash2, MoreVertical, Check } from "lucide-react";
+import { Copy, Pencil, Trash2, MoreVertical, Check, Reply } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +27,7 @@ interface MessageActionsProps {
   isOwnMessage: boolean;
   canEdit: boolean; // true if within 15 min window
   onEdit: () => void;
+  onReply: () => void;
   onDeleteForMe: () => void;
   onDeleteForEveryone: () => void;
   className?: string;
@@ -38,6 +39,7 @@ export const MessageActions = ({
   isOwnMessage,
   canEdit,
   onEdit,
+  onReply,
   onDeleteForMe,
   onDeleteForEveryone,
   className,
@@ -96,6 +98,11 @@ export const MessageActions = ({
               <Copy className="h-4 w-4" />
             )}
             Copy
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={onReply} className="gap-2">
+            <Reply className="h-4 w-4" />
+            Reply
           </DropdownMenuItem>
           
           {isOwnMessage && canEdit && (
