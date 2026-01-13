@@ -61,8 +61,9 @@ export const NotificationBell = () => {
         variant="ghost"
         size="icon"
         className={cn(
-          "relative h-10 w-10 rounded-full transition-all duration-200",
+          "relative h-9 w-9 rounded-full transition-all duration-200",
           "hover:bg-muted/80",
+          isOpen && "bg-muted",
           hasNewNotification && "animate-wiggle"
         )}
         onClick={() => setIsOpen(!isOpen)}
@@ -71,7 +72,7 @@ export const NotificationBell = () => {
         aria-haspopup="true"
       >
         <Bell className={cn(
-          "h-5 w-5 transition-colors",
+          "h-[18px] w-[18px] transition-colors",
           unreadCount > 0 ? "text-foreground" : "text-muted-foreground"
         )} />
         
@@ -79,11 +80,11 @@ export const NotificationBell = () => {
         {unreadCount > 0 && (
           <span 
             className={cn(
-              "absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1",
+              "absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1",
               "flex items-center justify-center",
               "text-[10px] font-bold text-primary-foreground",
               "bg-primary rounded-full",
-              "shadow-[0_0_8px_hsl(var(--primary)/0.5)]",
+              "shadow-[0_0_6px_hsl(var(--primary)/0.4)]",
               "animate-in fade-in zoom-in duration-200"
             )}
           >
@@ -91,9 +92,9 @@ export const NotificationBell = () => {
           </span>
         )}
         
-        {/* Glow effect for new notifications */}
+        {/* Pulse animation for new notifications */}
         {hasNewNotification && (
-          <span className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+          <span className="absolute inset-0 rounded-full bg-primary/25 animate-ping" />
         )}
       </Button>
 
