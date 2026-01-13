@@ -138,6 +138,139 @@ export type Database = {
         }
         Relationships: []
       }
+      form_analytics: {
+        Row: {
+          action: string
+          created_at: string
+          field_name: string
+          form_type: string
+          id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          field_name: string
+          form_type: string
+          id?: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          field_name?: string
+          form_type?: string
+          id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      form_drafts: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          form_data: Json
+          form_type: string
+          id: string
+          last_saved_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          form_data?: Json
+          form_type: string
+          id?: string
+          last_saved_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          form_data?: Json
+          form_type?: string
+          id?: string
+          last_saved_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      innovation_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          innovation_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          innovation_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          innovation_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_comments_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      innovation_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          document_url: string
+          id: string
+          innovation_id: string
+          title: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string
+          document_url: string
+          id?: string
+          innovation_id: string
+          title: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          innovation_id?: string
+          title?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_documents_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       innovation_likes: {
         Row: {
           created_at: string
@@ -170,9 +303,42 @@ export type Database = {
           },
         ]
       }
+      innovation_message_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          innovation_id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          innovation_id: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          innovation_id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_message_clicks_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       innovations: {
         Row: {
           category: Database["public"]["Enums"]["innovation_category"]
+          comment_count: number | null
           cover_image_url: string
           created_at: string
           custom_category: string | null
@@ -181,6 +347,7 @@ export type Database = {
           id: string
           innovator_id: string
           like_count: number | null
+          message_click_count: number | null
           pdf_urls: string[] | null
           status: Database["public"]["Enums"]["innovation_status"]
           tagline: string
@@ -193,6 +360,7 @@ export type Database = {
         }
         Insert: {
           category?: Database["public"]["Enums"]["innovation_category"]
+          comment_count?: number | null
           cover_image_url: string
           created_at?: string
           custom_category?: string | null
@@ -201,6 +369,7 @@ export type Database = {
           id?: string
           innovator_id: string
           like_count?: number | null
+          message_click_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
           tagline: string
@@ -213,6 +382,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["innovation_category"]
+          comment_count?: number | null
           cover_image_url?: string
           created_at?: string
           custom_category?: string | null
@@ -221,6 +391,7 @@ export type Database = {
           id?: string
           innovator_id?: string
           like_count?: number | null
+          message_click_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
           tagline?: string
@@ -301,6 +472,7 @@ export type Database = {
           investor_name: string
           message: string | null
           problem_id: string | null
+          status: string | null
           updated_at: string
         }
         Insert: {
@@ -313,6 +485,7 @@ export type Database = {
           investor_name: string
           message?: string | null
           problem_id?: string | null
+          status?: string | null
           updated_at?: string
         }
         Update: {
@@ -325,6 +498,7 @@ export type Database = {
           investor_name?: string
           message?: string | null
           problem_id?: string | null
+          status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -375,6 +549,35 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      nda_acceptances: {
+        Row: {
+          accepted_at: string
+          document_id: string
+          id: string
+          investor_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          document_id: string
+          id?: string
+          investor_id: string
+        }
+        Update: {
+          accepted_at?: string
+          document_id?: string
+          id?: string
+          investor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_acceptances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "innovation_documents"
             referencedColumns: ["id"]
           },
         ]
