@@ -46,6 +46,7 @@ import InnovationViewPage from "./pages/dashboard/InnovationViewPage";
 import InnovationEditPage from "./pages/dashboard/InnovationEditPage";
 import BookmarksPage from "./pages/dashboard/BookmarksPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
+import NotificationsPage from "./pages/dashboard/NotificationsPage";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +121,7 @@ const DashboardRoutes = () => {
         <Route path="innovations/:innovationId" element={<InnovationViewPage />} />
         <Route path="innovations/:innovationId/edit" element={<InnovationEditPage />} />
         <Route path="bookmarks" element={<BookmarksPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="investments" element={<DashboardOverview />} />
         <Route path="organizations" element={<DashboardOverview />} />
