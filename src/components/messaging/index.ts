@@ -1,3 +1,3 @@
 export { MessengerDrawer } from "./MessengerDrawer";
-export { ConversationList } from "./ConversationList";
+export { ConversationList, type ConversationListRef } from "./ConversationList";
 export { ChatThread } from "./ChatThread";
