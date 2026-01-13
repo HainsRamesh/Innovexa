@@ -15,6 +15,7 @@ import { MessageActions } from "./MessageActions";
 import { MessageEditForm } from "./MessageEditForm";
 import { ReplyPreview, ReplyingTo } from "./ReplyPreview";
 import { QuotedMessage } from "./QuotedMessage";
+import { TypingIndicator } from "./TypingIndicator";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +74,12 @@ export const ChatThread = ({
     full_name: string | null;
     avatar_url: string | null;
   } | null>(null);
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   // Mark messages as read using the secure RPC function
   const markMessagesAsRead = useCallback(async (convId: string) => {
@@ -520,7 +524,78 @@ export const ChatThread = ({
     setPendingAttachments([]);
     setEditingMessageId(null);
     setReplyingTo(null);
+    setIsOtherUserTyping(false);
   }, [targetUserId]);
+
+  // Typing indicator presence channel
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+
+    const channelName = `typing:${conversationId}`;
+    const channel = supabase.channel(channelName);
+    typingChannelRef.current = channel;
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        // Check if other user is typing
+        const otherTyping = Object.values(state).some((presences: any[]) =>
+          presences.some(p => p.user_id === targetUserId && p.is_typing)
+        );
+        setIsOtherUserTyping(otherTyping);
+      })
+      .subscribe();
+
+    return () => {
+      if (typingChannelRef.current) {
+        supabase.removeChannel(typingChannelRef.current);
+        typingChannelRef.current = null;
+      }
+    };
+  }, [conversationId, user?.id, targetUserId]);
+
+  // Broadcast typing status
+  const broadcastTyping = useCallback((isTyping: boolean) => {
+    if (!typingChannelRef.current || !user?.id) return;
+
+    typingChannelRef.current.track({
+      user_id: user.id,
+      is_typing: isTyping,
+      timestamp: Date.now(),
+    });
+  }, [user?.id]);
+
+  // Handle text input change with typing indicator
+  const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newText = e.target.value;
+    setMessageText(newText);
+
+    // Broadcast typing started
+    if (newText.length > 0) {
+      broadcastTyping(true);
+
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Stop typing after 2 seconds of no input
+      typingTimeoutRef.current = setTimeout(() => {
+        broadcastTyping(false);
+      }, 2000);
+    } else {
+      broadcastTyping(false);
+    }
+  };
+
+  // Clean up typing timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Subscribe to real-time messages (INSERT and UPDATE for edits/deletes)
   useEffect(() => {
@@ -862,6 +937,12 @@ export const ChatThread = ({
                 </div>
               );
             })}
+            
+            {/* Typing Indicator */}
+            {isOtherUserTyping && (
+              <TypingIndicator userName={displayName} />
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         )}
@@ -897,7 +978,7 @@ export const ChatThread = ({
           <Textarea
             ref={textareaRef}
             value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
+            onChange={handleTextChange}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             className="flex-1 min-h-[36px] max-h-[120px] resize-none bg-background border-border text-sm py-2"
