@@ -50,6 +50,7 @@ import BookmarksPage from "./pages/dashboard/BookmarksPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import NotificationsPage from "./pages/dashboard/NotificationsPage";
 import MessagesPage from "./pages/dashboard/MessagesPage";
+import InvestorDashboardPage from "./pages/dashboard/InvestorDashboardPage";
 
 const queryClient = new QueryClient();
 
