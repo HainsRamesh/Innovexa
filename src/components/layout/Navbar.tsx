@@ -14,6 +14,7 @@ import { Menu, X } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications";
+import { MessagesBell } from "@/components/messaging/MessagesBell";
 
 interface NavItem {
   label: string;
@@ -137,6 +138,9 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                {/* Messages Bell */}
+                <MessagesBell />
+                
                 {/* Notification Bell */}
                 <NotificationBell />
                 
@@ -216,6 +220,10 @@ export const Navbar = () => {
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
                 {user ? (
                   <>
+                    <div className="flex items-center justify-between px-2 pb-2">
+                      <span className="text-sm text-muted-foreground">Messages</span>
+                      <MessagesBell />
+                    </div>
                     <div className="flex items-center justify-between px-2 pb-2">
                       <span className="text-sm text-muted-foreground">Notifications</span>
                       <NotificationBell />
