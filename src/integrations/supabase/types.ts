@@ -205,6 +205,56 @@ export type Database = {
           },
         ]
       }
+      media_assets: {
+        Row: {
+          bucket: string
+          created_at: string
+          id: string
+          innovation_id: string | null
+          kind: "cover" | "gallery"
+          moderated_at: string | null
+          moderation_result: Json | null
+          path: string
+          public_url: string | null
+          status: "pending" | "approved" | "rejected" | "error"
+          user_id: string
+        }
+        Insert: {
+          bucket: string
+          created_at?: string
+          id?: string
+          innovation_id?: string | null
+          kind: "cover" | "gallery"
+          moderated_at?: string | null
+          moderation_result?: Json | null
+          path: string
+          public_url?: string | null
+          status?: "pending" | "approved" | "rejected" | "error"
+          user_id: string
+        }
+        Update: {
+          bucket?: string
+          created_at?: string
+          id?: string
+          innovation_id?: string | null
+          kind?: "cover" | "gallery"
+          moderated_at?: string | null
+          moderation_result?: Json | null
+          path?: string
+          public_url?: string | null
+          status?: "pending" | "approved" | "rejected" | "error"
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       problems: {
         Row: {
           ai_complexity_score: number | null

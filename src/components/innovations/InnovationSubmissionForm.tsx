@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,9 +13,31 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Upload, X, FileText, Image as ImageIcon, Video, Save, Send, Loader2, Plus, Minus } from "lucide-react";
+import { Upload, X, FileText, Image as ImageIcon, Video, Save, Send, Loader2, Plus, Minus, RefreshCcw } from "lucide-react";
 import { InnovationCategory } from "@/types";
+import { Badge } from "@/components/ui/badge";
 import aiIcon from "@/assets/ai_icon.png";
+
+type ModerationStatus = "pending" | "approved" | "rejected" | "error";
+
+type MediaAssetState = {
+  id: string;
+  assetId?: string;
+  kind: "cover" | "gallery";
+  previewUrl: string;
+  publicUrl?: string;
+  bucket?: string;
+  path?: string;
+  status: ModerationStatus;
+  reasons?: string[];
+};
+
+const TEMP_BUCKET = "temp-uploads";
+const allowedImageTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
+const buildFileKey = (userId: string | undefined, file: File, kind: "cover" | "gallery") =>
+  `${userId || "anon"}:${kind}:${file.name}:${file.size}:${file.lastModified}`;
 
 
 
@@ -70,10 +92,26 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [coverImage, setCoverImage] = useState<File | null>(null);
-  const [coverImagePreview, setCoverImagePreview] = useState<string>(initialData?.cover_image_url || "");
-  const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(initialData?.gallery_urls || []);
+  const [coverAsset, setCoverAsset] = useState<MediaAssetState | null>(
+    initialData?.cover_image_url
+      ? {
+          id: "existing-cover",
+          kind: "cover",
+          previewUrl: initialData.cover_image_url,
+          publicUrl: initialData.cover_image_url,
+          status: "approved",
+        }
+      : null,
+  );
+  const [galleryAssets, setGalleryAssets] = useState<MediaAssetState[]>(
+    (initialData?.gallery_urls || []).map((url, index) => ({
+      id: `existing-${index}`,
+      kind: "gallery",
+      previewUrl: url,
+      publicUrl: url,
+      status: "approved",
+    })),
+  );
   const [pdfFiles, setPdfFiles] = useState<File[]>([]);
   const [pdfNames, setPdfNames] = useState<string[]>(initialData?.pdf_urls?.map((_, i) => `Document ${i + 1}`) || []);
   const [isGeneratingTaglines, setIsGeneratingTaglines] = useState(false);
@@ -81,6 +119,11 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const [isRewritingDescription, setIsRewritingDescription] = useState(false);
   const [prevDescription, setPrevDescription] = useState<string | null>(null);
   const [canUndoDescription, setCanUndoDescription] = useState(false);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [isGalleryUploading, setIsGalleryUploading] = useState(false);
+  const moderationGuards = useRef<Set<string>>(new Set());
+  const retryGuards = useRef<Set<string>>(new Set());
+  const galleryQueue = useRef<Promise<void>>(Promise.resolve());
 
   const form = useForm<InnovationFormData>({
     resolver: zodResolver(innovationSchema),
@@ -98,6 +141,39 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
 
   const watchedCategory = form.watch("category");
 
+  const validateImageFile = (file: File) => {
+    if (!allowedImageTypes.includes(file.type)) {
+      return "Only JPG, PNG, WEBP, and GIF files are allowed";
+    }
+    if (file.size > MAX_IMAGE_SIZE) {
+      return "Images must be under 10MB";
+    }
+    return null;
+  };
+
+  const formatReasons = (reasons?: string[]) =>
+    reasons && reasons.length > 0 ? reasons.join(", ") : "Image rejected due to unsafe content.";
+
+  const renderStatusBadge = (status: ModerationStatus) => {
+    switch (status) {
+      case "approved":
+        return <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">Approved</Badge>;
+      case "pending":
+        return (
+          <Badge variant="secondary" className="gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Scanning...
+          </Badge>
+        );
+      case "rejected":
+        return <Badge variant="destructive">Rejected</Badge>;
+      case "error":
+        return <Badge variant="secondary">Scan failed</Badge>;
+      default:
+        return null;
+    }
+  };
+
   const uploadFile = async (file: File, folder: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${user?.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
@@ -112,24 +188,324 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     return data.publicUrl;
   };
 
+  const buildStoragePath = (file: File, kind: "cover" | "gallery") => {
+    const fileExt = file.name.split(".").pop() || "jpg";
+    const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+    return `${user?.id}/${kind}/${fileName}`;
+  };
+
+  const moderateAsset = async (
+   assetId: string,
+  path: string,
+  kind: "cover" | "gallery",
+  bucket = TEMP_BUCKET,
+) => {
+  // Ensure we have a valid session token for JWT-protected functions
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+
+  if (!session?.access_token) {
+    throw new Error("Authentication session not found. Please log in again.");
+  }
+
+  const { data, error } = await supabase.functions.invoke("moderate-image", {
+      body: {
+        asset_id: assetId,
+        bucket,
+        path,
+        user_id: user?.id,
+        kind,
+        innovation_id: initialData?.id ?? null,
+      },
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+      if (error) throw error;
+  return data || {};
+};
+
+  const uploadAndModerateImage = async (
+    file: File,
+    kind: "cover" | "gallery",
+    placeholderId?: string,
+    previewOverride?: string,
+  ): Promise<MediaAssetState> => {
+    if (!user) {
+      throw new Error("You must be logged in to upload images");
+    }
+
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      throw new Error(validationError);
+    }
+
+    const path = buildStoragePath(file, kind);
+    const previewUrl = previewOverride || URL.createObjectURL(file);
+
+    const { error: uploadError } = await supabase.storage.from(TEMP_BUCKET).upload(path, file, {
+      cacheControl: "3600",
+      upsert: false,
+      contentType: file.type,
+    });
+
+    if (uploadError) {
+      throw uploadError;
+    }
+
+    const { data: assetRecord, error: assetError } = await supabase
+      .from("media_assets")
+      .insert({
+        user_id: user.id,
+        innovation_id: initialData?.id ?? null,
+        kind,
+        bucket: TEMP_BUCKET,
+        path,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (assetError || !assetRecord) {
+      throw assetError || new Error("Failed to create moderation record");
+    }
+
+    const moderationResult = await moderateAsset(assetRecord.id, path, kind, TEMP_BUCKET);
+    const moderationStatus: ModerationStatus =
+      moderationResult?.status && ["approved", "pending", "rejected", "error"].includes(moderationResult.status)
+        ? moderationResult.status
+        : "error";
+
+    const reasons = moderationResult?.reasons as string[] | undefined;
+    const publicUrl = moderationResult?.publicUrl || moderationResult?.public_url;
+
+    return {
+      id: placeholderId || assetRecord.id,
+      assetId: assetRecord.id,
+      kind,
+      previewUrl,
+      bucket: moderationStatus === "approved" ? "innovations" : TEMP_BUCKET,
+      path: moderationResult?.path || path,
+      publicUrl: publicUrl || undefined,
+      status: moderationStatus,
+      reasons,
+    };
+  };
+
+  const processCoverUpload = async (file: File) => {
+    const guardKey = buildFileKey(user?.id, file, "cover");
+    if (moderationGuards.current.has(guardKey)) {
+      toast.info("Already scanning this cover image");
+      return;
+    }
+    moderationGuards.current.add(guardKey);
+    setIsCoverUploading(true);
+    const tempId = `cover-${Date.now()}`;
+    const previewUrl = URL.createObjectURL(file);
+    setCoverAsset({
+      id: tempId,
+      assetId: tempId,
+      kind: "cover",
+      previewUrl,
+      status: "pending",
+    });
+
+    try {
+      const moderatedAsset = await uploadAndModerateImage(file, "cover", tempId, previewUrl);
+      setCoverAsset({ ...moderatedAsset, previewUrl });
+
+      if (moderatedAsset.status === "rejected") {
+        toast.error(formatReasons(moderatedAsset.reasons));
+      } else if (moderatedAsset.status === "error") {
+        toast.error("Cover image scan failed. Please retry.");
+      } else {
+        toast.success("Cover image approved");
+      }
+    } catch (error: any) {
+      console.error("Error uploading cover image:", error);
+      setCoverAsset(null);
+      toast.error(error?.message || "Failed to upload cover image");
+    } finally {
+      moderationGuards.current.delete(guardKey);
+      setIsCoverUploading(false);
+    }
+  };
+
   const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setCoverImage(file);
-      setCoverImagePreview(URL.createObjectURL(file));
+      processCoverUpload(file);
+    }
+  };
+
+  const processGalleryUpload = async (file: File) => {
+    const guardKey = buildFileKey(user?.id, file, "gallery");
+    if (moderationGuards.current.has(guardKey)) {
+      toast.info("Already scanning this gallery image");
+      return;
+    }
+    moderationGuards.current.add(guardKey);
+    const tempId = crypto.randomUUID ? crypto.randomUUID() : `gallery-${Date.now()}`;
+    const previewUrl = URL.createObjectURL(file);
+    setGalleryAssets((prev) => [
+      ...prev,
+      {
+        id: tempId,
+        assetId: tempId,
+        kind: "gallery",
+        previewUrl,
+        status: "pending",
+      },
+    ]);
+
+    try {
+      const moderatedAsset = await uploadAndModerateImage(file, "gallery", tempId, previewUrl);
+
+      if (moderatedAsset.status === "rejected") {
+        setGalleryAssets((prev) => prev.filter((asset) => asset.id !== tempId));
+        toast.error(formatReasons(moderatedAsset.reasons));
+        return;
+      }
+
+      setGalleryAssets((prev) =>
+        prev.map((asset) => (asset.id === tempId ? { ...moderatedAsset, previewUrl } : asset)),
+      );
+
+      if (moderatedAsset.status === "error") {
+        toast.error("Gallery image scan failed. Use Retry.");
+      } else {
+        toast.success("Gallery image approved");
+      }
+    } catch (error: any) {
+      console.error("Error uploading gallery image:", error);
+      setGalleryAssets((prev) => prev.filter((asset) => asset.id !== tempId));
+      toast.error(error?.message || "Failed to upload gallery image");
+    } finally {
+      moderationGuards.current.delete(guardKey);
     }
   };
 
   const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setGalleryFiles((prev) => [...prev, ...files]);
-    const previews = files.map((file) => URL.createObjectURL(file));
-    setGalleryPreviews((prev) => [...prev, ...previews]);
+    if (files.length === 0) return;
+
+    setIsGalleryUploading(true);
+
+    let chain = galleryQueue.current;
+    files.forEach((file) => {
+      chain = chain.then(async () => {
+        const validationError = validateImageFile(file);
+        if (validationError) {
+          toast.error(validationError);
+          return;
+        }
+        await processGalleryUpload(file);
+      });
+    });
+
+    galleryQueue.current = chain.finally(() => {
+      setIsGalleryUploading(false);
+    });
   };
 
-  const removeGalleryImage = (index: number) => {
-    setGalleryFiles((prev) => prev.filter((_, i) => i !== index));
-    setGalleryPreviews((prev) => prev.filter((_, i) => i !== index));
+  const removeGalleryImage = (id: string) => {
+    setGalleryAssets((prev) => prev.filter((asset) => asset.id !== id));
+  };
+
+  const retryModeration = async (asset: MediaAssetState) => {
+    if (!user) {
+      toast.error("You must be logged in to retry moderation");
+      return;
+    }
+
+    if (!asset.assetId || !asset.path || !asset.bucket) {
+      toast.error("Unable to retry scan. Please re-upload the image.");
+      return;
+    }
+
+    if (retryGuards.current.has(asset.assetId)) {
+      toast.info("Scan already in progress for this image");
+      return;
+    }
+    retryGuards.current.add(asset.assetId);
+
+    const pendingState: MediaAssetState = { ...asset, status: "pending" };
+    if (asset.kind === "cover") {
+      setCoverAsset(pendingState);
+      setIsCoverUploading(true);
+    } else {
+      setGalleryAssets((prev) => prev.map((item) => (item.id === asset.id ? pendingState : item)));
+      setIsGalleryUploading(true);
+    }
+
+    const runRetry = async () => {
+      const moderationResult = await moderateAsset(asset.assetId, asset.path, asset.kind, asset.bucket);
+      const moderationStatus: ModerationStatus =
+        moderationResult?.status && ["approved", "pending", "rejected", "error"].includes(moderationResult.status)
+          ? moderationResult.status
+          : "error";
+      const publicUrl = moderationResult?.publicUrl || moderationResult?.public_url;
+      const reasons = moderationResult?.reasons as string[] | undefined;
+
+      const updatedAsset: MediaAssetState = {
+        ...asset,
+        status: moderationStatus,
+        publicUrl: publicUrl || asset.publicUrl,
+        bucket: moderationStatus === "approved" ? "innovations" : asset.bucket,
+        path: moderationResult?.path || asset.path,
+        reasons,
+      };
+
+      if (moderationStatus === "rejected") {
+        if (asset.kind === "cover") {
+          setCoverAsset(updatedAsset);
+        } else {
+          setGalleryAssets((prev) => prev.filter((item) => item.id !== asset.id));
+        }
+        toast.error(formatReasons(reasons));
+        return;
+      }
+
+      if (asset.kind === "cover") {
+        setCoverAsset(updatedAsset);
+      } else {
+        setGalleryAssets((prev) => prev.map((item) => (item.id === asset.id ? updatedAsset : item)));
+      }
+
+      if (moderationStatus === "error") {
+        toast.error("Scan failed again. Please re-upload the image.");
+      } else {
+        toast.success("Image approved after retry");
+      }
+    };
+
+    const handleRetryError = (error: any) => {
+      console.error("Error retrying moderation:", error);
+      const failedState: MediaAssetState = { ...asset, status: "error" };
+      if (asset.kind === "cover") {
+        setCoverAsset(failedState);
+      } else {
+        setGalleryAssets((prev) => prev.map((item) => (item.id === asset.id ? failedState : item)));
+      }
+      toast.error(error?.message || "Failed to retry moderation");
+    };
+
+    if (asset.kind === "gallery") {
+      galleryQueue.current = galleryQueue.current
+        .then(() => runRetry())
+        .catch(handleRetryError)
+        .finally(() => {
+          setIsGalleryUploading(false);
+          retryGuards.current.delete(asset.assetId!);
+        });
+    } else {
+      runRetry()
+        .catch(handleRetryError)
+        .finally(() => {
+          setIsCoverUploading(false);
+          retryGuards.current.delete(asset.assetId!);
+        });
+    }
   };
 
   const handlePdfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,32 +596,34 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       return;
     }
 
-    if (!coverImage && !coverImagePreview) {
-      toast.error("Cover image is required");
+    if (!coverAsset || coverAsset.status !== "approved" || !coverAsset.publicUrl) {
+      toast.error("Cover image must be uploaded and approved before submitting");
       return;
     }
 
-    if (galleryPreviews.length === 0) {
-      toast.error("At least one gallery image is required");
+    if (coverAsset.status === "pending") {
+      toast.error("Cover image moderation is still running. Please wait.");
+      return;
+    }
+
+    const pendingGallery = galleryAssets.some((asset) => asset.status === "pending");
+    if (pendingGallery) {
+      toast.error("Gallery moderation is still running. Please wait.");
+      return;
+    }
+
+    const approvedGalleryAssets = galleryAssets.filter(
+      (asset) => asset.status === "approved" && asset.publicUrl,
+    );
+
+    if (approvedGalleryAssets.length === 0) {
+      toast.error("At least one approved gallery image is required");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Upload cover image if new
-      let coverImageUrl = coverImagePreview;
-      if (coverImage) {
-        coverImageUrl = await uploadFile(coverImage, "covers");
-      }
-
-      // Upload gallery images if new
-      const newGalleryUrls = await Promise.all(galleryFiles.map((file) => uploadFile(file, "gallery")));
-      const allGalleryUrls = [
-        ...(initialData?.gallery_urls?.filter((_, i) => i < galleryPreviews.length - galleryFiles.length) || []),
-        ...newGalleryUrls,
-      ];
-
       // Upload PDFs if new
       const newPdfUrls = await Promise.all(pdfFiles.map((file) => uploadFile(file, "pdfs")));
       const allPdfUrls = [
@@ -270,15 +648,16 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
           | "other",
         custom_category: data.category === "other" ? data.custom_category : null,
         description: data.description,
-        cover_image_url: coverImageUrl,
+        cover_image_url: coverAsset.publicUrl,
         video_url: data.video_url || null,
-        gallery_urls: allGalleryUrls,
+        gallery_urls: approvedGalleryAssets.map((asset) => asset.publicUrl!) || [],
         pdf_urls: allPdfUrls,
         without_product: data.without_product,
         with_product: data.with_product,
         status,
         innovator_id: user.id,
       };
+      let innovationId = initialData?.id;
 
       if (mode === "edit" && initialData?.id) {
         const { error } = await supabase.from("innovations").update(innovationData).eq("id", initialData.id);
@@ -286,10 +665,24 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
         if (error) throw error;
         toast.success(asDraft ? "Innovation saved as draft" : "Innovation updated successfully");
       } else {
-        const { error } = await supabase.from("innovations").insert(innovationData);
+        const { data: inserted, error } = await supabase
+          .from("innovations")
+          .insert(innovationData)
+          .select()
+          .single();
 
         if (error) throw error;
+        innovationId = inserted?.id || innovationId;
         toast.success(asDraft ? "Innovation saved as draft" : "Innovation published successfully");
+      }
+
+      const assetIdsToLink = [
+        ...(coverAsset.assetId ? [coverAsset.assetId] : []),
+        ...approvedGalleryAssets.map((asset) => asset.assetId).filter(Boolean),
+      ] as string[];
+
+      if (innovationId && assetIdsToLink.length > 0) {
+        await supabase.from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
       }
 
       navigate("/innovations");
@@ -514,17 +907,33 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
             <div className="space-y-2">
               <Label>Cover Image *</Label>
               <div className="flex items-center gap-4">
-                {coverImagePreview ? (
+                {coverAsset ? (
                   <div className="relative w-40 h-24 rounded-lg overflow-hidden border border-border">
-                    <img src={coverImagePreview} alt="Cover preview" className="w-full h-full object-cover" />
+                    <img
+                      src={coverAsset.previewUrl || coverAsset.publicUrl}
+                      alt="Cover preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-1 left-1">{renderStatusBadge(coverAsset.status)}</div>
+                    {coverAsset.status === "error" && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="absolute bottom-1 right-8 h-6 w-6"
+                        onClick={() => retryModeration(coverAsset)}
+                        title="Retry scan"
+                      >
+                        <RefreshCcw className="h-3 w-3" />
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
                       className="absolute top-1 right-1 h-6 w-6"
                       onClick={() => {
-                        setCoverImage(null);
-                        setCoverImagePreview("");
+                        setCoverAsset(null);
                       }}
                     >
                       <X className="h-3 w-3" />
@@ -536,7 +945,13 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                       <ImageIcon className="h-6 w-6 mx-auto text-muted-foreground" />
                       <span className="text-xs text-muted-foreground mt-1">Upload</span>
                     </div>
-                    <input type="file" accept="image/*" className="hidden" onChange={handleCoverImageChange} />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCoverImageChange}
+                      disabled={isCoverUploading}
+                    />
                   </label>
                 )}
               </div>
@@ -546,15 +961,32 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
             <div className="space-y-2">
               <Label>Image Gallery * (at least 1 required)</Label>
               <div className="flex flex-wrap gap-3">
-                {galleryPreviews.map((preview, index) => (
-                  <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border">
-                    <img src={preview} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                {galleryAssets.map((asset) => (
+                  <div key={asset.id} className="relative w-24 h-24 rounded-lg overflow-hidden border border-border">
+                    <img
+                      src={asset.previewUrl || asset.publicUrl}
+                      alt={`Gallery ${asset.id}`}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-1 left-1">{renderStatusBadge(asset.status)}</div>
+                    {asset.status === "error" && (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="absolute bottom-1 right-8 h-5 w-5"
+                        onClick={() => retryModeration(asset)}
+                        title="Retry scan"
+                      >
+                        <RefreshCcw className="h-3 w-3" />
+                      </Button>
+                    )}
                     <Button
                       type="button"
                       variant="destructive"
                       size="icon"
                       className="absolute top-1 right-1 h-5 w-5"
-                      onClick={() => removeGalleryImage(index)}
+                      onClick={() => removeGalleryImage(asset.id)}
                     >
                       <X className="h-2.5 w-2.5" />
                     </Button>
@@ -565,7 +997,14 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
                     <Upload className="h-5 w-5 mx-auto text-muted-foreground" />
                     <span className="text-xs text-muted-foreground">Add</span>
                   </div>
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handleGalleryChange} />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={handleGalleryChange}
+                    disabled={isGalleryUploading}
+                  />
                 </label>
               </div>
             </div>

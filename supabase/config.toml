@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.rewrite-description]
 verify_jwt = false
+
+[functions.moderate-image]
+verify_jwt = false
