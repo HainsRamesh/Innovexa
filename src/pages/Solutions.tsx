@@ -14,9 +14,17 @@ import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight, CheckCircle
 import { Tables } from '@/integrations/supabase/types';
 import { SolutionDetailDialog } from '@/components/solutions/SolutionDetailDialog';
 import { InnovexaSolutionsGridSkeleton } from '@/components/ui/InnovexaSkeleton';
+import { UserProfileLink } from '@/components/user/UserProfileLink';
+
+type AuthorProfile = {
+  id: string;
+  full_name: string | null;
+  avatar_url: string | null;
+};
 
 type Solution = Tables<'solutions'> & {
   problems?: { title: string; category: string } | null;
+  author?: AuthorProfile | null;
 };
 
 const Solutions = () => {
@@ -42,6 +50,25 @@ const Solutions = () => {
   const fetchSolutions = async () => {
     setIsLoading(true);
     try {
+      // Helper function to attach author profiles to solutions
+      const attachAuthorProfiles = async (solutions: Tables<'solutions'>[]): Promise<Solution[]> => {
+        if (!solutions || solutions.length === 0) return [];
+        
+        const innovatorIds = [...new Set(solutions.map(s => s.innovator_id))];
+        const { data: profiles } = await supabase
+          .from('public_profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', innovatorIds);
+        
+        const profileMap = new Map<string, AuthorProfile>();
+        (profiles || []).forEach(p => profileMap.set(p.id, p));
+        
+        return solutions.map(s => ({
+          ...s,
+          author: profileMap.get(s.innovator_id) || null,
+        }));
+      };
+
       // Fetch all approved public solutions (for investors and general users)
       const { data: approved, error: approvedError } = await supabase
         .from('solutions')
@@ -54,7 +81,8 @@ const Solutions = () => {
         .order('created_at', { ascending: false });
 
       if (approvedError) throw approvedError;
-      setApprovedSolutions(approved || []);
+      const approvedWithAuthors = await attachAuthorProfiles(approved || []);
+      setApprovedSolutions(approvedWithAuthors);
 
       // Fetch user's own solutions if they are an innovator
       if (user && isInnovator) {
@@ -68,7 +96,8 @@ const Solutions = () => {
           .order('created_at', { ascending: false });
 
         if (mineError) throw mineError;
-        setMySolutions(mine || []);
+        const mineWithAuthors = await attachAuthorProfiles(mine || []);
+        setMySolutions(mineWithAuthors);
       }
 
       // Fetch solutions submitted to enterprise's problems (all relevant statuses)
@@ -95,7 +124,8 @@ const Solutions = () => {
             .order('created_at', { ascending: false });
 
           if (mineForProblemsError) throw mineForProblemsError;
-          setMyProblemSolutions(mineForProblems || []);
+          const mineForProblemsWithAuthors = await attachAuthorProfiles(mineForProblems || []);
+          setMyProblemSolutions(mineForProblemsWithAuthors);
         } else {
           setMyProblemSolutions([]);
         }
@@ -174,7 +204,36 @@ const Solutions = () => {
 
   const SolutionCard = ({ solution, showViewButton = false }: { solution: Solution; showViewButton?: boolean }) => (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
-      <CardHeader>
+      <CardHeader className="space-y-3">
+        {/* Author Mini Profile - LinkedIn style */}
+        <div className="flex items-center gap-3">
+          <UserProfileLink
+            userId={solution.innovator_id}
+            fullName={solution.author?.full_name || null}
+            avatarUrl={solution.author?.avatar_url || null}
+            showName={false}
+            avatarSize="sm"
+          />
+          <div className="flex-1 min-w-0">
+            <UserProfileLink
+              userId={solution.innovator_id}
+              fullName={solution.author?.full_name || null}
+              avatarUrl={solution.author?.avatar_url || null}
+              showName={true}
+              avatarSize="sm"
+              className="[&>span]:text-sm [&>span]:font-semibold"
+              nameClassName="line-clamp-1"
+            />
+            <p className="text-xs text-muted-foreground">
+              {new Date(solution.created_at).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })}
+            </p>
+          </div>
+        </div>
+
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
@@ -218,10 +277,6 @@ const Solutions = () => {
                 <span>{solution.timeline_weeks} weeks</span>
               </div>
             )}
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" />
-              <span>{new Date(solution.created_at).toLocaleDateString()}</span>
-            </div>
           </div>
           {solution.technology_stack && solution.technology_stack.length > 0 && (
             <div className="flex flex-wrap gap-1">
