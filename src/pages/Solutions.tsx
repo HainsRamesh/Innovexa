@@ -211,27 +211,17 @@ const Solutions = () => {
             userId={solution.innovator_id}
             fullName={solution.author?.full_name || null}
             avatarUrl={solution.author?.avatar_url || null}
-            showName={false}
+            showName={true}
             avatarSize="sm"
+            nameClassName="text-sm font-semibold line-clamp-1"
           />
-          <div className="flex-1 min-w-0">
-            <UserProfileLink
-              userId={solution.innovator_id}
-              fullName={solution.author?.full_name || null}
-              avatarUrl={solution.author?.avatar_url || null}
-              showName={true}
-              avatarSize="sm"
-              className="[&>span]:text-sm [&>span]:font-semibold"
-              nameClassName="line-clamp-1"
-            />
-            <p className="text-xs text-muted-foreground">
-              {new Date(solution.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
-              })}
-            </p>
-          </div>
+          <span className="text-xs text-muted-foreground">
+            · {new Date(solution.created_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric',
+            })}
+          </span>
         </div>
 
         <div className="flex items-start justify-between gap-2">
