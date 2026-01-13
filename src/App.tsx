@@ -49,6 +49,7 @@ import InnovationEditPage from "./pages/dashboard/InnovationEditPage";
 import BookmarksPage from "./pages/dashboard/BookmarksPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
 import NotificationsPage from "./pages/dashboard/NotificationsPage";
+import MessagesPage from "./pages/dashboard/MessagesPage";
 
 const queryClient = new QueryClient();
 
