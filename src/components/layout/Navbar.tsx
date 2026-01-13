@@ -15,6 +15,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications";
 import { MessagesBell } from "@/components/messaging/MessagesBell";
+import { GlobalSearch } from "@/components/search";
 
 interface NavItem {
   label: string;
@@ -138,6 +139,9 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             {user ? (
               <>
+                {/* Global Search */}
+                <GlobalSearch />
+                
                 {/* Messages Bell */}
                 <MessagesBell />
                 
