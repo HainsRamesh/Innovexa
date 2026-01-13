@@ -6,16 +6,17 @@ import { Innovation } from '@/types';
 import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
 import { VideoThumbnailPlayer } from './VideoThumbnailPlayer';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
+import { useChat } from '@/contexts/ChatContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Download, 
   Bookmark, 
-  Mail, 
+  MessageCircle, 
   Minus,
   Plus,
   FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
 interface InnovationDetailModalProps {
   innovation: Innovation | null;
   open: boolean;
@@ -53,8 +54,29 @@ export const InnovationDetailModal = ({
   onOpenChange,
 }: InnovationDetailModalProps) => {
   const { trackDemoPlay } = useDemoPlayTracker(innovation?.id || '');
+  const { openChat } = useChat();
+  const { user } = useAuth();
   
   if (!innovation) return null;
+
+  const handleMessageInnovator = () => {
+    // Get innovator name from innovation profiles if available
+    const innovatorName = (innovation as any).profiles?.full_name || 'Innovator';
+    
+    // Create prefilled message
+    const prefilledMessage = `Hi ${innovatorName}, I'm interested in your innovation "${innovation.title}". Can we discuss this further?`;
+    
+    openChat({
+      userId: innovation.innovator_id,
+      userName: innovatorName,
+      userAvatar: (innovation as any).profiles?.avatar_url || null,
+      prefilledMessage,
+      innovationId: innovation.id,
+      innovationTitle: innovation.title,
+    });
+  };
+
+  const isOwnInnovation = user?.id === innovation.innovator_id;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -158,10 +180,12 @@ export const InnovationDetailModal = ({
 
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-              <Button className="gap-2">
-                <Mail className="h-4 w-4" />
-                Contact Innovator
-              </Button>
+              {!isOwnInnovation && (
+                <Button className="gap-2" onClick={handleMessageInnovator}>
+                  <MessageCircle className="h-4 w-4" />
+                  Message Innovator
+                </Button>
+              )}
               <Button variant="outline" className="gap-2">
                 <Bookmark className="h-4 w-4" />
                 Save Innovation
