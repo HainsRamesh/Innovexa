@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          reason: string | null
+          target_content_id: string | null
+          target_content_type: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          target_content_id?: string | null
+          target_content_type?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          target_content_id?: string | null
+          target_content_type?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
@@ -87,6 +159,48 @@ export type Database = {
           requester_id?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      content_reports: {
+        Row: {
+          admin_notes: string | null
+          content_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
         }
         Relationships: []
       }
@@ -1005,6 +1119,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_suspensions: {
+        Row: {
+          expires_at: string | null
+          id: string
+          is_permanent: boolean
+          lifted_at: string | null
+          lifted_by: string | null
+          reason: string
+          suspended_at: string
+          suspended_by: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason: string
+          suspended_at?: string
+          suspended_by: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason?: string
+          suspended_at?: string
+          suspended_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -1054,6 +1204,15 @@ export type Database = {
       is_user_blocked: {
         Args: { _other_user_id: string; _user_id: string }
         Returns: boolean
+      }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_metadata?: Json
+        }
+        Returns: string
       }
       mark_all_notifications_read: {
         Args: { p_user_id: string }
