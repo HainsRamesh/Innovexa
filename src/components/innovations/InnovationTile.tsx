@@ -4,6 +4,7 @@ import { Expand, Heart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInnovationLike } from "@/hooks/useInnovationLike";
 import { InnovationTileMenu } from "./InnovationTileMenu";
+import { UserProfileLink } from "@/components/user/UserProfileLink";
 
 interface InnovationTileProps {
   innovation: Innovation;
@@ -155,21 +156,66 @@ export const InnovationTile = ({
           </div>
         )}
 
-        {/* Category badge */}
-        <div
-          className={cn(
-            "absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm",
-            categoryColors[innovation.category],
-            "text-primary-foreground",
+        {/* Top bar with category badge and creator profile */}
+        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+          {/* Category badge */}
+          <div
+            className={cn(
+              "px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm flex-shrink-0",
+              categoryColors[innovation.category],
+              "text-primary-foreground",
+            )}
+          >
+            {innovation.category === "other" && innovation.custom_category
+              ? innovation.custom_category
+              : categoryLabels[innovation.category]}
+          </div>
+          
+          {/* Creator Profile - LinkedIn style */}
+          {innovation.profiles && (
+            <div
+              className="flex-shrink-0 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1"
+              style={{
+                opacity: isActive ? 1 : 0.9,
+                transition: "opacity 200ms ease-out",
+              }}
+            >
+              <UserProfileLink
+                userId={innovation.innovator_id}
+                fullName={innovation.profiles.full_name}
+                avatarUrl={innovation.profiles.avatar_url}
+                showName={false}
+                avatarSize="sm"
+                className="hover:scale-105 transition-transform"
+              />
+            </div>
           )}
-        >
-          {innovation.category === "other" && innovation.custom_category
-            ? innovation.custom_category
-            : categoryLabels[innovation.category]}
         </div>
 
         {/* Content */}
         <div className="absolute inset-x-0 bottom-0 p-4">
+          {/* Creator info on hover - LinkedIn style */}
+          <div
+            className="mb-2"
+            style={{
+              opacity: isActive && !menuOpen ? 1 : 0,
+              transform: isActive && !menuOpen ? "translateY(0)" : "translateY(-8px)",
+              transition: "opacity 300ms ease-out, transform 300ms ease-out",
+              pointerEvents: isActive && !menuOpen ? "auto" : "none",
+            }}
+          >
+            {innovation.profiles && (
+              <UserProfileLink
+                userId={innovation.innovator_id}
+                fullName={innovation.profiles.full_name}
+                avatarUrl={innovation.profiles.avatar_url}
+                showName={true}
+                avatarSize="sm"
+                nameClassName="text-xs text-foreground/90"
+              />
+            )}
+          </div>
+          
           <h3
             className="text-base font-semibold text-foreground line-clamp-1 mb-1"
             style={{
