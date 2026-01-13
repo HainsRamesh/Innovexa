@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Problem, Solution, Innovation } from "@/types";
+import { ProfileActionButtons } from "@/components/profile";
 
 interface PublicProfile {
   id: string;
@@ -335,15 +336,25 @@ const PublicProfile = () => {
 
                 {/* Info */}
                 <div className="flex-1 text-center sm:text-left">
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                    <h1 className="text-2xl font-bold">
-                      {profile?.full_name || "Anonymous User"}
-                    </h1>
-                    {userRole && (
-                      <Badge className={getRoleBadgeColor(userRole.role)}>
-                        {getRoleLabel(userRole.role)}
-                      </Badge>
-                    )}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <h1 className="text-2xl font-bold">
+                        {profile?.full_name || "Anonymous User"}
+                      </h1>
+                      {userRole && (
+                        <Badge className={getRoleBadgeColor(userRole.role)}>
+                          {getRoleLabel(userRole.role)}
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {/* Action Buttons - Connect/Message/More */}
+                    <div className="flex justify-center sm:justify-end mt-2 sm:mt-0">
+                      <ProfileActionButtons
+                        targetUserId={userId!}
+                        targetUserName={profile?.full_name}
+                      />
+                    </div>
                   </div>
 
                   {profile?.organization_name && (

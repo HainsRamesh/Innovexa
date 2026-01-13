@@ -63,6 +63,57 @@ export type Database = {
           },
         ]
       }
+      connections: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_id: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          participant_one: string
+          participant_two: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_one: string
+          participant_two: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_one?: string
+          participant_two?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       enterprise_innovation_views: {
         Row: {
           created_at: string
@@ -289,6 +340,41 @@ export type Database = {
             columns: ["problem_id"]
             isOneToOne: false
             referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          id: string
+          read_at: string | null
+          sender_id: string
+          text: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id: string
+          text: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          read_at?: string | null
+          sender_id?: string
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
@@ -623,6 +709,78 @@ export type Database = {
           },
         ]
       }
+      user_blocks: {
+        Row: {
+          blocked_user_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reported_user_id?: string
+          reporter_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      user_restrictions: {
+        Row: {
+          created_at: string
+          id: string
+          restricted_user_id: string
+          restrictor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          restricted_user_id: string
+          restrictor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          restricted_user_id?: string
+          restrictor_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -671,6 +829,10 @@ export type Database = {
         }
         Returns: string
       }
+      get_or_create_conversation: {
+        Args: { _user_one: string; _user_two: string }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -685,6 +847,10 @@ export type Database = {
       increment_innovation_view_count: {
         Args: { _innovation_id: string }
         Returns: undefined
+      }
+      is_user_blocked: {
+        Args: { _other_user_id: string; _user_id: string }
+        Returns: boolean
       }
       mark_all_notifications_read: {
         Args: { p_user_id: string }
