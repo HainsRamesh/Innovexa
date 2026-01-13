@@ -15,6 +15,7 @@ import { InvestorInterestModal } from "@/components/investor/InvestorInterestMod
 import { InvestorReadyBadge } from "@/components/investor/InvestorReadyBadge";
 import { useHasApprovedSolutions, useInvestorInterests } from "@/hooks/useInvestorInterests";
 import { useProblemLike } from "@/hooks/useProblemLike";
+import { UserProfileLink } from "@/components/user/UserProfileLink";
 
 interface ProblemFeedItemProps {
   problem: Problem & { like_count?: number; solutions_count?: number };
@@ -174,16 +175,24 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
     <article className="bg-card border border-border rounded-xl p-6 mb-4">
       {/* Post Header */}
       <div className="flex items-start gap-4 mb-4">
-        <Avatar className="h-12 w-12">
-          <AvatarImage src={ownerProfile?.avatar_url || undefined} />
-          <AvatarFallback>{getInitials(ownerProfile?.full_name)}</AvatarFallback>
-        </Avatar>
+        <UserProfileLink
+          userId={problem.owner_id}
+          fullName={ownerProfile?.full_name || null}
+          avatarUrl={ownerProfile?.avatar_url || null}
+          showName={false}
+          avatarSize="lg"
+        />
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-semibold">
-              {ownerProfile?.full_name || "Anonymous"}
-            </span>
+            <UserProfileLink
+              userId={problem.owner_id}
+              fullName={ownerProfile?.full_name || null}
+              avatarUrl={ownerProfile?.avatar_url || null}
+              showName={true}
+              avatarSize="lg"
+              className="[&>*:first-child]:hidden"
+            />
             <span className="text-sm text-muted-foreground">
               · {format(new Date(problem.created_at), "MMM d, yyyy")}
             </span>
@@ -454,16 +463,25 @@ function SolutionComment({ solution, isProblemOwner, onApprove, onViewDetails }:
 
   return (
     <div className="flex items-start gap-3 p-4 bg-muted/20 rounded-lg">
-      <Avatar className="h-10 w-10">
-        <AvatarImage src={solution.profiles?.avatar_url || undefined} />
-        <AvatarFallback>{getInitials(solution.profiles?.full_name || null)}</AvatarFallback>
-      </Avatar>
+      <UserProfileLink
+        userId={solution.innovator_id}
+        fullName={solution.profiles?.full_name || null}
+        avatarUrl={solution.profiles?.avatar_url || null}
+        showName={false}
+        avatarSize="md"
+      />
       
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className="font-medium text-sm">
-            {solution.profiles?.full_name || "Anonymous Innovator"}
-          </span>
+          <UserProfileLink
+            userId={solution.innovator_id}
+            fullName={solution.profiles?.full_name || null}
+            avatarUrl={solution.profiles?.avatar_url || null}
+            showName={true}
+            avatarSize="sm"
+            className="[&>*:first-child]:hidden"
+            nameClassName="text-sm font-medium"
+          />
           <span className="text-xs text-muted-foreground">
             · {format(new Date(solution.created_at), "MMM d, yyyy")}
           </span>
