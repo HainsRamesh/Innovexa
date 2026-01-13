@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const getSessionId = (): string => {
-  const key = 'innovation_session_id';
+  const key = 'problem_session_id';
   let sessionId = localStorage.getItem(key);
   if (!sessionId) {
     sessionId = crypto.randomUUID();
@@ -14,20 +15,20 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
-export const useInnovationLike = (innovationId: string, initialLikeCount: number = 0) => {
+export const useProblemLike = (problemId: string, initialLikeCount: number = 0) => {
+  const { user } = useAuth();
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(initialLikeCount);
   const [isLoading, setIsLoading] = useState(false);
   const sessionId = getSessionId();
 
   // Create a Supabase client that sends the session header so RLS can see it
-  // This client also inherits the auth session from localStorage
   const supabaseWithSession = useMemo(
     () =>
       createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
         global: {
           headers: {
-            'x-innovation-session-id': sessionId,
+            'x-problem-session-id': sessionId,
           },
         },
         auth: {
@@ -42,9 +43,9 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
   useEffect(() => {
     const checkIfLiked = async () => {
       const { data } = await supabaseWithSession
-        .from('innovation_likes')
+        .from('problem_likes')
         .select('id')
-        .eq('innovation_id', innovationId)
+        .eq('problem_id', problemId)
         .eq('session_id', sessionId)
         .maybeSingle();
 
@@ -52,15 +53,15 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
     };
 
     checkIfLiked();
-  }, [innovationId, sessionId, supabaseWithSession]);
+  }, [problemId, sessionId, supabaseWithSession]);
 
   useEffect(() => {
     setLikeCount(initialLikeCount);
   }, [initialLikeCount]);
 
   const toggleLike = useCallback(
-    async (e: React.MouseEvent) => {
-      e.stopPropagation();
+    async (e?: React.MouseEvent) => {
+      if (e) e.stopPropagation();
       if (isLoading) return;
 
       setIsLoading(true);
@@ -74,16 +75,17 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
       try {
         if (previousIsLiked) {
           const { error } = await supabaseWithSession
-            .from('innovation_likes')
+            .from('problem_likes')
             .delete()
-            .eq('innovation_id', innovationId)
+            .eq('problem_id', problemId)
             .eq('session_id', sessionId);
 
           if (error) throw error;
         } else {
+          // Insert with session_id; user_id will be stamped by trigger if logged in
           const { error } = await supabaseWithSession
-            .from('innovation_likes')
-            .insert({ innovation_id: innovationId, session_id: sessionId });
+            .from('problem_likes')
+            .insert({ problem_id: problemId, session_id: sessionId });
 
           if (error) throw error;
         }
@@ -91,12 +93,12 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
         // Revert on error
         setIsLiked(previousIsLiked);
         setLikeCount(previousCount);
-        console.error('Error toggling like:', error);
+        console.error('Error toggling problem like:', error);
       } finally {
         setIsLoading(false);
       }
     },
-    [innovationId, sessionId, isLiked, likeCount, isLoading, supabaseWithSession]
+    [problemId, sessionId, isLiked, likeCount, isLoading, supabaseWithSession]
   );
 
   return { isLiked, likeCount, toggleLike, isLoading };

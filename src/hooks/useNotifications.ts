@@ -88,6 +88,7 @@ export const useNotifications = () => {
     }
 
     try {
+      console.log('[Notifications] Fetching for user:', user.id);
       const { data, error } = await supabase
         .from('notifications')
         .select('*')
@@ -95,9 +96,13 @@ export const useNotifications = () => {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[Notifications] Fetch error:', error);
+        throw error;
+      }
 
       const notifs = (data || []) as Notification[];
+      console.log('[Notifications] Fetched count:', notifs.length, 'unread:', notifs.filter(n => !n.is_read).length);
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.is_read).length);
     } catch (error) {
@@ -268,7 +273,7 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('New notification received:', payload);
+          console.log('[Notifications] Realtime INSERT received:', payload.new);
           const newNotification = payload.new as Notification;
           setNotifications(prev => [newNotification, ...prev]);
           setUnreadCount(prev => prev + 1);

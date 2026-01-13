@@ -14,6 +14,7 @@ import { SolutionDetailDialog } from "@/components/solutions/SolutionDetailDialo
 import { InvestorInterestModal } from "@/components/investor/InvestorInterestModal";
 import { InvestorReadyBadge } from "@/components/investor/InvestorReadyBadge";
 import { useHasApprovedSolutions, useInvestorInterests } from "@/hooks/useInvestorInterests";
+import { useProblemLike } from "@/hooks/useProblemLike";
 
 interface ProblemFeedItemProps {
   problem: Problem & { like_count?: number; solutions_count?: number };
@@ -28,10 +29,13 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   const [showComments, setShowComments] = useState(false);
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
-  const [likeCount, setLikeCount] = useState(problem.like_count ?? 0);
   const solutionsCount = problem.solutions_count ?? 0;
-  const [isLiked, setIsLiked] = useState(false);
-  const [isLiking, setIsLiking] = useState(false);
+  
+  // Use the problem like hook for persistent likes + notifications
+  const { isLiked, likeCount, toggleLike, isLoading: isLiking } = useProblemLike(
+    problem.id,
+    problem.like_count ?? 0
+  );
   
   // Solution submission state
   const [showSolutionForm, setShowSolutionForm] = useState(false);
@@ -110,12 +114,9 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
     }
   };
 
+  // Like handler now uses the hook
   const handleLike = async () => {
-    setIsLiking(true);
-    // For simplicity, just toggle the visual - full implementation would use problem_likes table
-    setIsLiked(!isLiked);
-    setLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-    setIsLiking(false);
+    await toggleLike();
   };
 
   const handleSubmitSolution = async () => {
