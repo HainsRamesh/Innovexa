@@ -80,7 +80,7 @@ export default function Innovations() {
         profiles: profilesMap.get(innovation.innovator_id) || null,
       }));
       
-      return innovationsWithProfiles as Innovation[];
+      return innovationsWithProfiles as unknown as Innovation[];
     },
   });
 
@@ -114,7 +114,7 @@ export default function Innovations() {
         profiles: profileData || null,
       }));
       
-      return innovationsWithProfiles as Innovation[];
+      return innovationsWithProfiles as unknown as Innovation[];
     },
     enabled: !!user && isInnovator,
   });
