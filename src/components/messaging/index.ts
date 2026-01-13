@@ -1,4 +1,6 @@
 export { MessengerDrawer } from "./MessengerDrawer";
+export { MessageActions } from "./MessageActions";
+export { MessageEditForm } from "./MessageEditForm";
 export { ConversationList, type ConversationListRef } from "./ConversationList";
 export { ChatThread } from "./ChatThread";
 export { EmojiPicker } from "./EmojiPicker";

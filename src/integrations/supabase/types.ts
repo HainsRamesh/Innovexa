@@ -677,7 +677,10 @@ export type Database = {
         Row: {
           conversation_id: string
           created_at: string
+          deleted_for_user_ids: string[] | null
+          edited_at: string | null
           id: string
+          is_deleted: boolean | null
           read_at: string | null
           sender_id: string
           text: string
@@ -686,7 +689,10 @@ export type Database = {
         Insert: {
           conversation_id: string
           created_at?: string
+          deleted_for_user_ids?: string[] | null
+          edited_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           read_at?: string | null
           sender_id: string
           text: string
@@ -695,7 +701,10 @@ export type Database = {
         Update: {
           conversation_id?: string
           created_at?: string
+          deleted_for_user_ids?: string[] | null
+          edited_at?: string | null
           id?: string
+          is_deleted?: boolean | null
           read_at?: string | null
           sender_id?: string
           text?: string

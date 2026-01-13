@@ -11,6 +11,9 @@ import { EmojiPicker } from "./EmojiPicker";
 import { AttachmentPicker, PendingAttachment } from "./AttachmentPicker";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { MessageAttachmentsList, MessageAttachmentData } from "./MessageAttachment";
+import { MessageActions } from "./MessageActions";
+import { MessageEditForm } from "./MessageEditForm";
+import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -21,6 +24,9 @@ interface Message {
   type: string;
   read_at: string | null;
   created_at: string;
+  edited_at?: string | null;
+  is_deleted?: boolean;
+  deleted_for_user_ids?: string[];
   attachments?: MessageAttachmentData[];
 }
 
@@ -33,6 +39,9 @@ interface ChatThreadProps {
   showBackButton?: boolean;
   onMessagesRead?: () => void;
 }
+
+// 15 minute edit window
+const EDIT_WINDOW_MS = 15 * 60 * 1000;
 
 export const ChatThread = ({
   targetUserId,
@@ -53,6 +62,7 @@ export const ChatThread = ({
   const [hasSetPrefilled, setHasSetPrefilled] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [otherUserProfile, setOtherUserProfile] = useState<{
     full_name: string | null;
     avatar_url: string | null;
@@ -60,24 +70,33 @@ export const ChatThread = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Mark messages as read function
+  // Mark messages as read function - persist to database
   const markMessagesAsRead = useCallback(async (convId: string) => {
     if (!user?.id || !convId) return;
 
     try {
-      const { error } = await supabase
+      // Update all unread messages from other users in this conversation
+      const { error, data } = await supabase
         .from("messages")
         .update({ read_at: new Date().toISOString() })
         .eq("conversation_id", convId)
         .neq("sender_id", user.id)
-        .is("read_at", null);
+        .is("read_at", null)
+        .select();
 
       if (!error) {
+        // Update local state
         setMessages(prev => prev.map(msg => ({
           ...msg,
-          read_at: msg.sender_id !== user.id ? new Date().toISOString() : msg.read_at
+          read_at: msg.sender_id !== user.id && !msg.read_at 
+            ? new Date().toISOString() 
+            : msg.read_at
         })));
-        onMessagesRead?.();
+        
+        // Notify parent to update unread counts
+        if (data && data.length > 0) {
+          onMessagesRead?.();
+        }
       }
     } catch (error) {
       console.error("Error marking messages as read:", error);
@@ -98,8 +117,14 @@ export const ChatThread = ({
 
       if (error) throw error;
 
+      // Filter out messages deleted for current user (client-side filter for extra safety)
+      const filteredMessages = (messagesData || []).filter(msg => {
+        const deletedFor = msg.deleted_for_user_ids || [];
+        return !deletedFor.includes(user.id);
+      });
+
       // Fetch attachments for all messages
-      const messageIds = (messagesData || []).map(m => m.id);
+      const messageIds = filteredMessages.map(m => m.id);
       let attachmentsMap: Record<string, MessageAttachmentData[]> = {};
 
       if (messageIds.length > 0) {
@@ -132,12 +157,14 @@ export const ChatThread = ({
         }
       }
 
-      const messagesWithAttachments = (messagesData || []).map(msg => ({
+      const messagesWithAttachments = filteredMessages.map(msg => ({
         ...msg,
         attachments: attachmentsMap[msg.id] || [],
       }));
 
       setMessages(messagesWithAttachments);
+      
+      // Mark messages as read after loading
       await markMessagesAsRead(convId);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -145,6 +172,117 @@ export const ChatThread = ({
       setIsLoading(false);
     }
   }, [user?.id, markMessagesAsRead]);
+
+  // Edit message
+  const handleEditMessage = async (messageId: string, newText: string) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .update({ 
+          text: newText, 
+          edited_at: new Date().toISOString() 
+        })
+        .eq("id", messageId)
+        .eq("sender_id", user.id);
+
+      if (error) throw error;
+
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, text: newText, edited_at: new Date().toISOString() }
+          : msg
+      ));
+      setEditingMessageId(null);
+      
+      toast({ description: "Message edited" });
+    } catch (error) {
+      console.error("Error editing message:", error);
+      toast({
+        title: "Error",
+        description: "Failed to edit message",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete message for me
+  const handleDeleteForMe = async (messageId: string) => {
+    if (!user?.id) return;
+
+    try {
+      // Get current deleted_for_user_ids
+      const { data: msgData } = await supabase
+        .from("messages")
+        .select("deleted_for_user_ids")
+        .eq("id", messageId)
+        .single();
+
+      const currentDeletedFor = msgData?.deleted_for_user_ids || [];
+      const updatedDeletedFor = [...currentDeletedFor, user.id];
+
+      const { error } = await supabase
+        .from("messages")
+        .update({ deleted_for_user_ids: updatedDeletedFor })
+        .eq("id", messageId);
+
+      if (error) throw error;
+
+      // Remove from local state
+      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      
+      toast({ description: "Message deleted for you" });
+    } catch (error) {
+      console.error("Error deleting message for me:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Delete message for everyone
+  const handleDeleteForEveryone = async (messageId: string) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .update({ 
+          is_deleted: true,
+          text: "" // Clear the text as well
+        })
+        .eq("id", messageId)
+        .eq("sender_id", user.id); // Only allow deleting own messages
+
+      if (error) throw error;
+
+      // Update local state to show "deleted" message
+      setMessages(prev => prev.map(msg => 
+        msg.id === messageId 
+          ? { ...msg, is_deleted: true, text: "" }
+          : msg
+      ));
+      
+      toast({ description: "Message deleted for everyone" });
+    } catch (error) {
+      console.error("Error deleting message for everyone:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete message",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Check if message can be edited (within 15 min window)
+  const canEditMessage = (createdAt: string) => {
+    const messageTime = new Date(createdAt).getTime();
+    const now = Date.now();
+    return now - messageTime < EDIT_WINDOW_MS;
+  };
 
   // Upload attachment to storage
   const uploadAttachment = async (file: File): Promise<{ url: string; thumbnailUrl?: string } | null> => {
@@ -365,11 +503,12 @@ export const ChatThread = ({
     setMessages([]);
     setConversationId(null);
     setPendingAttachments([]);
+    setEditingMessageId(null);
   }, [targetUserId]);
 
-  // Subscribe to real-time messages
+  // Subscribe to real-time messages (INSERT and UPDATE for edits/deletes)
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !user?.id) return;
 
     const channel = supabase
       .channel(`chat-thread:${conversationId}`)
@@ -383,6 +522,9 @@ export const ChatThread = ({
         },
         async (payload) => {
           const newMessage = payload.new as Message;
+          
+          // Skip if deleted for current user
+          if (newMessage.deleted_for_user_ids?.includes(user.id)) return;
           
           // Check if already exists
           if (messages.some(m => m.id === newMessage.id)) return;
@@ -410,9 +552,34 @@ export const ChatThread = ({
 
           setMessages(prev => [...prev, { ...newMessage, attachments }]);
 
-          if (newMessage.sender_id !== user?.id) {
+          if (newMessage.sender_id !== user.id) {
             markMessagesAsRead(conversationId);
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const updatedMessage = payload.new as Message;
+          
+          // If message is now deleted for current user, remove it
+          if (updatedMessage.deleted_for_user_ids?.includes(user.id)) {
+            setMessages(prev => prev.filter(m => m.id !== updatedMessage.id));
+            return;
+          }
+          
+          // Update the message in state
+          setMessages(prev => prev.map(msg => 
+            msg.id === updatedMessage.id 
+              ? { ...msg, ...updatedMessage, attachments: msg.attachments }
+              : msg
+          ));
         }
       )
       .subscribe();
@@ -535,43 +702,97 @@ export const ChatThread = ({
               const isOwn = message.sender_id === user?.id;
               const hasText = message.text && message.text.trim().length > 0;
               const hasAttachments = message.attachments && message.attachments.length > 0;
+              const isDeleted = message.is_deleted;
+              const isEditing = editingMessageId === message.id;
+
+              // Render deleted message placeholder
+              if (isDeleted) {
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  >
+                    <div className={cn("max-w-[80%] flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
+                      <div
+                        className={cn(
+                          "rounded-2xl px-3 py-2 italic",
+                          isOwn
+                            ? "bg-muted/50 text-muted-foreground rounded-br-md"
+                            : "bg-muted/50 text-muted-foreground rounded-bl-md"
+                        )}
+                      >
+                        <p className="text-sm">This message was deleted</p>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        {format(new Date(message.created_at), "h:mm a")}
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
 
               return (
                 <div
                   key={message.id}
-                  className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
+                  className={`flex ${isOwn ? "justify-end" : "justify-start"} group`}
                 >
-                  <div className={cn("max-w-[80%] flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
-                    {/* Attachments */}
-                    {hasAttachments && (
-                      <MessageAttachmentsList attachments={message.attachments!} isOwn={isOwn} />
-                    )}
+                  <div className={cn(
+                    "max-w-[80%] flex gap-1",
+                    isOwn ? "flex-row-reverse" : "flex-row"
+                  )}>
+                    {/* Message Actions */}
+                    <MessageActions
+                      messageId={message.id}
+                      messageText={message.text}
+                      isOwnMessage={isOwn}
+                      canEdit={canEditMessage(message.created_at)}
+                      onEdit={() => setEditingMessageId(message.id)}
+                      onDeleteForMe={() => handleDeleteForMe(message.id)}
+                      onDeleteForEveryone={() => handleDeleteForEveryone(message.id)}
+                      className={isOwn ? "mr-1" : "ml-1"}
+                    />
                     
-                    {/* Text bubble */}
-                    {hasText && (
-                      <div
-                        className={cn(
-                          "rounded-2xl px-3 py-2",
-                          isOwn
-                            ? "bg-primary text-primary-foreground rounded-br-md"
-                            : "bg-muted text-foreground rounded-bl-md"
+                    <div className={cn("flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
+                      {/* Attachments */}
+                      {hasAttachments && (
+                        <MessageAttachmentsList attachments={message.attachments!} isOwn={isOwn} />
+                      )}
+                      
+                      {/* Text bubble or edit form */}
+                      {isEditing ? (
+                        <MessageEditForm
+                          initialText={message.text}
+                          onSave={(newText) => handleEditMessage(message.id, newText)}
+                          onCancel={() => setEditingMessageId(null)}
+                          isOwn={isOwn}
+                        />
+                      ) : hasText ? (
+                        <div
+                          className={cn(
+                            "rounded-2xl px-3 py-2",
+                            isOwn
+                              ? "bg-primary text-primary-foreground rounded-br-md"
+                              : "bg-muted text-foreground rounded-bl-md"
+                          )}
+                        >
+                          <p className="text-sm whitespace-pre-wrap break-words">
+                            {message.text}
+                          </p>
+                        </div>
+                      ) : null}
+                      
+                      {/* Timestamp and edited indicator */}
+                      <div className="flex items-center gap-1">
+                        {message.edited_at && (
+                          <span className="text-[10px] text-muted-foreground italic">
+                            edited
+                          </span>
                         )}
-                      >
-                        <p className="text-sm whitespace-pre-wrap break-words">
-                          {message.text}
+                        <p className="text-[10px] text-muted-foreground">
+                          {format(new Date(message.created_at), "h:mm a")}
                         </p>
                       </div>
-                    )}
-                    
-                    {/* Timestamp */}
-                    <p
-                      className={cn(
-                        "text-[10px]",
-                        isOwn ? "text-muted-foreground" : "text-muted-foreground"
-                      )}
-                    >
-                      {format(new Date(message.created_at), "h:mm a")}
-                    </p>
+                    </div>
                   </div>
                 </div>
               );
