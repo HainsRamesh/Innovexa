@@ -6,8 +6,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import { GlobalOverlayProvider } from "@/contexts/GlobalOverlayContext";
+import { ChatProvider } from "@/contexts/ChatContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-
+import { MessengerDrawer } from "@/components/messaging";
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -208,7 +209,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <GlobalOverlayProvider>
-              <AppRoutes />
+              <ChatProvider>
+                <AppRoutes />
+                <MessengerDrawer />
+              </ChatProvider>
             </GlobalOverlayProvider>
           </BrowserRouter>
         </TooltipProvider>
