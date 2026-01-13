@@ -682,6 +682,9 @@ export type Database = {
           id: string
           is_deleted: boolean | null
           read_at: string | null
+          reply_to_message_id: string | null
+          reply_to_sender_id: string | null
+          reply_to_snippet: string | null
           sender_id: string
           text: string
           type: string
@@ -694,6 +697,9 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           read_at?: string | null
+          reply_to_message_id?: string | null
+          reply_to_sender_id?: string | null
+          reply_to_snippet?: string | null
           sender_id: string
           text: string
           type?: string
@@ -706,6 +712,9 @@ export type Database = {
           id?: string
           is_deleted?: boolean | null
           read_at?: string | null
+          reply_to_message_id?: string | null
+          reply_to_sender_id?: string | null
+          reply_to_snippet?: string | null
           sender_id?: string
           text?: string
           type?: string
@@ -716,6 +725,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
@@ -1239,6 +1255,7 @@ export type Database = {
         Args: { _user_one: string; _user_two: string }
         Returns: string
       }
+      get_unread_message_count: { Args: never; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1269,6 +1286,10 @@ export type Database = {
       }
       mark_all_notifications_read: {
         Args: { p_user_id: string }
+        Returns: number
+      }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
         Returns: number
       }
       track_enterprise_video_view: {

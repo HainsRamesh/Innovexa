@@ -15,31 +15,15 @@ export const MessagesBell = () => {
     if (!user?.id) return;
 
     try {
-      // Get all conversations
-      const { data: conversations } = await supabase
-        .from("conversations")
-        .select("id")
-        .or(`participant_one.eq.${user.id},participant_two.eq.${user.id}`);
+      // Use the efficient RPC function for global unread count
+      const { data: count, error } = await supabase.rpc("get_unread_message_count");
 
-      if (!conversations?.length) {
-        setTotalUnreadCount(0);
+      if (error) {
+        console.error("Error fetching unread count:", error);
         return;
       }
 
-      // Count unread messages across all conversations
-      let totalUnread = 0;
-      for (const conv of conversations) {
-        const { count } = await supabase
-          .from("messages")
-          .select("*", { count: "exact", head: true })
-          .eq("conversation_id", conv.id)
-          .neq("sender_id", user.id)
-          .is("read_at", null);
-
-        totalUnread += count || 0;
-      }
-
-      setTotalUnreadCount(totalUnread);
+      setTotalUnreadCount(count || 0);
     } catch (error) {
       console.error("Error fetching unread count:", error);
     }
