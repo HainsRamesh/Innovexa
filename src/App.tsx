@@ -16,6 +16,7 @@ import ProblemDetails from "./pages/ProblemDetails";
 import Solutions from "./pages/Solutions";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 import Innovations from "./pages/Innovations";
 import NewInnovation from "./pages/NewInnovation";
@@ -181,6 +182,9 @@ const AppRoutes = () => {
       } />
       <Route path="/profile" element={
         <ProtectedRoute><Profile /></ProtectedRoute>
+      } />
+      <Route path="/users/:userId" element={
+        <ProtectedRoute><PublicProfile /></ProtectedRoute>
       } />
       <Route
         path="/dashboard/*"
