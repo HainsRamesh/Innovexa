@@ -124,6 +124,8 @@ const DashboardRoutes = () => {
         <Route path="innovations/:innovationId/edit" element={<InnovationEditPage />} />
         <Route path="bookmarks" element={<BookmarksPage />} />
         <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="messages" element={<MessagesPage />} />
+        <Route path="messages/:conversationId" element={<MessagesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="investments" element={<DashboardOverview />} />
         <Route path="organizations" element={<DashboardOverview />} />
