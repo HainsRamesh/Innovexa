@@ -202,9 +202,6 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
         <span className="hidden md:inline-flex text-muted-foreground">
           Search...
         </span>
-        <kbd className="pointer-events-none absolute right-1.5 top-1.5 hidden h-6 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 md:flex">
-          <span className="text-xs">⌘</span>K
-        </kbd>
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
