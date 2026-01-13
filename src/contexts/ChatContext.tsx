@@ -100,7 +100,20 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 export const useChat = () => {
   const context = useContext(ChatContext);
   if (context === undefined) {
-    throw new Error("useChat must be used within a ChatProvider");
+    // Return a no-op implementation for components rendered outside provider
+    // This can happen with portal-based components during initial render
+    return {
+      isDrawerOpen: false,
+      activeChats: [],
+      currentChatTarget: null,
+      openChat: () => {},
+      closeDrawer: () => {},
+      toggleDrawer: () => {},
+      switchToChat: () => {},
+      removeChat: () => {},
+      getTotalUnreadCount: () => 0,
+      setTotalUnreadCount: () => {},
+    } as ChatContextType;
   }
   return context;
 };
