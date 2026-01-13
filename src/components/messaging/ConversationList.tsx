@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from "react";
 import { format } from "date-fns";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,47 +32,20 @@ interface ConversationListProps {
   onTotalUnreadChange?: (count: number) => void;
 }
 
-export const ConversationList = ({
+export interface ConversationListRef {
+  refreshConversations: () => Promise<void>;
+}
+
+export const ConversationList = forwardRef<ConversationListRef, ConversationListProps>(({
   onSelectConversation,
   selectedUserId,
   onTotalUnreadChange,
-}: ConversationListProps) => {
+}, ref) => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchConversations();
-    }
-  }, [user?.id]);
-
-  // Real-time subscription for new messages
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel("conversations-list")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-        },
-        () => {
-          // Refetch conversations when messages change
-          fetchConversations();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     if (!user?.id) return;
 
     try {
@@ -108,7 +81,7 @@ export const ConversationList = ({
             .limit(1)
             .maybeSingle();
 
-          // Get unread count
+          // Get unread count - only messages from other user that are not read
           const { count } = await supabase
             .from("messages")
             .select("*", { count: "exact", head: true })
@@ -135,7 +108,55 @@ export const ConversationList = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user?.id, onTotalUnreadChange]);
+
+  // Expose refresh method to parent
+  useImperativeHandle(ref, () => ({
+    refreshConversations: fetchConversations,
+  }), [fetchConversations]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchConversations();
+    }
+  }, [user?.id, fetchConversations]);
+
+  // Real-time subscription for new messages AND updates (for read status)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel("conversations-list-updates")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+        },
+        () => {
+          // Refetch conversations when new messages arrive
+          fetchConversations();
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "messages",
+        },
+        () => {
+          // Refetch when messages are marked as read
+          fetchConversations();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchConversations]);
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -253,4 +274,4 @@ export const ConversationList = ({
       </div>
     </ScrollArea>
   );
-};
+});

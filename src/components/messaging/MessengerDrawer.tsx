@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { X, MessageCircle, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { ConversationList } from "./ConversationList";
+import { ConversationList, ConversationListRef } from "./ConversationList";
 import { ChatThread } from "./ChatThread";
 
 type DrawerView = "list" | "chat";
@@ -31,17 +31,24 @@ export const MessengerDrawer = () => {
 
   const [view, setView] = useState<DrawerView>("list");
   const [selectedChat, setSelectedChat] = useState<SelectedChatState | null>(null);
+  const conversationListRef = useRef<ConversationListRef>(null);
 
   // Sync with external chat target (from Innovation modal)
   useEffect(() => {
     if (currentChatTarget && isDrawerOpen) {
-      setSelectedChat({
-        userId: currentChatTarget.userId,
-        userName: currentChatTarget.userName,
-        userAvatar: currentChatTarget.userAvatar || null,
-        prefilledMessage: currentChatTarget.prefilledMessage,
-      });
-      setView("chat");
+      // If userId is empty, just show the list view
+      if (!currentChatTarget.userId) {
+        setView("list");
+        setSelectedChat(null);
+      } else {
+        setSelectedChat({
+          userId: currentChatTarget.userId,
+          userName: currentChatTarget.userName,
+          userAvatar: currentChatTarget.userAvatar || null,
+          prefilledMessage: currentChatTarget.prefilledMessage,
+        });
+        setView("chat");
+      }
     }
   }, [currentChatTarget, isDrawerOpen]);
 
@@ -58,10 +65,17 @@ export const MessengerDrawer = () => {
     setView("chat");
   };
 
-  const handleBackToList = () => {
+  const handleBackToList = useCallback(() => {
     setView("list");
     setSelectedChat(null);
-  };
+    // Refresh conversations list when going back to ensure read status is updated
+    conversationListRef.current?.refreshConversations();
+  }, []);
+
+  const handleMessagesRead = useCallback(() => {
+    // Refresh the conversation list to update unread counts
+    conversationListRef.current?.refreshConversations();
+  }, []);
 
   if (!user) return null;
 
@@ -73,19 +87,13 @@ export const MessengerDrawer = () => {
       {!isDrawerOpen && (
         <button
           onClick={() => {
-            if (selectedChat) {
-              openChat({
-                userId: selectedChat.userId,
-                userName: selectedChat.userName,
-                userAvatar: selectedChat.userAvatar,
-              });
-            } else {
-              openChat({
-                userId: "",
-                userName: null,
-              });
-            }
-            setView(selectedChat ? "chat" : "list");
+            // Always open to list view when clicking the floating button
+            openChat({
+              userId: "",
+              userName: null,
+            });
+            setView("list");
+            setSelectedChat(null);
           }}
           className={cn(
             "fixed bottom-6 right-6 z-50",
@@ -163,6 +171,7 @@ export const MessengerDrawer = () => {
         <div className="flex-1 overflow-hidden">
           {view === "list" ? (
             <ConversationList
+              ref={conversationListRef}
               onSelectConversation={handleSelectConversation}
               selectedUserId={selectedChat?.userId}
               onTotalUnreadChange={setTotalUnreadCount}
@@ -174,7 +183,8 @@ export const MessengerDrawer = () => {
               targetUserAvatar={selectedChat.userAvatar}
               prefilledMessage={selectedChat.prefilledMessage}
               onBack={handleBackToList}
-              showBackButton={activeChats.length > 1 || true}
+              showBackButton={true}
+              onMessagesRead={handleMessagesRead}
             />
           ) : (
             <div className="flex items-center justify-center h-full">

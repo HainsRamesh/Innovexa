@@ -1,13 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { format } from "date-fns";
 import { Send, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useMessaging } from "@/hooks/useMessaging";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+
+interface Message {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  text: string;
+  read_at: string | null;
+  created_at: string;
+}
 
 interface ChatThreadProps {
   targetUserId: string;
@@ -16,6 +24,7 @@ interface ChatThreadProps {
   prefilledMessage?: string;
   onBack?: () => void;
   showBackButton?: boolean;
+  onMessagesRead?: () => void;
 }
 
 export const ChatThread = ({
@@ -25,10 +34,14 @@ export const ChatThread = ({
   prefilledMessage,
   onBack,
   showBackButton = false,
+  onMessagesRead,
 }: ChatThreadProps) => {
   const { user } = useAuth();
   const [messageText, setMessageText] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasSetPrefilled, setHasSetPrefilled] = useState(false);
   const [otherUserProfile, setOtherUserProfile] = useState<{
@@ -37,8 +50,91 @@ export const ChatThread = ({
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const { messages, isLoading, isSending, sendMessage, fetchMessages } =
-    useMessaging();
+  // Mark messages as read function
+  const markMessagesAsRead = useCallback(async (convId: string) => {
+    if (!user?.id || !convId) return;
+
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("conversation_id", convId)
+        .neq("sender_id", user.id)
+        .is("read_at", null);
+
+      if (!error) {
+        // Update local messages state to reflect read status
+        setMessages(prev => prev.map(msg => ({
+          ...msg,
+          read_at: msg.sender_id !== user.id ? new Date().toISOString() : msg.read_at
+        })));
+        // Notify parent that messages were read
+        onMessagesRead?.();
+      }
+    } catch (error) {
+      console.error("Error marking messages as read:", error);
+    }
+  }, [user?.id, onMessagesRead]);
+
+  // Fetch messages function
+  const fetchMessages = useCallback(async (convId: string) => {
+    if (!user?.id) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", convId)
+        .order("created_at", { ascending: true });
+
+      if (error) throw error;
+
+      setMessages(data || []);
+
+      // Mark messages as read immediately after fetching
+      await markMessagesAsRead(convId);
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id, markMessagesAsRead]);
+
+  // Send message function
+  const sendMessage = useCallback(async (convId: string, text: string): Promise<boolean> => {
+    if (!user?.id || !text.trim()) return false;
+
+    setIsSending(true);
+    try {
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({
+          conversation_id: convId,
+          sender_id: user.id,
+          text: text.trim(),
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMessages((prev) => [...prev, data]);
+
+      // Update conversation timestamp
+      await supabase
+        .from("conversations")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", convId);
+
+      return true;
+    } catch (error) {
+      console.error("Error sending message:", error);
+      return false;
+    } finally {
+      setIsSending(false);
+    }
+  }, [user?.id]);
 
   // Initialize conversation
   useEffect(() => {
@@ -65,7 +161,44 @@ export const ChatThread = ({
   useEffect(() => {
     setHasSetPrefilled(false);
     setMessageText("");
+    setMessages([]);
+    setConversationId(null);
   }, [targetUserId]);
+
+  // Subscribe to real-time messages
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const channel = supabase
+      .channel(`chat-thread:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `conversation_id=eq.${conversationId}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          // Only add if not already in messages (avoid duplicates)
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === newMessage.id)) return prev;
+            return [...prev, newMessage];
+          });
+
+          // Mark as read if from other user
+          if (newMessage.sender_id !== user?.id) {
+            markMessagesAsRead(conversationId);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [conversationId, user?.id, markMessagesAsRead]);
 
   const fetchOtherUserProfile = async () => {
     const { data } = await supabase
