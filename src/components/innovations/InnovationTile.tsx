@@ -156,12 +156,12 @@ export const InnovationTile = ({
           </div>
         )}
 
-        {/* Top bar with category badge and creator profile */}
-        <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 z-10">
+        {/* Top bar with category badge */}
+        <div className="absolute top-3 left-3 z-10">
           {/* Category badge */}
           <div
             className={cn(
-              "px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm flex-shrink-0",
+              "px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm",
               categoryColors[innovation.category],
               "text-primary-foreground",
             )}
@@ -170,26 +170,6 @@ export const InnovationTile = ({
               ? innovation.custom_category
               : categoryLabels[innovation.category]}
           </div>
-          
-          {/* Creator Profile - LinkedIn style */}
-          {innovation.profiles && (
-            <div
-              className="flex-shrink-0 bg-background/80 backdrop-blur-sm rounded-full px-2 py-1"
-              style={{
-                opacity: isActive ? 1 : 0.9,
-                transition: "opacity 200ms ease-out",
-              }}
-            >
-              <UserProfileLink
-                userId={innovation.innovator_id}
-                fullName={innovation.profiles.full_name}
-                avatarUrl={innovation.profiles.avatar_url}
-                showName={false}
-                avatarSize="sm"
-                className="hover:scale-105 transition-transform"
-              />
-            </div>
-          )}
         </div>
 
         {/* Content */}
