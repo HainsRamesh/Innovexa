@@ -293,6 +293,63 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          actor_avatar_url: string | null
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          data: Json | null
+          group_key: string | null
+          id: string
+          is_read: boolean
+          message: string
+          priority: number
+          read_at: string | null
+          related_id: string | null
+          related_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_avatar_url?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          data?: Json | null
+          group_key?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          priority?: number
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_avatar_url?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          data?: Json | null
+          group_key?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          priority?: number
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       problem_likes: {
         Row: {
           created_at: string
@@ -597,6 +654,23 @@ export type Database = {
         Args: { _solution_id: string; _user_id: string }
         Returns: boolean
       }
+      create_notification: {
+        Args: {
+          p_actor_avatar_url?: string
+          p_actor_id?: string
+          p_actor_name?: string
+          p_data?: Json
+          p_group_key?: string
+          p_message: string
+          p_priority?: number
+          p_related_id?: string
+          p_related_type?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -611,6 +685,10 @@ export type Database = {
       increment_innovation_view_count: {
         Args: { _innovation_id: string }
         Returns: undefined
+      }
+      mark_all_notifications_read: {
+        Args: { p_user_id: string }
+        Returns: number
       }
       track_enterprise_video_view: {
         Args: { _innovation_id: string }
