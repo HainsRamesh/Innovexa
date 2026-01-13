@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatDistanceToNow, format } from 'date-fns';
-import { Bell, CheckCheck, Trash2, Filter, ArrowLeft } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, ArrowLeft } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useNotifications, GroupedNotification, getNotificationMeta } from '@/hooks/useNotifications';
+import { 
+  useNotifications, 
+  GroupedNotification, 
+  getNotificationMeta,
+  formatRelativeTime 
+} from '@/hooks/useNotifications';
+import { NotificationSkeleton } from '@/components/notifications/NotificationSkeleton';
 import { cn } from '@/lib/utils';
 
 const FILTER_TABS = [
@@ -15,6 +19,7 @@ const FILTER_TABS = [
   { id: 'mentions', label: 'Mentions' },
   { id: 'approvals', label: 'Approvals' },
   { id: 'comments', label: 'Comments' },
+  { id: 'likes', label: 'Likes' },
   { id: 'investments', label: 'Investments' },
 ];
 
@@ -54,199 +59,192 @@ const NotificationsPage = () => {
     }
   };
 
-  // Group notifications by date
-  const groupByDate = (notifications: GroupedNotification[]) => {
-    const groups: { [key: string]: GroupedNotification[] } = {};
+  // Parse message to make actor name bold
+  const renderMessage = (notification: GroupedNotification) => {
+    const actorName = notification.actor_name;
+    const message = notification.message;
     
-    notifications.forEach(notif => {
-      const date = new Date(notif.created_at);
-      const today = new Date();
-      const yesterday = new Date(today);
-      yesterday.setDate(yesterday.getDate() - 1);
-      
-      let key: string;
-      if (date.toDateString() === today.toDateString()) {
-        key = 'Today';
-      } else if (date.toDateString() === yesterday.toDateString()) {
-        key = 'Yesterday';
-      } else {
-        key = format(date, 'MMMM d, yyyy');
-      }
-      
-      if (!groups[key]) {
-        groups[key] = [];
-      }
-      groups[key].push(notif);
-    });
+    if (actorName && message.startsWith(actorName)) {
+      const restOfMessage = message.substring(actorName.length);
+      return (
+        <>
+          <span className="font-semibold text-foreground">{actorName}</span>
+          <span className={notification.is_read ? "text-muted-foreground" : "text-foreground/90"}>
+            {restOfMessage}
+          </span>
+        </>
+      );
+    }
     
-    return groups;
+    return <span className={notification.is_read ? "text-muted-foreground" : "text-foreground"}>{message}</span>;
   };
-
-  const groupedByDate = groupByDate(filteredNotifications);
 
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+      <div className="h-full flex flex-col max-w-3xl mx-auto">
+        {/* Compact Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/30 backdrop-blur-sm sticky top-0 z-10">
+          <div className="flex items-center gap-2">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate(-1)}
-              className="h-9 w-9"
+              className="h-8 w-8 mr-1"
             >
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2">
-              <Bell className="h-6 w-6 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Notifications</h1>
-              {unreadCount > 0 && (
-                <span className="bg-primary/20 text-primary text-sm font-medium px-2 py-0.5 rounded-full">
-                  {unreadCount} unread
-                </span>
-              )}
-            </div>
+            <Bell className="h-5 w-5 text-primary" />
+            <h1 className="text-lg font-semibold text-foreground">Notifications</h1>
+            {unreadCount > 0 && (
+              <span className="text-xs text-primary bg-primary/15 px-2 py-0.5 rounded-full font-medium">
+                {unreadCount} unread
+              </span>
+            )}
           </div>
           
           {unreadCount > 0 && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
               onClick={markAllAsRead}
-              className="gap-2"
+              className="gap-1.5 text-muted-foreground hover:text-primary h-8"
             >
               <CheckCheck className="h-4 w-4" />
-              Mark all as read
+              <span className="hidden sm:inline">Mark all read</span>
             </Button>
           )}
         </div>
 
-        {/* Filter tabs */}
-        <Tabs value={activeFilter} onValueChange={setActiveFilter} className="mb-6">
-          <TabsList className="w-full md:w-auto bg-muted/50">
+        {/* Sticky filter tabs */}
+        <div className="px-4 py-2 border-b border-border/30 bg-background/80 backdrop-blur-sm sticky top-[57px] z-10">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide pb-0.5">
             {FILTER_TABS.map(tab => (
-              <TabsTrigger
+              <button
                 key={tab.id}
-                value={tab.id}
-                className="data-[state=active]:bg-background"
+                onClick={() => setActiveFilter(tab.id)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all",
+                  activeFilter === tab.id
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60 border border-border/50"
+                )}
               >
                 {tab.label}
-              </TabsTrigger>
+              </button>
             ))}
-          </TabsList>
-        </Tabs>
+          </div>
+        </div>
 
-        {/* Notifications list */}
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
-          </div>
-        ) : filteredNotifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Bell className="h-10 w-10 text-muted-foreground/50" />
+        {/* Notifications feed */}
+        <ScrollArea className="flex-1">
+          {isLoading ? (
+            <div className="p-4">
+              <NotificationSkeleton count={8} />
             </div>
-            <h3 className="text-lg font-medium text-foreground mb-1">
-              You're all caught up! 🎉
-            </h3>
-            <p className="text-muted-foreground">
-              No notifications to show
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {Object.entries(groupedByDate).map(([date, notifications]) => (
-              <div key={date}>
-                <h3 className="text-sm font-medium text-muted-foreground mb-3 px-1">
-                  {date}
-                </h3>
-                <div className="bg-card border border-border rounded-lg overflow-hidden">
-                  {notifications.map((notification, index) => {
-                    const meta = getNotificationMeta(notification.type);
-                    
-                    return (
-                      <div
-                        key={notification.id}
-                        className={cn(
-                          "group flex items-start gap-4 p-4 cursor-pointer transition-all",
-                          "hover:bg-muted/50",
-                          index !== notifications.length - 1 && "border-b border-border/50",
-                          !notification.is_read && "bg-primary/5"
-                        )}
-                        onClick={() => handleNotificationClick(notification)}
-                      >
-                        {/* Unread indicator */}
-                        {!notification.is_read && (
-                          <div className="flex-shrink-0 w-2 h-2 rounded-full bg-primary mt-3 animate-pulse" />
-                        )}
-                        
-                        {/* Avatar */}
-                        <div className="flex-shrink-0">
-                          {notification.actor_avatar_url ? (
-                            <Avatar className="h-12 w-12 border border-border/50">
-                              <AvatarImage src={notification.actor_avatar_url} />
-                              <AvatarFallback className="bg-muted text-muted-foreground">
-                                {notification.actor_name?.charAt(0).toUpperCase() || meta.icon}
-                              </AvatarFallback>
-                            </Avatar>
-                          ) : (
-                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-xl">
-                              {meta.icon}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <p className={cn(
-                            "text-sm mb-1",
-                            !notification.is_read ? "text-foreground font-medium" : "text-muted-foreground"
-                          )}>
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground/70">
-                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
-                        
-                        {/* Actions */}
-                        <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2">
-                          {!notification.is_read && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                markAsRead(notification.id);
-                              }}
-                              title="Mark as read"
-                            >
-                              <CheckCheck className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deleteNotification(notification.id);
-                            }}
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                <Bell className="h-7 w-7 text-muted-foreground/40" />
               </div>
-            ))}
-          </div>
-        )}
+              <h3 className="text-base font-medium text-foreground mb-1">
+                {activeFilter === 'all' ? "You're all caught up! 🎉" : `No ${activeFilter} notifications`}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {activeFilter === 'all' 
+                  ? 'New notifications will appear here' 
+                  : 'Try checking "All" to see other notifications'}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/30">
+              {filteredNotifications.map((notification, index) => {
+                const meta = getNotificationMeta(notification.type);
+                
+                return (
+                  <div
+                    key={notification.id}
+                    className={cn(
+                      "group flex items-start gap-3 px-4 py-3 cursor-pointer transition-all",
+                      "hover:bg-muted/50",
+                      !notification.is_read && "bg-primary/[0.06]",
+                      "animate-in fade-in slide-in-from-top-1"
+                    )}
+                    style={{ animationDelay: `${Math.min(index * 20, 200)}ms` }}
+                    onClick={() => handleNotificationClick(notification)}
+                  >
+                    {/* Unread indicator */}
+                    {!notification.is_read && (
+                      <div className="absolute left-1.5 w-1.5 h-1.5 rounded-full bg-primary mt-4" />
+                    )}
+                    
+                    {/* Avatar */}
+                    <div className="relative flex-shrink-0">
+                      {notification.actor_avatar_url ? (
+                        <Avatar className="h-11 w-11 border border-border/50">
+                          <AvatarImage src={notification.actor_avatar_url} />
+                          <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
+                            {notification.actor_name?.charAt(0).toUpperCase() || meta.icon}
+                          </AvatarFallback>
+                        </Avatar>
+                      ) : (
+                        <div className="h-11 w-11 rounded-full bg-muted flex items-center justify-center text-xl">
+                          {meta.icon}
+                        </div>
+                      )}
+                      
+                      {/* Grouped count */}
+                      {notification.count && notification.count > 1 && (
+                        <span className="absolute -bottom-0.5 -right-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-sm">
+                          {notification.count > 99 ? '99+' : notification.count}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="flex-1 min-w-0 py-0.5">
+                      <p className="text-sm leading-snug line-clamp-2">
+                        {renderMessage(notification)}
+                      </p>
+                      <p className="text-xs text-muted-foreground/60 mt-1">
+                        {formatRelativeTime(notification.created_at)}
+                      </p>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pt-1">
+                      {!notification.is_read && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(notification.id);
+                          }}
+                          title="Mark as read"
+                        >
+                          <CheckCheck className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteNotification(notification.id);
+                        }}
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </ScrollArea>
       </div>
     </DashboardLayout>
   );
