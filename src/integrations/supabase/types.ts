@@ -632,6 +632,47 @@ export type Database = {
           },
         ]
       }
+      message_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string
+          size: number
+          thumbnail_url: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type: string
+          size: number
+          thumbnail_url?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string
+          size?: number
+          thumbnail_url?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           conversation_id: string
@@ -640,6 +681,7 @@ export type Database = {
           read_at: string | null
           sender_id: string
           text: string
+          type: string
         }
         Insert: {
           conversation_id: string
@@ -648,6 +690,7 @@ export type Database = {
           read_at?: string | null
           sender_id: string
           text: string
+          type?: string
         }
         Update: {
           conversation_id?: string
@@ -656,6 +699,7 @@ export type Database = {
           read_at?: string | null
           sender_id?: string
           text?: string
+          type?: string
         }
         Relationships: [
           {

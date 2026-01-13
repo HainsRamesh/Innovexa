@@ -1,20 +1,27 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, DragEvent } from "react";
 import { format } from "date-fns";
 import { Send, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { EmojiPicker } from "./EmojiPicker";
+import { AttachmentPicker, PendingAttachment } from "./AttachmentPicker";
+import { AttachmentPreview } from "./AttachmentPreview";
+import { MessageAttachmentsList, MessageAttachmentData } from "./MessageAttachment";
+import { cn } from "@/lib/utils";
 
 interface Message {
   id: string;
   conversation_id: string;
   sender_id: string;
   text: string;
+  type: string;
   read_at: string | null;
   created_at: string;
+  attachments?: MessageAttachmentData[];
 }
 
 interface ChatThreadProps {
@@ -44,11 +51,14 @@ export const ChatThread = ({
   const [isSending, setIsSending] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasSetPrefilled, setHasSetPrefilled] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [otherUserProfile, setOtherUserProfile] = useState<{
     full_name: string | null;
     avatar_url: string | null;
   } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Mark messages as read function
   const markMessagesAsRead = useCallback(async (convId: string) => {
@@ -63,12 +73,10 @@ export const ChatThread = ({
         .is("read_at", null);
 
       if (!error) {
-        // Update local messages state to reflect read status
         setMessages(prev => prev.map(msg => ({
           ...msg,
           read_at: msg.sender_id !== user.id ? new Date().toISOString() : msg.read_at
         })));
-        // Notify parent that messages were read
         onMessagesRead?.();
       }
     } catch (error) {
@@ -76,13 +84,13 @@ export const ChatThread = ({
     }
   }, [user?.id, onMessagesRead]);
 
-  // Fetch messages function
+  // Fetch messages with attachments
   const fetchMessages = useCallback(async (convId: string) => {
     if (!user?.id) return;
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const { data: messagesData, error } = await supabase
         .from("messages")
         .select("*")
         .eq("conversation_id", convId)
@@ -90,9 +98,46 @@ export const ChatThread = ({
 
       if (error) throw error;
 
-      setMessages(data || []);
+      // Fetch attachments for all messages
+      const messageIds = (messagesData || []).map(m => m.id);
+      let attachmentsMap: Record<string, MessageAttachmentData[]> = {};
 
-      // Mark messages as read immediately after fetching
+      if (messageIds.length > 0) {
+        const { data: attachmentsData } = await supabase
+          .from("message_attachments")
+          .select("*")
+          .in("message_id", messageIds);
+
+        if (attachmentsData) {
+          // Get signed URLs for private attachments
+          const attachmentsWithUrls = await Promise.all(
+            attachmentsData.map(async (att) => {
+              const { data: signedUrlData } = await supabase.storage
+                .from("chat-attachments")
+                .createSignedUrl(att.url.replace(/^.*chat-attachments\//, ""), 3600);
+              
+              return {
+                ...att,
+                url: signedUrlData?.signedUrl || att.url,
+              };
+            })
+          );
+
+          attachmentsWithUrls.forEach(att => {
+            if (!attachmentsMap[att.message_id]) {
+              attachmentsMap[att.message_id] = [];
+            }
+            attachmentsMap[att.message_id].push(att);
+          });
+        }
+      }
+
+      const messagesWithAttachments = (messagesData || []).map(msg => ({
+        ...msg,
+        attachments: attachmentsMap[msg.id] || [],
+      }));
+
+      setMessages(messagesWithAttachments);
       await markMessagesAsRead(convId);
     } catch (error) {
       console.error("Error fetching messages:", error);
@@ -101,40 +146,196 @@ export const ChatThread = ({
     }
   }, [user?.id, markMessagesAsRead]);
 
-  // Send message function
-  const sendMessage = useCallback(async (convId: string, text: string): Promise<boolean> => {
-    if (!user?.id || !text.trim()) return false;
+  // Upload attachment to storage
+  const uploadAttachment = async (file: File): Promise<{ url: string; thumbnailUrl?: string } | null> => {
+    if (!user?.id || !conversationId) return null;
+
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${user.id}/${conversationId}/${Date.now()}_${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+    const { data, error } = await supabase.storage
+      .from("chat-attachments")
+      .upload(fileName, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (error) {
+      console.error("Upload error:", error);
+      throw error;
+    }
+
+    return {
+      url: data.path,
+    };
+  };
+
+  // Send message with attachments
+  const sendMessageWithAttachments = async () => {
+    if (!conversationId || (!messageText.trim() && pendingAttachments.length === 0)) return;
+    if (!user?.id) return;
 
     setIsSending(true);
+
     try {
-      const { data, error } = await supabase
+      // Upload all attachments first
+      const uploadedAttachments: Array<{
+        file: File;
+        url: string;
+        thumbnailUrl?: string;
+      }> = [];
+
+      for (const attachment of pendingAttachments) {
+        setPendingAttachments(prev => 
+          prev.map(a => a.id === attachment.id ? { ...a, uploading: true, progress: 0 } : a)
+        );
+
+        try {
+          const result = await uploadAttachment(attachment.file);
+          if (result) {
+            uploadedAttachments.push({
+              file: attachment.file,
+              ...result,
+            });
+            setPendingAttachments(prev => 
+              prev.map(a => a.id === attachment.id ? { ...a, progress: 100 } : a)
+            );
+          }
+        } catch (error) {
+          setPendingAttachments(prev => 
+            prev.map(a => a.id === attachment.id ? { ...a, uploading: false, error: "Upload failed" } : a)
+          );
+          throw error;
+        }
+      }
+
+      // Determine message type
+      let messageType = "text";
+      if (uploadedAttachments.length > 0 && messageText.trim()) {
+        messageType = "mixed";
+      } else if (uploadedAttachments.length > 0) {
+        const hasImages = uploadedAttachments.some(a => a.file.type.startsWith("image/"));
+        const hasFiles = uploadedAttachments.some(a => !a.file.type.startsWith("image/"));
+        if (hasImages && !hasFiles) {
+          messageType = "image";
+        } else {
+          messageType = "file";
+        }
+      }
+
+      // Insert message
+      const { data: newMessage, error: msgError } = await supabase
         .from("messages")
         .insert({
-          conversation_id: convId,
+          conversation_id: conversationId,
           sender_id: user.id,
-          text: text.trim(),
+          text: messageText.trim() || "",
+          type: messageType,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (msgError) throw msgError;
 
-      setMessages((prev) => [...prev, data]);
+      // Insert attachments
+      if (uploadedAttachments.length > 0) {
+        const attachmentRecords = uploadedAttachments.map(att => ({
+          message_id: newMessage.id,
+          url: att.url,
+          file_name: att.file.name,
+          mime_type: att.file.type,
+          size: att.file.size,
+          thumbnail_url: att.thumbnailUrl || null,
+        }));
+
+        const { error: attError } = await supabase
+          .from("message_attachments")
+          .insert(attachmentRecords);
+
+        if (attError) {
+          console.error("Error inserting attachments:", attError);
+        }
+      }
 
       // Update conversation timestamp
       await supabase
         .from("conversations")
         .update({ updated_at: new Date().toISOString() })
-        .eq("id", convId);
+        .eq("id", conversationId);
 
-      return true;
+      // Clear inputs
+      setMessageText("");
+      setPendingAttachments([]);
+
+      // Refetch to get attachments with proper URLs
+      await fetchMessages(conversationId);
     } catch (error) {
       console.error("Error sending message:", error);
-      return false;
     } finally {
       setIsSending(false);
     }
-  }, [user?.id]);
+  };
+
+  // Handle file selection
+  const handleFilesSelected = (files: File[]) => {
+    const newAttachments: PendingAttachment[] = files.map(file => ({
+      id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      file,
+      type: file.type.startsWith("image/") ? "image" : "file",
+      preview: file.type.startsWith("image/") ? URL.createObjectURL(file) : undefined,
+    }));
+    setPendingAttachments(prev => [...prev, ...newAttachments]);
+  };
+
+  // Handle attachment removal
+  const handleRemoveAttachment = (id: string) => {
+    setPendingAttachments(prev => {
+      const attachment = prev.find(a => a.id === id);
+      if (attachment?.preview) {
+        URL.revokeObjectURL(attachment.preview);
+      }
+      return prev.filter(a => a.id !== id);
+    });
+  };
+
+  // Handle emoji selection
+  const handleEmojiSelect = (emoji: string) => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newText = messageText.slice(0, start) + emoji + messageText.slice(end);
+      setMessageText(newText);
+      // Set cursor position after emoji
+      setTimeout(() => {
+        textarea.selectionStart = textarea.selectionEnd = start + emoji.length;
+        textarea.focus();
+      }, 0);
+    } else {
+      setMessageText(prev => prev + emoji);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFilesSelected(files);
+    }
+  };
 
   // Initialize conversation
   useEffect(() => {
@@ -157,12 +358,13 @@ export const ChatThread = ({
     }
   }, [prefilledMessage, hasSetPrefilled, messages.length, isLoading, conversationId]);
 
-  // Reset prefilled flag when target user changes
+  // Reset state when target user changes
   useEffect(() => {
     setHasSetPrefilled(false);
     setMessageText("");
     setMessages([]);
     setConversationId(null);
+    setPendingAttachments([]);
   }, [targetUserId]);
 
   // Subscribe to real-time messages
@@ -179,15 +381,35 @@ export const ChatThread = ({
           table: "messages",
           filter: `conversation_id=eq.${conversationId}`,
         },
-        (payload) => {
+        async (payload) => {
           const newMessage = payload.new as Message;
-          // Only add if not already in messages (avoid duplicates)
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === newMessage.id)) return prev;
-            return [...prev, newMessage];
-          });
+          
+          // Check if already exists
+          if (messages.some(m => m.id === newMessage.id)) return;
 
-          // Mark as read if from other user
+          // Fetch attachments for new message
+          const { data: attachmentsData } = await supabase
+            .from("message_attachments")
+            .select("*")
+            .eq("message_id", newMessage.id);
+
+          let attachments: MessageAttachmentData[] = [];
+          if (attachmentsData && attachmentsData.length > 0) {
+            attachments = await Promise.all(
+              attachmentsData.map(async (att) => {
+                const { data: signedUrlData } = await supabase.storage
+                  .from("chat-attachments")
+                  .createSignedUrl(att.url.replace(/^.*chat-attachments\//, ""), 3600);
+                return {
+                  ...att,
+                  url: signedUrlData?.signedUrl || att.url,
+                };
+              })
+            );
+          }
+
+          setMessages(prev => [...prev, { ...newMessage, attachments }]);
+
           if (newMessage.sender_id !== user?.id) {
             markMessagesAsRead(conversationId);
           }
@@ -198,7 +420,7 @@ export const ChatThread = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, user?.id, markMessagesAsRead]);
+  }, [conversationId, user?.id, markMessagesAsRead, messages]);
 
   const fetchOtherUserProfile = async () => {
     const { data } = await supabase
@@ -206,7 +428,6 @@ export const ChatThread = ({
       .select("full_name, avatar_url")
       .eq("id", targetUserId)
       .maybeSingle();
-
     setOtherUserProfile(data);
   };
 
@@ -235,12 +456,7 @@ export const ChatThread = ({
   };
 
   const handleSend = async () => {
-    if (!conversationId || !messageText.trim()) return;
-
-    const success = await sendMessage(conversationId, messageText);
-    if (success) {
-      setMessageText("");
-    }
+    await sendMessageWithAttachments();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -262,9 +478,15 @@ export const ChatThread = ({
 
   const displayName = targetUserName || otherUserProfile?.full_name || "User";
   const displayAvatar = targetUserAvatar || otherUserProfile?.avatar_url;
+  const canSend = messageText.trim() || pendingAttachments.length > 0;
 
   return (
-    <div className="flex flex-col h-full">
+    <div 
+      className="flex flex-col h-full"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border flex-shrink-0">
         {showBackButton && (
@@ -288,6 +510,13 @@ export const ChatThread = ({
         </div>
       </div>
 
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary flex items-center justify-center">
+          <p className="text-primary font-medium">Drop files here</p>
+        </div>
+      )}
+
       {/* Messages Area */}
       <ScrollArea className="flex-1 p-4">
         {isInitializing || isLoading ? (
@@ -304,27 +533,42 @@ export const ChatThread = ({
           <div className="space-y-3">
             {messages.map((message) => {
               const isOwn = message.sender_id === user?.id;
+              const hasText = message.text && message.text.trim().length > 0;
+              const hasAttachments = message.attachments && message.attachments.length > 0;
+
               return (
                 <div
                   key={message.id}
                   className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                 >
-                  <div
-                    className={`max-w-[80%] rounded-2xl px-3 py-2 ${
-                      isOwn
-                        ? "bg-primary text-primary-foreground rounded-br-md"
-                        : "bg-muted text-foreground rounded-bl-md"
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap break-words">
-                      {message.text}
-                    </p>
+                  <div className={cn("max-w-[80%] flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
+                    {/* Attachments */}
+                    {hasAttachments && (
+                      <MessageAttachmentsList attachments={message.attachments!} isOwn={isOwn} />
+                    )}
+                    
+                    {/* Text bubble */}
+                    {hasText && (
+                      <div
+                        className={cn(
+                          "rounded-2xl px-3 py-2",
+                          isOwn
+                            ? "bg-primary text-primary-foreground rounded-br-md"
+                            : "bg-muted text-foreground rounded-bl-md"
+                        )}
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words">
+                          {message.text}
+                        </p>
+                      </div>
+                    )}
+                    
+                    {/* Timestamp */}
                     <p
-                      className={`text-[10px] mt-1 ${
-                        isOwn
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
-                      }`}
+                      className={cn(
+                        "text-[10px]",
+                        isOwn ? "text-muted-foreground" : "text-muted-foreground"
+                      )}
                     >
                       {format(new Date(message.created_at), "h:mm a")}
                     </p>
@@ -337,22 +581,39 @@ export const ChatThread = ({
         )}
       </ScrollArea>
 
+      {/* Attachment Preview */}
+      <AttachmentPreview
+        attachments={pendingAttachments}
+        onRemove={handleRemoveAttachment}
+      />
+
       {/* Input Area */}
       <div className="p-3 border-t border-border flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <Input
+        <div className="flex items-end gap-2">
+          <AttachmentPicker
+            onFilesSelected={handleFilesSelected}
+            currentCount={pendingAttachments.length}
+            disabled={isSending || isInitializing}
+          />
+          <EmojiPicker
+            onEmojiSelect={handleEmojiSelect}
+            disabled={isSending || isInitializing}
+          />
+          <Textarea
+            ref={textareaRef}
             value={messageText}
             onChange={(e) => setMessageText(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
-            className="flex-1 bg-background border-border text-sm"
+            className="flex-1 min-h-[36px] max-h-[120px] resize-none bg-background border-border text-sm py-2"
             disabled={isSending || isInitializing}
+            rows={1}
           />
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={!messageText.trim() || isSending || isInitializing}
-            className="h-9 w-9"
+            disabled={!canSend || isSending || isInitializing}
+            className="h-9 w-9 flex-shrink-0"
           >
             {isSending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
