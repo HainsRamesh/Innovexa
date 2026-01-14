@@ -45,72 +45,90 @@ function parseRetryAfter(headerValue: string | null): number | null {
   return null;
 }
 
-async function fetchWithBackoff(
-  requestFn: () => Promise<Response>,
-  attempts = 3,
-  baseDelayMs = 500,
-): Promise<{ response: Response; exhausted: boolean }> {
-  let lastResponse: Response | null = null;
+ async function fetchWithBackoff(
+    requestFn: () => Promise<Response>,
+    attempts = 2,        // <= reduce retries (total attempts)
+    baseDelayMs = 400,
+    maxDelayMs = 4000,
+  ): Promise<{ response: Response; exhausted: boolean }> {
+    let lastResponse: Response | null = null;
 
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    lastResponse = await requestFn();
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      lastResponse = await requestFn();
 
-    if (lastResponse.status !== 429) {
-      return { response: lastResponse, exhausted: false };
+      // Success or non-429 → return immediately
+      if (lastResponse.status !== 429) {
+        return { response: lastResponse, exhausted: false };
+      }
+
+      // If 429 is actually quota/billing, retries won't help → stop now
+      try {
+        const j = await lastResponse.clone().json();
+        const code = j?.error?.code;
+        const type = j?.error?.type;
+        if (code === "insufficient_quota" || type === "insufficient_quota") {
+          return { response: lastResponse, exhausted: true };
+        }
+      } catch {
+        // ignore parse errors
+      }
+
+      // last attempt
+      if (attempt === attempts - 1) break;
+
+      const retryAfter = parseRetryAfter(lastResponse.headers.get("retry-after"));
+
+      // exponential backoff with full jitter
+      const exp = Math.min(baseDelayMs * 2 ** attempt, maxDelayMs);
+      const jitter = Math.floor(Math.random() * exp);
+      const waitMs = retryAfter ? Math.max(retryAfter, jitter) : jitter;
+
+      await sleep(waitMs);
     }
 
-    if (attempt === attempts - 1) {
-      break;
-    }
-
-    const retryAfter = parseRetryAfter(lastResponse.headers.get("retry-after"));
-    const backoffMs = retryAfter ?? baseDelayMs * 2 ** attempt;
-    await sleep(backoffMs);
+    if (!lastResponse) throw new Error("No response received from request");
+    return { response: lastResponse, exhausted: true };
   }
 
-  if (!lastResponse) {
-    throw new Error("No response received from request");
-  }
-
-  return { response: lastResponse, exhausted: true };
-}
 
 function evaluateModeration(result: any): ModerationDecision {
-  const output = result?.results?.[0];
+  const output = result?.results?.[0] ?? {};
+  const flagged = output?.flagged === true;
+
   const categories = output?.categories ?? {};
   const scores = output?.category_scores ?? {};
 
+  // Tuned to be stricter for image uploads (especially NSFW)
   const thresholds: Record<string, number> = {
-    sexual: 0.4,
-    "sexual/minors": 0.1,
-    violence: 0.45,
-    "violence/graphic": 0.35,
-    "self-harm": 0.3,
-    "self-harm/intent": 0.25,
-    "self-harm/instructions": 0.25,
-    hate: 0.45,
-    "hate/threatening": 0.35,
-    harassment: 0.45,
-    "harassment/threatening": 0.35,
-    abuse: 0.35,
+    sexual: 0.15,
+    violence: 0.25,
+    "violence/graphic": 0.15,
+    "self-harm": 0.15,
+    "self-harm/intent": 0.10,
+    "self-harm/instructions": 0.10,
   };
 
   const reasons: string[] = [];
 
   for (const [key, threshold] of Object.entries(thresholds)) {
-    const flagged = categories?.[key] === true;
+    const isCategoryFlagged = categories?.[key] === true;
     const score = typeof scores?.[key] === "number" ? scores[key] : 0;
-    if (flagged || score >= threshold) {
+
+    if (isCategoryFlagged || score >= threshold) {
       reasons.push(`${key} ${(score * 100).toFixed(0)}%`);
     }
   }
 
-  if (reasons.length > 0) {
+  // Primary signal: if model says flagged, reject
+  if (flagged || reasons.length > 0) {
+    // If flagged but we didn't collect reasons (rare), provide a generic one
+    if (flagged && reasons.length === 0) reasons.push("flagged");
     return { decision: "reject", reasons };
   }
 
-  return { decision: "approve", reasons };
+  return { decision: "approve", reasons: [] };
 }
+
 
 async function updateAssetStatus(
   supabaseAdmin: ReturnType<typeof createClient>,
@@ -156,7 +174,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const openAiKey = Deno.env.get("OPENAI_API_KEY");
+    const openAiKey = Deno.env.get("OPENAI_API_KEY_MODERATION");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -259,20 +277,27 @@ Deno.serve(async (req) => {
             ],
           }),
         }),
-      3,
-      500,
+      2,
+      400,
     );
 
     const moderationJson = await moderationRes.json().catch(() => null);
 
     if (moderationRes.status === 429 && exhausted) {
-      console.warn("OpenAI moderation rate limited after retries");
-      await updateAssetStatus(supabaseAdmin, asset_id, { status: "error" });
-      return new Response(JSON.stringify({ error: "Rate limited, please try again" }), {
-        status: 503,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    console.warn("OpenAI moderation 429 after retries", {
+      code: moderationJson?.error?.code,
+      type: moderationJson?.error?.type,
+      message: moderationJson?.error?.message,
+    });
+
+    await updateAssetStatus(supabaseAdmin, asset_id, { status: "error" });
+
+    return new Response(JSON.stringify({ error: "Rate limited, please try again" }), {
+      status: 503,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
 
     if (!moderationRes.ok) {
       const msg = moderationJson?.error?.message ?? JSON.stringify(moderationJson);

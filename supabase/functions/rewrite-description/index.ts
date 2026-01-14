@@ -13,13 +13,13 @@ type RewriteRequest = {
   maxWords?: number;
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function extractOutputText(result: any): string | null {
-  // Responses API commonly returns output_text as a string
   if (typeof result?.output_text === "string" && result.output_text.trim()) {
     return result.output_text.trim();
   }
 
-  // Fallback: scan output array
   const output = result?.output;
   if (Array.isArray(output)) {
     for (const item of output) {
@@ -37,8 +37,61 @@ function extractOutputText(result: any): string | null {
   return null;
 }
 
+function isRetryableOpenAI(status: number): boolean {
+  // 429 rate limit, 500/502/503/504 server/transient errors
+  return status === 429 || status === 500 || status === 502 || status === 503 || status === 504;
+}
+
+async function fetchWithRetry(
+  url: string,
+  init: RequestInit,
+  retries = 2,          // total attempts = 1 + retries => 3
+  baseDelayMs = 400,
+  maxDelayMs = 4000,
+): Promise<Response> {
+  let lastRes: Response | null = null;
+  let lastErr: any = null;
+
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, init);
+      lastRes = res;
+
+      if (res.ok) return res;
+
+      // Only retry on retryable status codes
+      if (!isRetryableOpenAI(res.status) || attempt === retries) return res;
+
+      // Respect Retry-After if present (seconds)
+      const retryAfter = res.headers.get("retry-after");
+      let delayMs: number | null = null;
+      if (retryAfter) {
+        const parsed = Number(retryAfter);
+        if (Number.isFinite(parsed)) delayMs = parsed * 1000;
+      }
+
+      // Exponential backoff + full jitter
+      const exp = Math.min(baseDelayMs * 2 ** attempt, maxDelayMs);
+      const jitter = Math.floor(Math.random() * exp);
+      const backoffMs = delayMs ? Math.max(delayMs, jitter) : jitter;
+
+      await sleep(backoffMs);
+      continue;
+    } catch (e) {
+      lastErr = e;
+      if (attempt === retries) break;
+
+      const exp = Math.min(baseDelayMs * 2 ** attempt, maxDelayMs);
+      const jitter = Math.floor(Math.random() * exp);
+      await sleep(jitter);
+    }
+  }
+
+  if (lastRes) return lastRes;
+  throw lastErr ?? new Error("Request failed");
+}
+
 Deno.serve(async (req) => {
-  // ✅ CORS preflight must return OK (2xx) + CORS headers
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
   }
@@ -61,7 +114,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const apiKey = Deno.env.get("OPENAI_API_KEY");
+    const apiKey = Deno.env.get("OPENAI_API_KEY_TEXT");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
         status: 500,
@@ -70,7 +123,7 @@ Deno.serve(async (req) => {
     }
 
     const prompt =
-      `Rewrite the following innovation description to be clearer and easier to understand while staying ${tone} and professional.\n` +
+      `Rewrite the following innovation description to be clearer and easier to understand while staying ${tone}.\n` +
       `Rules:\n` +
       `- Do NOT add any new claims or facts.\n` +
       `- Preserve ALL details already mentioned; only improve wording and structure.\n` +
@@ -78,27 +131,43 @@ Deno.serve(async (req) => {
       `- Keep it within ${maxWords} words.\n\n` +
       `Original:\n${text.trim()}`;
 
-    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const openaiRes = await fetchWithRetry(
+      "https://api.openai.com/v1/responses",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-4o-mini",
+          input: prompt,
+          max_output_tokens: 400,
+        }),
       },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        input: prompt,
-        max_output_tokens: 400,
-      }),
-    });
+      2,    // retries
+      400,  // baseDelay
+    );
 
     const raw = await openaiRes.text();
 
     if (!openaiRes.ok) {
       console.error("OpenAI error:", openaiRes.status, raw);
-      return new Response(JSON.stringify({ error: "OpenAI request failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+
+      // If it's rate limited, return 503 so frontend can retry gracefully
+      const status = openaiRes.status === 429 ? 503 : 500;
+
+      return new Response(
+        JSON.stringify({
+          error: openaiRes.status === 429
+            ? "Rate limited, please try again"
+            : "OpenAI request failed",
+        }),
+        {
+          status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
 
     const result = JSON.parse(raw);
@@ -121,9 +190,12 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("rewrite-description error:", error);
-    return new Response(JSON.stringify({ error: "Failed to rewrite description" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Failed to rewrite description" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
