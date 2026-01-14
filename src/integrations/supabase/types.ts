@@ -575,281 +575,52 @@ export type Database = {
           },
         ]
       }
-      investor_interests: {
+      media_assets: {
         Row: {
+          bucket: string
           created_at: string
           id: string
           innovation_id: string | null
-          interest_type: string
-          investment_range: string | null
-          investor_id: string
-          investor_name: string
-          message: string | null
-          problem_id: string | null
-          status: string | null
-          updated_at: string
+          kind: "cover" | "gallery"
+          moderated_at: string | null
+          moderation_result: Json | null
+          path: string
+          public_url: string | null
+          status: "pending" | "approved" | "rejected" | "error"
+          user_id: string
         }
         Insert: {
+          bucket: string
           created_at?: string
           id?: string
           innovation_id?: string | null
-          interest_type: string
-          investment_range?: string | null
-          investor_id: string
-          investor_name: string
-          message?: string | null
-          problem_id?: string | null
-          status?: string | null
-          updated_at?: string
+          kind: "cover" | "gallery"
+          moderated_at?: string | null
+          moderation_result?: Json | null
+          path: string
+          public_url?: string | null
+          status?: "pending" | "approved" | "rejected" | "error"
+          user_id: string
         }
         Update: {
+          bucket?: string
           created_at?: string
           id?: string
           innovation_id?: string | null
-          interest_type?: string
-          investment_range?: string | null
-          investor_id?: string
-          investor_name?: string
-          message?: string | null
-          problem_id?: string | null
-          status?: string | null
-          updated_at?: string
+          kind?: "cover" | "gallery"
+          moderated_at?: string | null
+          moderation_result?: Json | null
+          path?: string
+          public_url?: string | null
+          status?: "pending" | "approved" | "rejected" | "error"
+          user_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "investor_interests_innovation_id_fkey"
+            foreignKeyName: "media_assets_innovation_id_fkey"
             columns: ["innovation_id"]
             isOneToOne: false
             referencedRelation: "innovations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "investor_interests_problem_id_fkey"
-            columns: ["problem_id"]
-            isOneToOne: false
-            referencedRelation: "problems"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      message_attachments: {
-        Row: {
-          created_at: string
-          file_name: string
-          id: string
-          message_id: string
-          mime_type: string
-          size: number
-          thumbnail_url: string | null
-          url: string
-        }
-        Insert: {
-          created_at?: string
-          file_name: string
-          id?: string
-          message_id: string
-          mime_type: string
-          size: number
-          thumbnail_url?: string | null
-          url: string
-        }
-        Update: {
-          created_at?: string
-          file_name?: string
-          id?: string
-          message_id?: string
-          mime_type?: string
-          size?: number
-          thumbnail_url?: string | null
-          url?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_attachments_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      messages: {
-        Row: {
-          conversation_id: string
-          created_at: string
-          deleted_for_user_ids: string[] | null
-          edited_at: string | null
-          id: string
-          is_deleted: boolean | null
-          read_at: string | null
-          reply_to_message_id: string | null
-          reply_to_sender_id: string | null
-          reply_to_snippet: string | null
-          sender_id: string
-          text: string
-          type: string
-        }
-        Insert: {
-          conversation_id: string
-          created_at?: string
-          deleted_for_user_ids?: string[] | null
-          edited_at?: string | null
-          id?: string
-          is_deleted?: boolean | null
-          read_at?: string | null
-          reply_to_message_id?: string | null
-          reply_to_sender_id?: string | null
-          reply_to_snippet?: string | null
-          sender_id: string
-          text: string
-          type?: string
-        }
-        Update: {
-          conversation_id?: string
-          created_at?: string
-          deleted_for_user_ids?: string[] | null
-          edited_at?: string | null
-          id?: string
-          is_deleted?: boolean | null
-          read_at?: string | null
-          reply_to_message_id?: string | null
-          reply_to_sender_id?: string | null
-          reply_to_snippet?: string | null
-          sender_id?: string
-          text?: string
-          type?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "messages_conversation_id_fkey"
-            columns: ["conversation_id"]
-            isOneToOne: false
-            referencedRelation: "conversations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "messages_reply_to_message_id_fkey"
-            columns: ["reply_to_message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      nda_acceptances: {
-        Row: {
-          accepted_at: string
-          document_id: string
-          id: string
-          investor_id: string
-        }
-        Insert: {
-          accepted_at?: string
-          document_id: string
-          id?: string
-          investor_id: string
-        }
-        Update: {
-          accepted_at?: string
-          document_id?: string
-          id?: string
-          investor_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "nda_acceptances_document_id_fkey"
-            columns: ["document_id"]
-            isOneToOne: false
-            referencedRelation: "innovation_documents"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      notifications: {
-        Row: {
-          actor_avatar_url: string | null
-          actor_id: string | null
-          actor_name: string | null
-          created_at: string
-          data: Json | null
-          group_key: string | null
-          id: string
-          is_read: boolean
-          message: string
-          priority: number
-          read_at: string | null
-          related_id: string | null
-          related_type: string | null
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          actor_avatar_url?: string | null
-          actor_id?: string | null
-          actor_name?: string | null
-          created_at?: string
-          data?: Json | null
-          group_key?: string | null
-          id?: string
-          is_read?: boolean
-          message: string
-          priority?: number
-          read_at?: string | null
-          related_id?: string | null
-          related_type?: string | null
-          title: string
-          type: string
-          user_id: string
-        }
-        Update: {
-          actor_avatar_url?: string | null
-          actor_id?: string | null
-          actor_name?: string | null
-          created_at?: string
-          data?: Json | null
-          group_key?: string | null
-          id?: string
-          is_read?: boolean
-          message?: string
-          priority?: number
-          read_at?: string | null
-          related_id?: string | null
-          related_type?: string | null
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      problem_likes: {
-        Row: {
-          created_at: string
-          id: string
-          problem_id: string
-          session_id: string
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          problem_id: string
-          session_id: string
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          problem_id?: string
-          session_id?: string
-          user_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "problem_likes_problem_id_fkey"
-            columns: ["problem_id"]
-            isOneToOne: false
-            referencedRelation: "problems"
             referencedColumns: ["id"]
           },
         ]
