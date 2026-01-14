@@ -126,6 +126,22 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Input length validation - prevent resource exhaustion
+    if (cleanTitle.length > 200) {
+      return new Response(
+        JSON.stringify({ error: "Title must be 200 characters or less" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Count range validation - prevent excessive API calls
+    if (typeof count !== 'number' || count < 1 || count > 10) {
+      return new Response(
+        JSON.stringify({ error: "Count must be between 1 and 10" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const apiKey = Deno.env.get("OPENAI_API_KEY_TEXT");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing OPENAI_API_KEY" }), {
