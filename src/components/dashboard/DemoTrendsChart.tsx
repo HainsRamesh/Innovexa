@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AreaChart,
   Area,
@@ -31,17 +30,13 @@ interface DemoTrendsChartProps {
   monthlyData: ChartDataPoint[];
 }
 
-// Generate year options (current year and past 5 years)
-const currentYear = new Date().getFullYear();
-const yearOptions = Array.from({ length: 6 }, (_, i) => currentYear - i);
-
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-card border border-border rounded-lg px-4 py-3 shadow-xl">
-        <p className="text-sm font-medium text-foreground mb-2">{label}</p>
+      <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-xl">
+        <p className="text-xs font-medium text-foreground mb-1.5">{label}</p>
         {payload.map((entry: any, index: number) => (
-          <p key={index} className="text-sm" style={{ color: entry.color }}>
+          <p key={index} className="text-xs" style={{ color: entry.color }}>
             {entry.name}: {entry.value.toLocaleString()}
           </p>
         ))}
@@ -54,8 +49,6 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTrendsChartProps) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('weekly');
   const [chartType, setChartType] = useState<ChartType>('line');
-  const [fromYear, setFromYear] = useState<number>(currentYear);
-  const [toYear, setToYear] = useState<number>(currentYear);
 
   const getData = () => {
     switch (timeRange) {
@@ -73,98 +66,62 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
   const data = getData();
 
   return (
-    <Card className="bg-card/50 border-border/50">
-      <CardHeader className="pb-4">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle className="text-lg font-semibold flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Demo Play Trends
-            </CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Time Range Selector */}
-              <div className="flex items-center bg-muted/50 rounded-lg p-1">
-                {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((range) => (
-                  <Button
-                    key={range}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setTimeRange(range)}
-                    className={cn(
-                      "text-xs capitalize transition-all duration-200",
-                      timeRange === range 
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    {range}
-                  </Button>
-                ))}
-              </div>
-              
-              {/* Chart Type Selector */}
-              <div className="flex items-center bg-muted/50 rounded-lg p-1">
-                {(['line', 'bar'] as ChartType[]).map((type) => (
-                  <Button
-                    key={type}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setChartType(type)}
-                    className={cn(
-                      "text-xs capitalize transition-all duration-200 gap-1.5",
-                      chartType === type 
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
-                        : "hover:bg-muted"
-                    )}
-                  >
-                    {type === 'line' ? <LineChart className="h-3.5 w-3.5" /> : <BarChart3 className="h-3.5 w-3.5" />}
-                    {type}
-                  </Button>
-                ))}
-              </div>
+    <Card className="bg-card/50 border-border/50 flex flex-col h-full">
+      <CardHeader className="pb-2 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Demo Play Trends
+          </CardTitle>
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Time Range Selector */}
+            <div className="flex items-center bg-muted/30 rounded-md p-0.5">
+              {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((range) => (
+                <Button
+                  key={range}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setTimeRange(range)}
+                  className={cn(
+                    "h-7 px-2.5 text-[11px] capitalize transition-all duration-200",
+                    timeRange === range 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
+                      : "hover:bg-muted/50 text-muted-foreground"
+                  )}
+                >
+                  {range}
+                </Button>
+              ))}
             </div>
-          </div>
-          
-          {/* Year Range Selectors */}
-          <div className="flex items-center gap-3 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">From:</span>
-              <Select value={fromYear.toString()} onValueChange={(v) => setFromYear(parseInt(v))}>
-                <SelectTrigger className="w-[100px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground">To:</span>
-              <Select value={toYear.toString()} onValueChange={(v) => setToYear(parseInt(v))}>
-                <SelectTrigger className="w-[100px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {yearOptions.filter(y => y >= fromYear).map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            
+            {/* Chart Type Selector */}
+            <div className="flex items-center bg-muted/30 rounded-md p-0.5">
+              {(['line', 'bar'] as ChartType[]).map((type) => (
+                <Button
+                  key={type}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setChartType(type)}
+                  className={cn(
+                    "h-7 px-2 text-[11px] capitalize transition-all duration-200 gap-1",
+                    chartType === type 
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
+                      : "hover:bg-muted/50 text-muted-foreground"
+                  )}
+                >
+                  {type === 'line' ? <LineChart className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
+                  {type}
+                </Button>
+              ))}
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
+      <CardContent className="flex-1 pt-0">
+        <div className="h-[260px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'line' ? (
-              <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="demoPlaysGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -179,16 +136,17 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
                 <XAxis
                   dataKey="name"
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value.toLocaleString()}
+                  width={40}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
@@ -211,21 +169,22 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
                 />
               </AreaChart>
             ) : (
-              <BarChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                 <XAxis
                   dataKey="name"
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value.toLocaleString()}
+                  width={40}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar

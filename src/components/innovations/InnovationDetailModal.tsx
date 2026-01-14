@@ -5,14 +5,22 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Innovation } from '@/types';
 import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
 import { VideoThumbnailPlayer } from './VideoThumbnailPlayer';
+import { InnovationCommentsSection } from './InnovationCommentsSection';
+import { InnovationAnalyticsCard } from './InnovationAnalyticsCard';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
+import { useInnovationBookmark } from '@/hooks/useInnovationBookmark';
+import { useMessageClickTracker } from '@/hooks/useMessageClickTracker';
+import { useChat } from '@/contexts/ChatContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   Download, 
   Bookmark, 
-  Mail, 
+  BookmarkCheck,
+  MessageCircle, 
   Minus,
   Plus,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -53,8 +61,29 @@ export const InnovationDetailModal = ({
   onOpenChange,
 }: InnovationDetailModalProps) => {
   const { trackDemoPlay } = useDemoPlayTracker(innovation?.id || '');
+  const { isBookmarked, isLoading: bookmarkLoading, toggleBookmark } = useInnovationBookmark(innovation?.id || '');
+  const { trackMessageClick } = useMessageClickTracker(innovation?.id || '');
+  const { openChat } = useChat();
+  const { user } = useAuth();
   
   if (!innovation) return null;
+
+  const handleMessageInnovator = () => {
+    trackMessageClick();
+    const innovatorName = (innovation as any).profiles?.full_name || 'Innovator';
+    const prefilledMessage = `Hi ${innovatorName}, I'm interested in your innovation "${innovation.title}". Can we discuss this further?`;
+    
+    openChat({
+      userId: innovation.innovator_id,
+      userName: innovatorName,
+      userAvatar: (innovation as any).profiles?.avatar_url || null,
+      prefilledMessage,
+      innovationId: innovation.id,
+      innovationTitle: innovation.title,
+    });
+  };
+
+  const isOwnInnovation = user?.id === innovation.innovator_id;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -156,15 +185,43 @@ export const InnovationDetailModal = ({
               </div>
             )}
 
+            {/* Analytics */}
+            <InnovationAnalyticsCard
+              viewCount={(innovation as any).view_count || 0}
+              likeCount={(innovation as any).like_count || 0}
+              commentCount={(innovation as any).comment_count || 0}
+              messageClickCount={(innovation as any).message_click_count || 0}
+              isOwner={isOwnInnovation}
+            />
+
+            {/* Comments Section */}
+            <InnovationCommentsSection
+              innovationId={innovation.id}
+              innovatorId={innovation.innovator_id}
+            />
+
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-3 pt-4 border-t border-border">
-              <Button className="gap-2">
-                <Mail className="h-4 w-4" />
-                Contact Innovator
-              </Button>
-              <Button variant="outline" className="gap-2">
-                <Bookmark className="h-4 w-4" />
-                Save Innovation
+              {!isOwnInnovation && (
+                <Button className="gap-2" onClick={handleMessageInnovator}>
+                  <MessageCircle className="h-4 w-4" />
+                  Message Innovator
+                </Button>
+              )}
+              <Button 
+                variant={isBookmarked ? "default" : "outline"} 
+                className="gap-2"
+                onClick={toggleBookmark}
+                disabled={bookmarkLoading}
+              >
+                {bookmarkLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : isBookmarked ? (
+                  <BookmarkCheck className="h-4 w-4" />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
+                {isBookmarked ? 'Saved' : 'Save Innovation'}
               </Button>
             </div>
           </div>

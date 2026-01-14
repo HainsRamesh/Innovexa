@@ -12,7 +12,10 @@ import { ProductTrackerTable, ProductData } from '@/components/dashboard/Product
 import { EnterpriseProblemsTable } from '@/components/dashboard/EnterpriseProblemsTable';
 import { InvestorPortfolioTable } from '@/components/dashboard/InvestorPortfolioTable';
 import { DemoTrendsChart } from '@/components/dashboard/DemoTrendsChart';
-import { CategoryMomentumChart } from '@/components/dashboard/CategoryMomentumChart';
+import { EnterpriseActivityChart } from '@/components/dashboard/EnterpriseActivityChart';
+import { InvestorInnovationChart } from '@/components/dashboard/InvestorInnovationChart';
+import { RoleAwareProgressChart } from '@/components/dashboard/RoleAwareProgressChart';
+import { useRoleProgressData } from '@/hooks/useRoleProgressData';
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
 import { Problem, Innovation, Investment } from '@/types';
@@ -31,6 +34,7 @@ const DashboardOverview = () => {
   const { user, role } = useAuth();
   const navigate = useNavigate();
   const { metrics, isLoading: metricsLoading } = useDashboardMetrics(user?.id, role);
+  const { data: roleProgressData, isLoading: progressLoading } = useRoleProgressData(user?.id, role);
 
   // Role-specific data states
   const [innovations, setInnovations] = useState<Innovation[]>([]);
@@ -335,14 +339,24 @@ const DashboardOverview = () => {
       {/* Filters */}
       <DashboardFilters />
 
-      {/* Charts Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        <DemoTrendsChart
-          dailyData={chartData.daily}
-          weeklyData={chartData.weekly}
-          monthlyData={chartData.monthly}
-        />
-        <CategoryMomentumChart data={categoryMomentum} />
+      {/* Charts Row - Aligned with consistent heights */}
+      <div className="grid lg:grid-cols-2 gap-4">
+        <div className="min-h-[340px]">
+          {role === 'enterprise' ? (
+            <EnterpriseActivityChart />
+          ) : role === 'investor' ? (
+            <InvestorInnovationChart />
+          ) : (
+            <DemoTrendsChart
+              dailyData={chartData.daily}
+              weeklyData={chartData.weekly}
+              monthlyData={chartData.monthly}
+            />
+          )}
+        </div>
+        <div className="min-h-[340px]">
+          <RoleAwareProgressChart role={role} data={roleProgressData} isLoading={progressLoading} />
+        </div>
       </div>
 
       {/* Role-specific Tables */}
@@ -367,6 +381,9 @@ const DashboardOverview = () => {
           onView={handleProblemView}
           onEdit={handleProblemEdit}
           onDelete={handleProblemDelete}
+          onViewAll={() => navigate('/dashboard/problems')}
+          showViewAll={true}
+          limit={5}
         />
       )}
 

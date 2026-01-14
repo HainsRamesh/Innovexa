@@ -19,17 +19,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Search, Lightbulb, MoreVertical, Eye, Edit, Trash2, Play, Heart, Calendar } from 'lucide-react';
+import { Search, Lightbulb, MoreVertical, Eye, Edit, Trash2, Play, Heart, Calendar, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Innovation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
 import { getCategoryColor, getCategoryLabel } from '@/lib/categoryColors';
 import { format } from 'date-fns';
+import { useBookmarks } from '@/hooks/useBookmarks';
 
 const MyInnovationsPage = () => {
   const { user, role } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isBookmarked, toggleBookmark } = useBookmarks();
 
   const [innovations, setInnovations] = useState<Innovation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -97,6 +99,10 @@ const MyInnovationsPage = () => {
     }
   };
 
+  const handleToggleBookmark = (innovationId: string) => {
+    toggleBookmark(undefined, undefined, innovationId);
+  };
+
   const filteredInnovations = innovations.filter((innovation) => {
     const matchesSearch =
       innovation.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,98 +112,116 @@ const MyInnovationsPage = () => {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const InnovationCard = ({ innovation }: { innovation: Innovation }) => (
-    <Card className="group hover:border-primary/50 transition-all duration-200 overflow-hidden">
-      <div className="aspect-video relative overflow-hidden bg-muted">
-        <img
-          src={innovation.cover_image_url}
-          alt={innovation.title}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-        <Badge
-          variant="outline"
-          className={`absolute top-3 left-3 ${getCategoryColor(innovation.category, 'innovation')}`}
-        >
-          {getCategoryLabel(innovation.category, 'innovation')}
-        </Badge>
-      </div>
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
-            {innovation.title}
-          </h3>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2 shrink-0">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/dashboard/innovations/${innovation.id}`, {
-                    state: { from: 'my-innovations' },
-                  })
-                }
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() =>
-                  navigate(`/dashboard/innovations/${innovation.id}/edit`, {
-                    state: { from: 'my-innovations' },
-                  })
-                }
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDeleteClick(innovation.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                <Trash2 className="h-4 w-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{innovation.tagline}</p>
-
-        <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-          <div className="flex items-center gap-1">
-            <Play className="h-4 w-4" />
-            <span>{innovation.view_count || 0}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Heart className="h-4 w-4" />
-            <span>{innovation.like_count || 0}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-3 border-t border-border/50">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
-            {format(new Date(innovation.created_at), 'MMM d, yyyy')}
-          </div>
+  const InnovationCard = ({ innovation }: { innovation: Innovation }) => {
+    const bookmarked = isBookmarked(undefined, undefined, innovation.id);
+    
+    return (
+      <Card className="group hover:border-primary/50 transition-all duration-200 overflow-hidden">
+        <div className="aspect-video relative overflow-hidden bg-muted">
+          <img
+            src={innovation.cover_image_url}
+            alt={innovation.title}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
           <Badge
-            variant={
-              innovation.status === 'published'
-                ? 'status_open'
-                : innovation.status === 'draft'
-                ? 'outline'
-                : 'secondary'
-            }
+            variant="outline"
+            className={`absolute top-3 left-3 ${getCategoryColor(innovation.category, 'innovation')}`}
           >
-            {innovation.status.charAt(0).toUpperCase() + innovation.status.slice(1)}
+            {getCategoryLabel(innovation.category, 'innovation')}
           </Badge>
         </div>
-      </CardContent>
-    </Card>
-  );
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-3 mb-3">
+            <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+              {innovation.title}
+            </h3>
+            <div className="flex items-center gap-1 shrink-0">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => handleToggleBookmark(innovation.id)}
+              >
+                {bookmarked ? (
+                  <BookmarkCheck className="h-4 w-4 text-primary" />
+                ) : (
+                  <Bookmark className="h-4 w-4" />
+                )}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(`/dashboard/innovations/${innovation.id}`, {
+                        state: { from: 'my-innovations' },
+                      })
+                    }
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigate(`/dashboard/innovations/${innovation.id}/edit`, {
+                        state: { from: 'my-innovations' },
+                      })
+                    }
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDeleteClick(innovation.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{innovation.tagline}</p>
+
+          <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+            <div className="flex items-center gap-1">
+              <Play className="h-4 w-4" />
+              <span>{innovation.view_count || 0}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Heart className="h-4 w-4" />
+              <span>{innovation.like_count || 0}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-3 border-t border-border/50">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="h-3.5 w-3.5" />
+              {format(new Date(innovation.created_at), 'MMM d, yyyy')}
+            </div>
+            <Badge
+              variant={
+                innovation.status === 'published'
+                  ? 'status_open'
+                  : innovation.status === 'draft'
+                  ? 'outline'
+                  : 'secondary'
+              }
+            >
+              {innovation.status.charAt(0).toUpperCase() + innovation.status.slice(1)}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">

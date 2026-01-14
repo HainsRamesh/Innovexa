@@ -21,10 +21,14 @@ import {
   Sparkles,
   Calendar,
   DollarSign,
+  Lightbulb,
+  Play,
+  Heart,
 } from 'lucide-react';
-import { Problem, Solution, Bookmark as BookmarkType, SolutionStatus, ProblemStatus } from '@/types';
+import { Problem, Solution, Innovation, Bookmark as BookmarkType, SolutionStatus, ProblemStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { getCategoryColor, getCategoryLabel } from '@/lib/categoryColors';
 
 const BookmarksPage = () => {
   const { user } = useAuth();
@@ -32,6 +36,7 @@ const BookmarksPage = () => {
   const [bookmarks, setBookmarks] = useState<BookmarkType[]>([]);
   const [problems, setProblems] = useState<Problem[]>([]);
   const [solutions, setSolutions] = useState<Solution[]>([]);
+  const [innovations, setInnovations] = useState<Innovation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -53,7 +58,9 @@ const BookmarksPage = () => {
 
       const problemIds = bookmarkData?.filter((b) => b.problem_id).map((b) => b.problem_id) || [];
       const solutionIds = bookmarkData?.filter((b) => b.solution_id).map((b) => b.solution_id) || [];
+      const innovationIds = bookmarkData?.filter((b) => b.innovation_id).map((b) => b.innovation_id) || [];
 
+      // Fetch problems
       if (problemIds.length > 0) {
         const { data: problemData } = await supabase
           .from('problems')
@@ -64,6 +71,7 @@ const BookmarksPage = () => {
         setProblems([]);
       }
 
+      // Fetch solutions
       if (solutionIds.length > 0) {
         const { data: solutionData } = await supabase
           .from('solutions')
@@ -72,6 +80,17 @@ const BookmarksPage = () => {
         setSolutions((solutionData as Solution[]) || []);
       } else {
         setSolutions([]);
+      }
+
+      // Fetch innovations
+      if (innovationIds.length > 0) {
+        const { data: innovationData } = await supabase
+          .from('innovations')
+          .select('*')
+          .in('id', innovationIds);
+        setInnovations((innovationData as Innovation[]) || []);
+      } else {
+        setInnovations([]);
       }
     } catch (error) {
       console.error('Error fetching bookmarks:', error);
@@ -85,13 +104,15 @@ const BookmarksPage = () => {
     }
   };
 
-  const removeBookmark = async (bookmarkId: string, itemType: 'problem' | 'solution', itemId: string) => {
+  const removeBookmark = async (bookmarkId: string, itemType: 'problem' | 'solution' | 'innovation', itemId: string) => {
     // Optimistic update
     setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
     if (itemType === 'problem') {
       setProblems((prev) => prev.filter((p) => p.id !== itemId));
-    } else {
+    } else if (itemType === 'solution') {
       setSolutions((prev) => prev.filter((s) => s.id !== itemId));
+    } else {
+      setInnovations((prev) => prev.filter((i) => i.id !== itemId));
     }
 
     try {
@@ -176,11 +197,16 @@ const BookmarksPage = () => {
     bookmarks.some((b) => b.solution_id === s.id)
   );
 
-  const getBookmarkId = (problemId?: string, solutionId?: string) => {
+  const bookmarkedInnovations = innovations.filter((i) =>
+    bookmarks.some((b) => b.innovation_id === i.id)
+  );
+
+  const getBookmarkId = (problemId?: string, solutionId?: string, innovationId?: string) => {
     const bookmark = bookmarks.find(
       (b) =>
         (problemId && b.problem_id === problemId) ||
-        (solutionId && b.solution_id === solutionId)
+        (solutionId && b.solution_id === solutionId) ||
+        (innovationId && b.innovation_id === innovationId)
     );
     return bookmark?.id;
   };
@@ -209,23 +235,132 @@ const BookmarksPage = () => {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Bookmarks</h1>
-        <p className="text-muted-foreground">Your saved problems and solutions</p>
+        <p className="text-muted-foreground">Your saved innovations, solutions, and problems</p>
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="solutions" className="w-full">
-        <TabsList className="grid w-full max-w-lg grid-cols-2 mb-6">
+      <Tabs defaultValue="innovations" className="w-full">
+        <TabsList className="grid w-full max-w-2xl grid-cols-3 mb-6">
+          <TabsTrigger value="innovations" className="flex items-center gap-2">
+            <Lightbulb className="h-4 w-4" />
+            <span className="hidden sm:inline">Innovations</span> ({bookmarkedInnovations.length})
+          </TabsTrigger>
           <TabsTrigger value="solutions" className="flex items-center gap-2">
             <Sparkles className="h-4 w-4" />
-            My Solutions Bookmarks ({bookmarkedSolutions.length})
+            <span className="hidden sm:inline">Solutions</span> ({bookmarkedSolutions.length})
           </TabsTrigger>
           <TabsTrigger value="problems" className="flex items-center gap-2">
             <FileText className="h-4 w-4" />
-            Browse Problems Bookmarks ({bookmarkedProblems.length})
+            <span className="hidden sm:inline">Problems</span> ({bookmarkedProblems.length})
           </TabsTrigger>
         </TabsList>
 
-        {/* Bookmarked Solutions - Matches SolutionCard from /dashboard/solutions */}
+        {/* Bookmarked Innovations */}
+        <TabsContent value="innovations" className="mt-0">
+          {isLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+            </div>
+          ) : bookmarkedInnovations.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {bookmarkedInnovations.map((innovation) => (
+                <Card key={innovation.id} className="group hover:border-primary/50 transition-all duration-200 overflow-hidden">
+                  <div className="aspect-video relative overflow-hidden bg-muted">
+                    <img
+                      src={innovation.cover_image_url}
+                      alt={innovation.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
+                    <Badge
+                      variant="outline"
+                      className={`absolute top-3 left-3 ${getCategoryColor(innovation.category, 'innovation')}`}
+                    >
+                      {getCategoryLabel(innovation.category, 'innovation')}
+                    </Badge>
+                  </div>
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <h3 className="font-semibold text-lg line-clamp-1 group-hover:text-primary transition-colors">
+                        {innovation.title}
+                      </h3>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2 shrink-0">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link to={`/dashboard/innovations/${innovation.id}`} state={{ from: 'bookmarks' }}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              const id = getBookmarkId(undefined, undefined, innovation.id);
+                              if (id) removeBookmark(id, 'innovation', innovation.id);
+                            }}
+                          >
+                            <BookmarkX className="h-4 w-4 mr-2" />
+                            Remove Bookmark
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{innovation.tagline}</p>
+
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
+                      <div className="flex items-center gap-1">
+                        <Play className="h-4 w-4" />
+                        <span>{innovation.view_count || 0}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Heart className="h-4 w-4" />
+                        <span>{innovation.like_count || 0}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {format(new Date(innovation.created_at), 'MMM d, yyyy')}
+                      </div>
+                      <Badge
+                        variant={
+                          innovation.status === 'published'
+                            ? 'status_open'
+                            : innovation.status === 'draft'
+                            ? 'outline'
+                            : 'secondary'
+                        }
+                      >
+                        {innovation.status.charAt(0).toUpperCase() + innovation.status.slice(1)}
+                      </Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-12 text-center">
+                <Bookmark className="h-16 w-16 text-muted-foreground/30 mx-auto mb-4" />
+                <h3 className="text-lg font-medium mb-2">No bookmarked innovations</h3>
+                <p className="text-muted-foreground mb-6">
+                  Bookmark innovations you find interesting to save them here
+                </p>
+                <Button variant="hero" asChild>
+                  <Link to="/dashboard/innovations">Browse Innovations</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+
+        {/* Bookmarked Solutions */}
         <TabsContent value="solutions" className="mt-0">
           {isLoading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -312,7 +447,7 @@ const BookmarksPage = () => {
           )}
         </TabsContent>
 
-        {/* Bookmarked Problems - Matches ProblemCard from /dashboard/browse */}
+        {/* Bookmarked Problems */}
         <TabsContent value="problems" className="mt-0">
           {isLoading ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { AvatarCropModal } from '@/components/ui/AvatarCropModal';
+import { AvatarOptionsSheet } from '@/components/ui/AvatarOptionsSheet';
+import { AvatarViewDialog } from '@/components/ui/AvatarViewDialog';
 import { useToast } from '@/hooks/use-toast';
 import { Save, Camera, Loader2 } from 'lucide-react';
 
@@ -16,7 +19,12 @@ const SettingsPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [selectedImageSrc, setSelectedImageSrc] = useState<string | null>(null);
+  const [optionsSheetOpen, setOptionsSheetOpen] = useState(false);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     full_name: profile?.full_name || '',
@@ -37,12 +45,11 @@ const SettingsPage = () => {
   };
 
   const handleAvatarClick = () => {
-    fileInputRef.current?.click();
+    setOptionsSheetOpen(true);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
+  const handleFileSelect = async (file: File) => {
+    if (!user) return;
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -54,33 +61,53 @@ const SettingsPage = () => {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
+    // Validate file size (max 5MB for original, will be compressed after crop)
+    if (file.size > 5 * 1024 * 1024) {
       toast({
         title: 'File too large',
-        description: 'Please select an image smaller than 2MB',
+        description: 'Please select an image smaller than 5MB',
         variant: 'destructive',
       });
       return;
     }
 
-    // Create preview
+    // Read file and open crop modal
     const reader = new FileReader();
     reader.onloadend = () => {
-      setAvatarPreview(reader.result as string);
+      setSelectedImageSrc(reader.result as string);
+      setCropModalOpen(true);
     };
     reader.readAsDataURL(file);
+  };
 
-    // Upload to storage
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset file input so same file can be selected again
+    e.target.value = '';
+    handleFileSelect(file);
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
+    if (!user) return;
+
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
+      // Create preview from cropped blob
+      const previewUrl = URL.createObjectURL(croppedBlob);
+      setAvatarPreview(previewUrl);
+
+      // Upload cropped image to storage
+      const fileName = `${Date.now()}.jpg`;
       const filePath = `${user.id}/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, croppedBlob, { 
+          upsert: true,
+          contentType: 'image/jpeg',
+        });
 
       if (uploadError) throw uploadError;
 
@@ -93,9 +120,12 @@ const SettingsPage = () => {
       const { error: updateError } = await updateProfile({ avatar_url: publicUrl });
       if (updateError) throw updateError;
 
+      setCropModalOpen(false);
+      setSelectedImageSrc(null);
+
       toast({
-        title: 'Avatar updated',
-        description: 'Your profile picture has been updated.',
+        title: 'Profile photo updated',
+        description: 'Your profile picture has been updated successfully.',
       });
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -103,6 +133,60 @@ const SettingsPage = () => {
       toast({
         title: 'Upload failed',
         description: 'Failed to upload avatar. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleCropModalClose = () => {
+    if (!isUploading) {
+      setCropModalOpen(false);
+      setSelectedImageSrc(null);
+    }
+  };
+
+  const handleViewPhoto = () => {
+    setViewDialogOpen(true);
+  };
+
+  const handleTakePhoto = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const handleChooseFromGallery = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleEditPhoto = () => {
+    const currentAvatarUrl = avatarPreview || profile?.avatar_url;
+    if (currentAvatarUrl) {
+      setSelectedImageSrc(currentAvatarUrl);
+      setCropModalOpen(true);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!user) return;
+
+    setIsUploading(true);
+    try {
+      // Update profile to remove avatar URL
+      const { error: updateError } = await updateProfile({ avatar_url: null });
+      if (updateError) throw updateError;
+
+      setAvatarPreview(null);
+
+      toast({
+        title: 'Profile photo removed',
+        description: 'Your profile picture has been removed.',
+      });
+    } catch (error) {
+      console.error('Error removing avatar:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to remove profile photo. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -142,6 +226,7 @@ const SettingsPage = () => {
   }
 
   const displayAvatarUrl = avatarPreview || profile?.avatar_url || '';
+  const hasAvatar = Boolean(displayAvatarUrl);
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -156,7 +241,7 @@ const SettingsPage = () => {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Profile Picture</CardTitle>
-            <CardDescription>Click on your avatar to upload a new picture</CardDescription>
+            <CardDescription>Click on your avatar to manage your picture</CardDescription>
           </CardHeader>
           <CardContent className="flex items-center gap-6">
             <div className="relative group">
@@ -176,10 +261,19 @@ const SettingsPage = () => {
                   <Camera className="h-6 w-6 text-white" />
                 )}
               </div>
+              {/* Hidden file inputs */}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="user"
                 className="hidden"
                 onChange={handleFileChange}
               />
@@ -195,11 +289,42 @@ const SettingsPage = () => {
                 onClick={handleAvatarClick}
                 disabled={isUploading}
               >
-                {isUploading ? 'Uploading...' : 'Change Picture'}
+                Change Picture
               </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Avatar Options Sheet */}
+        <AvatarOptionsSheet
+          open={optionsSheetOpen}
+          onClose={() => setOptionsSheetOpen(false)}
+          hasAvatar={hasAvatar}
+          onViewPhoto={handleViewPhoto}
+          onTakePhoto={handleTakePhoto}
+          onChooseFromGallery={handleChooseFromGallery}
+          onEditPhoto={handleEditPhoto}
+          onRemovePhoto={handleRemovePhoto}
+        />
+
+        {/* Avatar View Dialog */}
+        <AvatarViewDialog
+          open={viewDialogOpen}
+          onClose={() => setViewDialogOpen(false)}
+          avatarUrl={displayAvatarUrl}
+          fallbackText={getInitials(profile?.full_name)}
+        />
+
+        {/* Avatar Crop Modal */}
+        {selectedImageSrc && (
+          <AvatarCropModal
+            open={cropModalOpen}
+            onClose={handleCropModalClose}
+            imageSrc={selectedImageSrc}
+            onCropComplete={handleCropComplete}
+            isUploading={isUploading}
+          />
+        )}
 
         {/* Personal Info */}
         <Card>

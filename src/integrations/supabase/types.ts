@@ -14,10 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_actions: {
+        Row: {
+          action_type: string
+          admin_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          reason: string | null
+          target_content_id: string | null
+          target_content_type: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          target_content_id?: string | null
+          target_content_type?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          reason?: string | null
+          target_content_id?: string | null
+          target_content_type?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bookmarks: {
         Row: {
           created_at: string
           id: string
+          innovation_id: string | null
           problem_id: string | null
           solution_id: string | null
           user_id: string
@@ -25,6 +98,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          innovation_id?: string | null
           problem_id?: string | null
           solution_id?: string | null
           user_id: string
@@ -32,11 +106,19 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          innovation_id?: string | null
           problem_id?: string | null
           solution_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "bookmarks_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bookmarks_problem_id_fkey"
             columns: ["problem_id"]
@@ -49,6 +131,256 @@ export type Database = {
             columns: ["solution_id"]
             isOneToOne: false
             referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connections: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_id: string
+          requester_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_id: string
+          requester_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          requester_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      content_reports: {
+        Row: {
+          admin_notes: string | null
+          content_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Update: {
+          admin_notes?: string | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          id: string
+          participant_one: string
+          participant_two: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          participant_one: string
+          participant_two: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          participant_one?: string
+          participant_two?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      enterprise_innovation_views: {
+        Row: {
+          created_at: string
+          enterprise_user_id: string
+          id: string
+          innovation_id: string
+          view_date: string
+        }
+        Insert: {
+          created_at?: string
+          enterprise_user_id: string
+          id?: string
+          innovation_id: string
+          view_date?: string
+        }
+        Update: {
+          created_at?: string
+          enterprise_user_id?: string
+          id?: string
+          innovation_id?: string
+          view_date?: string
+        }
+        Relationships: []
+      }
+      form_analytics: {
+        Row: {
+          action: string
+          created_at: string
+          field_name: string
+          form_type: string
+          id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          field_name: string
+          form_type: string
+          id?: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          field_name?: string
+          form_type?: string
+          id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      form_drafts: {
+        Row: {
+          created_at: string
+          entity_id: string | null
+          form_data: Json
+          form_type: string
+          id: string
+          last_saved_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id?: string | null
+          form_data?: Json
+          form_type: string
+          id?: string
+          last_saved_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string | null
+          form_data?: Json
+          form_type?: string
+          id?: string
+          last_saved_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      innovation_comments: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          innovation_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          innovation_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          innovation_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_comments_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      innovation_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          document_url: string
+          id: string
+          innovation_id: string
+          title: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string
+          document_url: string
+          id?: string
+          innovation_id: string
+          title: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          innovation_id?: string
+          title?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_documents_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
             referencedColumns: ["id"]
           },
         ]
@@ -85,9 +417,42 @@ export type Database = {
           },
         ]
       }
+      innovation_message_clicks: {
+        Row: {
+          created_at: string
+          id: string
+          innovation_id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          innovation_id: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          innovation_id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "innovation_message_clicks_innovation_id_fkey"
+            columns: ["innovation_id"]
+            isOneToOne: false
+            referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       innovations: {
         Row: {
           category: Database["public"]["Enums"]["innovation_category"]
+          comment_count: number | null
           cover_image_url: string
           created_at: string
           custom_category: string | null
@@ -96,6 +461,7 @@ export type Database = {
           id: string
           innovator_id: string
           like_count: number | null
+          message_click_count: number | null
           pdf_urls: string[] | null
           status: Database["public"]["Enums"]["innovation_status"]
           tagline: string
@@ -108,6 +474,7 @@ export type Database = {
         }
         Insert: {
           category?: Database["public"]["Enums"]["innovation_category"]
+          comment_count?: number | null
           cover_image_url: string
           created_at?: string
           custom_category?: string | null
@@ -116,6 +483,7 @@ export type Database = {
           id?: string
           innovator_id: string
           like_count?: number | null
+          message_click_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
           tagline: string
@@ -128,6 +496,7 @@ export type Database = {
         }
         Update: {
           category?: Database["public"]["Enums"]["innovation_category"]
+          comment_count?: number | null
           cover_image_url?: string
           created_at?: string
           custom_category?: string | null
@@ -136,6 +505,7 @@ export type Database = {
           id?: string
           innovator_id?: string
           like_count?: number | null
+          message_click_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
           tagline?: string
@@ -267,8 +637,10 @@ export type Database = {
           description: string
           id: string
           industry: string | null
+          like_count: number | null
           owner_id: string
           requirements: string[] | null
+          solutions_count: number | null
           status: Database["public"]["Enums"]["problem_status"]
           tags: string[] | null
           title: string
@@ -286,8 +658,10 @@ export type Database = {
           description: string
           id?: string
           industry?: string | null
+          like_count?: number | null
           owner_id: string
           requirements?: string[] | null
+          solutions_count?: number | null
           status?: Database["public"]["Enums"]["problem_status"]
           tags?: string[] | null
           title: string
@@ -305,8 +679,10 @@ export type Database = {
           description?: string
           id?: string
           industry?: string | null
+          like_count?: number | null
           owner_id?: string
           requirements?: string[] | null
+          solutions_count?: number | null
           status?: Database["public"]["Enums"]["problem_status"]
           tags?: string[] | null
           title?: string
@@ -490,6 +866,78 @@ export type Database = {
           },
         ]
       }
+      user_blocks: {
+        Row: {
+          blocked_user_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_user_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_user_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_reports: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason: string
+          reported_user_id: string
+          reporter_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          reason?: string
+          reported_user_id?: string
+          reporter_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      user_restrictions: {
+        Row: {
+          created_at: string
+          id: string
+          restricted_user_id: string
+          restrictor_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          restricted_user_id: string
+          restrictor_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          restricted_user_id?: string
+          restrictor_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -511,6 +959,42 @@ export type Database = {
         }
         Relationships: []
       }
+      user_suspensions: {
+        Row: {
+          expires_at: string | null
+          id: string
+          is_permanent: boolean
+          lifted_at: string | null
+          lifted_by: string | null
+          reason: string
+          suspended_at: string
+          suspended_by: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason: string
+          suspended_at?: string
+          suspended_by: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          is_permanent?: boolean
+          lifted_at?: string | null
+          lifted_by?: string | null
+          reason?: string
+          suspended_at?: string
+          suspended_by?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -521,6 +1005,28 @@ export type Database = {
         Args: { _solution_id: string; _user_id: string }
         Returns: boolean
       }
+      create_notification: {
+        Args: {
+          p_actor_avatar_url?: string
+          p_actor_id?: string
+          p_actor_name?: string
+          p_data?: Json
+          p_group_key?: string
+          p_message: string
+          p_priority?: number
+          p_related_id?: string
+          p_related_type?: string
+          p_title: string
+          p_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      get_or_create_conversation: {
+        Args: { _user_one: string; _user_two: string }
+        Returns: string
+      }
+      get_unread_message_count: { Args: never; Returns: number }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
@@ -533,6 +1039,31 @@ export type Database = {
         Returns: boolean
       }
       increment_innovation_view_count: {
+        Args: { _innovation_id: string }
+        Returns: undefined
+      }
+      is_user_blocked: {
+        Args: { _other_user_id: string; _user_id: string }
+        Returns: boolean
+      }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_entity_id?: string
+          p_entity_type?: string
+          p_metadata?: Json
+        }
+        Returns: string
+      }
+      mark_all_notifications_read: {
+        Args: { p_user_id: string }
+        Returns: number
+      }
+      mark_conversation_read: {
+        Args: { p_conversation_id: string }
+        Returns: number
+      }
+      track_enterprise_video_view: {
         Args: { _innovation_id: string }
         Returns: undefined
       }

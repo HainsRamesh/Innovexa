@@ -6,16 +6,18 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { LoadingProvider } from "@/contexts/LoadingContext";
 import { GlobalOverlayProvider } from "@/contexts/GlobalOverlayContext";
+import { ChatProvider } from "@/contexts/ChatContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-
+import { MessengerDrawer } from "@/components/messaging";
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Explore from "./pages/Explore";
+import ExploreProblems from "./pages/ExploreProblems";
 import ProblemDetails from "./pages/ProblemDetails";
 import Solutions from "./pages/Solutions";
 import About from "./pages/About";
 import Profile from "./pages/Profile";
+import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 import Innovations from "./pages/Innovations";
 import NewInnovation from "./pages/NewInnovation";
@@ -46,6 +48,9 @@ import InnovationViewPage from "./pages/dashboard/InnovationViewPage";
 import InnovationEditPage from "./pages/dashboard/InnovationEditPage";
 import BookmarksPage from "./pages/dashboard/BookmarksPage";
 import SettingsPage from "./pages/dashboard/SettingsPage";
+import NotificationsPage from "./pages/dashboard/NotificationsPage";
+import MessagesPage from "./pages/dashboard/MessagesPage";
+import InvestorDashboardPage from "./pages/dashboard/InvestorDashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -120,6 +125,9 @@ const DashboardRoutes = () => {
         <Route path="innovations/:innovationId" element={<InnovationViewPage />} />
         <Route path="innovations/:innovationId/edit" element={<InnovationEditPage />} />
         <Route path="bookmarks" element={<BookmarksPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
+        <Route path="messages" element={<MessagesPage />} />
+        <Route path="messages/:conversationId" element={<MessagesPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="investments" element={<DashboardOverview />} />
         <Route path="organizations" element={<DashboardOverview />} />
@@ -162,8 +170,9 @@ const AppRoutes = () => {
         <ProtectedRoute><EditInnovation /></ProtectedRoute>
       } />
       <Route path="/explore" element={
-        <ProtectedRoute><Explore /></ProtectedRoute>
+        <ProtectedRoute><ExploreProblems /></ProtectedRoute>
       } />
+      <Route path="/explore/problems" element={<Navigate to="/explore" replace />} />
       <Route path="/explore/:problemId" element={
         <ProtectedRoute><ProblemDetails /></ProtectedRoute>
       } />
@@ -178,6 +187,9 @@ const AppRoutes = () => {
       } />
       <Route path="/profile" element={
         <ProtectedRoute><Profile /></ProtectedRoute>
+      } />
+      <Route path="/users/:userId" element={
+        <ProtectedRoute><PublicProfile /></ProtectedRoute>
       } />
       <Route
         path="/dashboard/*"
@@ -201,7 +213,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <GlobalOverlayProvider>
-              <AppRoutes />
+              <ChatProvider>
+                <AppRoutes />
+                <MessengerDrawer />
+              </ChatProvider>
             </GlobalOverlayProvider>
           </BrowserRouter>
         </TooltipProvider>

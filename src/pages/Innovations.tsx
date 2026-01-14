@@ -47,34 +47,74 @@ export default function Innovations() {
 
   const isInnovator = role === "innovator";
 
-  // Fetch all published/featured innovations
+  // Fetch all published/featured innovations with creator profiles
   const { data: innovations = [], isLoading } = useQuery({
     queryKey: ["innovations"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First fetch innovations
+      const { data: innovationsData, error: innovationsError } = await supabase
         .from("innovations")
         .select("*")
         .in("status", ["published", "featured"])
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as Innovation[];
+      if (innovationsError) throw innovationsError;
+      
+      // Get unique innovator IDs
+      const innovatorIds = [...new Set(innovationsData.map(i => i.innovator_id))];
+      
+      // Fetch profiles for these innovators
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("public_profiles")
+        .select("id, full_name, avatar_url, organization_name")
+        .in("id", innovatorIds);
+        
+      if (profilesError) throw profilesError;
+      
+      // Create a map for quick lookup
+      const profilesMap = new Map(profilesData?.map(p => [p.id, p]) ?? []);
+      
+      // Attach profiles to innovations
+      const innovationsWithProfiles = innovationsData.map(innovation => ({
+        ...innovation,
+        profiles: profilesMap.get(innovation.innovator_id) || null,
+      }));
+      
+      return innovationsWithProfiles as unknown as Innovation[];
     },
   });
 
-  // Fetch innovator's own innovations (all statuses)
+  // Fetch innovator's own innovations (all statuses) with creator profiles
   const { data: myInnovations = [], refetch: refetchMyInnovations } = useQuery({
     queryKey: ["my-innovations", user?.id],
     queryFn: async () => {
       if (!user || !isInnovator) return [];
-      const { data, error } = await supabase
+      
+      // Fetch innovations
+      const { data: innovationsData, error: innovationsError } = await supabase
         .from("innovations")
         .select("*")
         .eq("innovator_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      return data as Innovation[];
+      if (innovationsError) throw innovationsError;
+      
+      // Fetch user's profile
+      const { data: profileData, error: profileError } = await supabase
+        .from("public_profiles")
+        .select("id, full_name, avatar_url, organization_name")
+        .eq("id", user.id)
+        .single();
+        
+      if (profileError && profileError.code !== 'PGRST116') throw profileError;
+      
+      // Attach profile to all innovations
+      const innovationsWithProfiles = innovationsData.map(innovation => ({
+        ...innovation,
+        profiles: profileData || null,
+      }));
+      
+      return innovationsWithProfiles as unknown as Innovation[];
     },
     enabled: !!user && isInnovator,
   });
