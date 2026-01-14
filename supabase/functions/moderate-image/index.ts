@@ -1,4 +1,5 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -131,7 +132,7 @@ function evaluateModeration(result: any): ModerationDecision {
 
 
 async function updateAssetStatus(
-  supabaseAdmin: ReturnType<typeof createClient>,
+  supabaseAdmin: any,
   assetId: string,
   values: Record<string, any>,
 ) {
@@ -200,7 +201,7 @@ Deno.serve(async (req) => {
     if (assetLookupError) {
       console.error("Failed to load media asset row", assetLookupError);
     } else if (assetRow) {
-      const existingStatus = assetRow.status as ModerationDecision["decision"] | "pending" | "error";
+      const existingStatus = assetRow.status as "pending" | "approved" | "rejected" | "error";
       const recentModeration =
         assetRow.moderated_at && Date.now() - new Date(assetRow.moderated_at).getTime() < PENDING_CACHE_WINDOW_MS;
 

@@ -253,7 +253,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       throw uploadError;
     }
 
-    const { data: assetRecord, error: assetError } = await supabase
+    const { data: assetRecord, error: assetError } = await (supabase as any)
       .from("media_assets")
       .insert({
         user_id: user.id,
@@ -601,10 +601,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       return;
     }
 
-    if (coverAsset.status === "pending") {
-      toast.error("Cover image moderation is still running. Please wait.");
-      return;
-    }
+    // Pending check handled by the !== "approved" check above
 
     const pendingGallery = galleryAssets.some((asset) => asset.status === "pending");
     if (pendingGallery) {
@@ -682,7 +679,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       ] as string[];
 
       if (innovationId && assetIdsToLink.length > 0) {
-        await supabase.from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
+        await (supabase as any).from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
       }
 
       navigate("/innovations");
