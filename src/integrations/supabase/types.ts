@@ -469,6 +469,7 @@ export type Database = {
           updated_at: string
           video_url: string | null
           view_count: number | null
+          visibility: string
           with_product: string
           without_product: string
         }
@@ -491,6 +492,7 @@ export type Database = {
           updated_at?: string
           video_url?: string | null
           view_count?: number | null
+          visibility?: string
           with_product: string
           without_product: string
         }
@@ -513,6 +515,7 @@ export type Database = {
           updated_at?: string
           video_url?: string | null
           view_count?: number | null
+          visibility?: string
           with_product?: string
           without_product?: string
         }
@@ -822,6 +825,36 @@ export type Database = {
         }
         Relationships: []
       }
+      privacy_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          who_can_comment: string
+          who_can_message: string
+          who_can_view_profile: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          who_can_comment?: string
+          who_can_message?: string
+          who_can_view_profile?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          who_can_comment?: string
+          who_can_message?: string
+          who_can_view_profile?: string
+        }
+        Relationships: []
+      }
       problem_likes: {
         Row: {
           created_at: string
@@ -875,6 +908,7 @@ export type Database = {
           title: string
           updated_at: string
           view_count: number | null
+          visibility: string
         }
         Insert: {
           ai_complexity_score?: number | null
@@ -896,6 +930,7 @@ export type Database = {
           title: string
           updated_at?: string
           view_count?: number | null
+          visibility?: string
         }
         Update: {
           ai_complexity_score?: number | null
@@ -917,6 +952,7 @@ export type Database = {
           title?: string
           updated_at?: string
           view_count?: number | null
+          visibility?: string
         }
         Relationships: []
       }
@@ -1232,6 +1268,10 @@ export type Database = {
       approve_solution: { Args: { _solution_id: string }; Returns: undefined }
       can_investor_view_solution: {
         Args: { _solution_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_profile: {
+        Args: { _target_user_id: string; _viewer_id: string }
         Returns: boolean
       }
       create_notification: {
