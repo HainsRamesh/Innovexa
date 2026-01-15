@@ -6,15 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -41,6 +39,8 @@ export const SecuritySettings = () => {
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: '',
@@ -91,24 +91,74 @@ export const SecuritySettings = () => {
   };
 
   const handleDeleteAccount = async () => {
+    // Validate confirmation text
+    if (deleteConfirmText !== 'DELETE') {
+      setDeleteError('Please type DELETE to confirm');
+      return;
+    }
+
     setIsDeleting(true);
+    setDeleteError('');
+
     try {
-      // Note: Full account deletion requires admin-level access or a server function
-      // For now, we'll just sign out and show a message
-      await signOut();
-      toast({ 
-        title: 'Account deletion requested', 
-        description: 'Please contact support to complete account deletion.' 
+      // Call the Edge Function to delete the account
+      const { data, error } = await supabase.functions.invoke('delete-account', {
+        method: 'POST',
       });
-      navigate('/auth');
-    } catch (error) {
+
+      if (error) {
+        console.error('Edge function error:', error);
+        setDeleteError(error.message || 'Failed to delete account. Please try again.');
+        toast({ 
+          title: 'Error', 
+          description: 'Failed to delete account. Please try again.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      if (data?.error) {
+        console.error('Delete account error:', data.error);
+        setDeleteError(data.error);
+        toast({ 
+          title: 'Error', 
+          description: data.error, 
+          variant: 'destructive' 
+        });
+        return;
+      }
+
+      // Success - sign out and redirect
+      await signOut();
+      
+      toast({ 
+        title: 'Account deleted', 
+        description: 'Your account has been permanently deleted.' 
+      });
+      
+      navigate('/');
+    } catch (error: any) {
       console.error('Error deleting account:', error);
-      toast({ title: 'Error', description: 'Failed to delete account', variant: 'destructive' });
+      setDeleteError(error.message || 'An unexpected error occurred');
+      toast({ 
+        title: 'Error', 
+        description: 'An unexpected error occurred. Please try again.', 
+        variant: 'destructive' 
+      });
     } finally {
       setIsDeleting(false);
-      setDeleteDialogOpen(false);
     }
   };
+
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setDeleteConfirmText('');
+      setDeleteError('');
+    }
+    setDeleteDialogOpen(open);
+  };
+
+  const isDeleteEnabled = deleteConfirmText === 'DELETE';
 
   return (
     <div className="space-y-6">
@@ -265,34 +315,85 @@ export const SecuritySettings = () => {
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="bg-card border-border">
-          <AlertDialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="p-2 rounded-full bg-destructive/10">
-                <AlertTriangle className="h-5 w-5 text-destructive" />
+      {/* Delete Confirmation Dialog - Instagram Style */}
+      <Dialog open={deleteDialogOpen} onOpenChange={handleDialogClose}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader className="text-center sm:text-center">
+            <div className="flex justify-center mb-4">
+              <div className="p-4 rounded-full bg-destructive/10">
+                <AlertTriangle className="h-8 w-8 text-destructive" />
               </div>
-              <AlertDialogTitle>Delete Account?</AlertDialogTitle>
             </div>
-            <AlertDialogDescription className="space-y-2">
-              <p>This action cannot be undone. This will permanently delete your account and remove all your data from our servers.</p>
-              <p className="font-medium text-destructive">All your problems, solutions, innovations, and messages will be deleted.</p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
+            <DialogTitle className="text-xl">Delete Your Account?</DialogTitle>
+            <DialogDescription className="space-y-3 pt-2">
+              <p className="text-center">
+                This action is <span className="font-semibold text-destructive">permanent</span> and cannot be undone.
+              </p>
+              <div className="text-left space-y-2 p-4 rounded-lg bg-destructive/5 border border-destructive/20">
+                <p className="text-sm font-medium text-foreground">This will permanently delete:</p>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Your profile and personal information</li>
+                  <li>• All your messages and conversations</li>
+                  <li>• Your notifications and preferences</li>
+                  <li>• Your connections and blocked accounts</li>
+                  <li>• All likes, comments, and bookmarks</li>
+                </ul>
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deleteConfirm" className="text-sm font-medium">
+                Type <span className="font-bold text-destructive">DELETE</span> to confirm
+              </Label>
+              <Input
+                id="deleteConfirm"
+                value={deleteConfirmText}
+                onChange={(e) => {
+                  setDeleteConfirmText(e.target.value.toUpperCase());
+                  setDeleteError('');
+                }}
+                placeholder="Type DELETE here"
+                className={deleteError ? 'border-destructive' : ''}
+                autoComplete="off"
+              />
+              {deleteError && (
+                <p className="text-sm text-destructive">{deleteError}</p>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-col">
+            <Button
+              variant="destructive"
               onClick={handleDeleteAccount}
-              className="bg-destructive hover:bg-destructive/90"
-              disabled={isDeleting}
+              disabled={!isDeleteEnabled || isDeleting}
+              className="w-full"
             >
-              {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
-              Delete Account
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting Account...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Permanently Delete Account
+                </>
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleDialogClose(false)}
+              disabled={isDeleting}
+              className="w-full"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
