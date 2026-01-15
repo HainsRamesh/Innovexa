@@ -739,6 +739,36 @@ export type Database = {
           },
         ]
       }
+      messaging_preferences: {
+        Row: {
+          allow_attachments: boolean
+          created_at: string
+          id: string
+          message_requests_enabled: boolean
+          read_receipts_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_attachments?: boolean
+          created_at?: string
+          id?: string
+          message_requests_enabled?: boolean
+          read_receipts_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_attachments?: boolean
+          created_at?: string
+          id?: string
+          message_requests_enabled?: boolean
+          read_receipts_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       nda_acceptances: {
         Row: {
           accepted_at: string
@@ -767,6 +797,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          comments_enabled: boolean
+          created_at: string
+          id: string
+          investor_interest_enabled: boolean
+          likes_enabled: boolean
+          mentions_enabled: boolean
+          messages_enabled: boolean
+          mute_all: boolean
+          solutions_enabled: boolean
+          system_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_enabled?: boolean
+          created_at?: string
+          id?: string
+          investor_interest_enabled?: boolean
+          likes_enabled?: boolean
+          mentions_enabled?: boolean
+          messages_enabled?: boolean
+          mute_all?: boolean
+          solutions_enabled?: boolean
+          system_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_enabled?: boolean
+          created_at?: string
+          id?: string
+          investor_interest_enabled?: boolean
+          likes_enabled?: boolean
+          mentions_enabled?: boolean
+          messages_enabled?: boolean
+          mute_all?: boolean
+          solutions_enabled?: boolean
+          system_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -829,6 +904,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          profile_visibility: string
+          show_activity_status: boolean
           updated_at: string
           user_id: string
           who_can_comment: string
@@ -838,6 +915,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          profile_visibility?: string
+          show_activity_status?: boolean
           updated_at?: string
           user_id: string
           who_can_comment?: string
@@ -847,6 +926,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          profile_visibility?: string
+          show_activity_status?: boolean
           updated_at?: string
           user_id?: string
           who_can_comment?: string
