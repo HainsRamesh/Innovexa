@@ -154,19 +154,23 @@ const InnovationViewPage = () => {
           {/* WITH/WITHOUT Section */}
           <div className="grid md:grid-cols-2 gap-4">
             <Card className="border-destructive/30 bg-destructive/5">
-              <CardHeader>
-                <CardTitle className="text-lg text-destructive">Without the Product</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base sm:text-lg text-destructive break-words">
+                  Without the Product
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">{innovation.without_product}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap text-sm sm:text-base break-words overflow-hidden">{innovation.without_product}</p>
               </CardContent>
             </Card>
             <Card className="border-primary/30 bg-primary/5">
-              <CardHeader>
-                <CardTitle className="text-lg text-primary">With the Product</CardTitle>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base sm:text-lg text-primary break-words">
+                  With the Product
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap">{innovation.with_product}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap text-sm sm:text-base break-words overflow-hidden">{innovation.with_product}</p>
               </CardContent>
             </Card>
           </div>

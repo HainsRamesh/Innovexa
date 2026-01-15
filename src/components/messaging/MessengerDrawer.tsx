@@ -194,10 +194,10 @@ export const MessengerDrawer = () => {
         </div>
       </div>
 
-      {/* Backdrop for mobile */}
+      {/* Backdrop - for both mobile and closing on overlay click */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm sm:hidden"
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none"
           onClick={closeDrawer}
         />
       )}
