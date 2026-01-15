@@ -31,14 +31,14 @@ interface InnovationDetailModalProps {
 }
 
 const categoryLabels: Record<string, string> = {
-  ai: 'AI',
-  healthtech: 'HealthTech',
-  fintech: 'FinTech',
-  climatetech: 'ClimateTech',
-  edtech: 'EdTech',
+  ai: 'Artificial Intelligence',
+  healthtech: 'Health Tech',
+  fintech: 'Fin Tech',
+  climatetech: 'Climate Tech',
+  edtech: 'Ed Tech',
   saas: 'SaaS',
-  hardware: 'Hardware',
-  web3: 'Web3',
+  hardware: 'Hardware & IoT',
+  web3: 'Web3 & Blockchain',
   other: 'Other',
 };
 

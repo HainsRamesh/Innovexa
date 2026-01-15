@@ -63,7 +63,6 @@ export const ChatThread = ({
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSending, setIsSending] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
   const [hasSetPrefilled, setHasSetPrefilled] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
@@ -322,8 +321,14 @@ export const ChatThread = ({
     if (!conversationId || (!messageText.trim() && pendingAttachments.length === 0)) return;
     if (!user?.id) return;
 
-    setIsSending(true);
     const currentReply = replyingTo; // Capture before clearing
+    const currentText = messageText.trim();
+    const currentAttachments = [...pendingAttachments];
+    
+    // Optimistic update - clear inputs immediately for instant UX
+    setMessageText("");
+    setPendingAttachments([]);
+    setReplyingTo(null);
 
     try {
       // Upload all attachments first
@@ -333,11 +338,7 @@ export const ChatThread = ({
         thumbnailUrl?: string;
       }> = [];
 
-      for (const attachment of pendingAttachments) {
-        setPendingAttachments(prev => 
-          prev.map(a => a.id === attachment.id ? { ...a, uploading: true, progress: 0 } : a)
-        );
-
+      for (const attachment of currentAttachments) {
         try {
           const result = await uploadAttachment(attachment.file);
           if (result) {
@@ -345,21 +346,16 @@ export const ChatThread = ({
               file: attachment.file,
               ...result,
             });
-            setPendingAttachments(prev => 
-              prev.map(a => a.id === attachment.id ? { ...a, progress: 100 } : a)
-            );
           }
         } catch (error) {
-          setPendingAttachments(prev => 
-            prev.map(a => a.id === attachment.id ? { ...a, uploading: false, error: "Upload failed" } : a)
-          );
+          console.error("Upload failed:", error);
           throw error;
         }
       }
 
       // Determine message type
       let messageType = "text";
-      if (uploadedAttachments.length > 0 && messageText.trim()) {
+      if (uploadedAttachments.length > 0 && currentText) {
         messageType = "mixed";
       } else if (uploadedAttachments.length > 0) {
         const hasImages = uploadedAttachments.some(a => a.file.type.startsWith("image/"));
@@ -375,7 +371,7 @@ export const ChatThread = ({
       const messagePayload: any = {
         conversation_id: conversationId,
         sender_id: user.id,
-        text: messageText.trim() || "",
+        text: currentText || "",
         type: messageType,
       };
 
@@ -419,17 +415,10 @@ export const ChatThread = ({
         .update({ updated_at: new Date().toISOString() })
         .eq("id", conversationId);
 
-      // Clear inputs
-      setMessageText("");
-      setPendingAttachments([]);
-      setReplyingTo(null);
-
       // Refetch to get attachments with proper URLs
       await fetchMessages(conversationId);
     } catch (error) {
       console.error("Error sending message:", error);
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -969,11 +958,11 @@ export const ChatThread = ({
           <AttachmentPicker
             onFilesSelected={handleFilesSelected}
             currentCount={pendingAttachments.length}
-            disabled={isSending || isInitializing}
+            disabled={isInitializing}
           />
           <EmojiPicker
             onEmojiSelect={handleEmojiSelect}
-            disabled={isSending || isInitializing}
+            disabled={isInitializing}
           />
           <Textarea
             ref={textareaRef}
@@ -982,20 +971,16 @@ export const ChatThread = ({
             onKeyDown={handleKeyDown}
             placeholder="Type a message..."
             className="flex-1 min-h-[36px] max-h-[120px] resize-none bg-background border-border text-sm py-2"
-            disabled={isSending || isInitializing}
+            disabled={isInitializing}
             rows={1}
           />
           <Button
             size="icon"
             onClick={handleSend}
-            disabled={!canSend || isSending || isInitializing}
+            disabled={!canSend || isInitializing}
             className="h-9 w-9 flex-shrink-0"
           >
-            {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+            <Send className="h-4 w-4" />
           </Button>
         </div>
       </div>

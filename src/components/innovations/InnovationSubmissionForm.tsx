@@ -78,10 +78,10 @@ interface InnovationSubmissionFormProps {
 
 const categoryOptions: { value: InnovationCategory; label: string }[] = [
   { value: "ai", label: "Artificial Intelligence" },
-  { value: "healthtech", label: "HealthTech" },
-  { value: "fintech", label: "FinTech" },
-  { value: "climatetech", label: "ClimateTech" },
-  { value: "edtech", label: "EdTech" },
+  { value: "healthtech", label: "Health Tech" },
+  { value: "fintech", label: "Fin Tech" },
+  { value: "climatetech", label: "Climate Tech" },
+  { value: "edtech", label: "Ed Tech" },
   { value: "saas", label: "SaaS" },
   { value: "hardware", label: "Hardware & IoT" },
   { value: "web3", label: "Web3 & Blockchain" },
@@ -130,7 +130,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     defaultValues: {
       title: initialData?.title || "",
       tagline: initialData?.tagline || "",
-      category: initialData?.category || "other",
+      category: initialData?.category || undefined, // No default category - user must select
       custom_category: initialData?.custom_category || "",
       description: initialData?.description || "",
       video_url: initialData?.video_url || "",
@@ -682,7 +682,13 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
         await (supabase as any).from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
       }
 
-      navigate("/innovations");
+      // Navigate to My Innovations section
+      if (mode === "edit") {
+        // For edit mode, navigate to innovations page and scroll to My Innovations
+        navigate("/innovations", { state: { scrollToMyInnovations: true } });
+      } else {
+        navigate("/innovations");
+      }
     } catch (error: any) {
       console.error("Error submitting innovation:", error);
       toast.error(error.message || "Failed to submit innovation");
@@ -1124,18 +1130,21 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
           <Button type="button" variant="outline" onClick={() => navigate("/innovations")} disabled={isSubmitting}>
             Cancel
           </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={form.handleSubmit((data) => onSubmit(data, true))}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            Save as Draft
-          </Button>
+          {/* Only show Save as Draft for create mode, not edit mode */}
+          {mode === "create" && (
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={form.handleSubmit((data) => onSubmit(data, true))}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              Save as Draft
+            </Button>
+          )}
           <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, false))} disabled={isSubmitting}>
             {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
-            Publish Innovation
+            {mode === "edit" ? "Update Innovation" : "Publish Innovation"}
           </Button>
         </div>
       </form>
