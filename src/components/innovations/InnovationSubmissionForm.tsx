@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabaseClient";
+import { decodeJwt } from "@/lib/supabaseClient";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import { Upload, X, FileText, Image as ImageIcon, Video, Save, Send, Loader2, Pl
 import { InnovationCategory } from "@/types";
 import { Badge } from "@/components/ui/badge";
 import aiIcon from "@/assets/ai_icon.png";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 type ModerationStatus = "pending" | "approved" | "rejected" | "error";
 
@@ -62,6 +64,16 @@ const innovationSchema = z.object({
 );
 
 type InnovationFormData = z.infer<typeof innovationSchema>;
+
+type RedundancyMatch = {
+  id: string;
+  title: string;
+  tagline: string;
+  category: string;
+  similarity: number;
+  bucket?: string | null;
+  snippet?: string | null;
+};
 
 interface InnovationSubmissionFormProps {
   initialData?: Partial<
@@ -124,6 +136,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const moderationGuards = useRef<Set<string>>(new Set());
   const retryGuards = useRef<Set<string>>(new Set());
   const galleryQueue = useRef<Promise<void>>(Promise.resolve());
+  const pendingPublishAction = useRef<(() => Promise<void>) | null>(null);
 
   const form = useForm<InnovationFormData>({
     resolver: zodResolver(innovationSchema),
@@ -140,6 +153,9 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   });
 
   const watchedCategory = form.watch("category");
+  const [warningOpen, setWarningOpen] = useState(false);
+  const [redundancyWarning, setRedundancyWarning] = useState<{ matches: RedundancyMatch[] }>({ matches: [] });
+  const [blockData, setBlockData] = useState<{ reason: string; matches: RedundancyMatch[] } | null>(null);
 
   const validateImageFile = (file: File) => {
     if (!allowedImageTypes.includes(file.type)) {
@@ -201,12 +217,19 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   bucket = TEMP_BUCKET,
 ) => {
   // Ensure we have a valid session token for JWT-protected functions
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-  if (sessionError) throw sessionError;
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
 
-  if (!session?.access_token) {
-    throw new Error("Authentication session not found. Please log in again.");
+  if (!accessToken) {
+    console.error("No access token found", sessionError);
+    toast({
+      title: "Please log in again",
+      description: "Session token missing or expired.",
+      variant: "destructive",
+    });
+    return;
   }
+
 
   const { data, error } = await supabase.functions.invoke("moderate-image", {
       body: {
@@ -218,7 +241,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
         innovation_id: initialData?.id ?? null,
       },
       headers: {
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
       if (error) throw error;
@@ -624,6 +647,20 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     setIsSubmitting(true);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const decoded = decodeJwt(accessToken);
+      console.log("supabase url", supabase.supabaseUrl, "token iss", decoded?.iss, "accessToken present", !!accessToken, "anonKey present", !!anonKey);
+      if (!accessToken) {
+        toast.error("Please login again");
+        setIsSubmitting(false);
+        return;
+      }
+
+      setBlockData(null);
+      setWarningOpen(false);
+
       // Upload PDFs if new
       const newPdfUrls = await Promise.all(pdfFiles.map((file) => uploadFile(file, "pdfs")));
       const allPdfUrls = [
@@ -657,35 +694,137 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
         status,
         innovator_id: user.id,
       };
-      let innovationId = initialData?.id;
-
-      if (mode === "edit" && initialData?.id) {
-        const { error } = await supabase.from("innovations").update(innovationData).eq("id", initialData.id);
-
-        if (error) throw error;
-        toast.success(asDraft ? "Innovation saved as draft" : "Innovation updated successfully");
-      } else {
-        const { data: inserted, error } = await supabase
-          .from("innovations")
-          .insert(innovationData)
-          .select()
-          .single();
-
-        if (error) throw error;
-        innovationId = inserted?.id || innovationId;
-        toast.success(asDraft ? "Innovation saved as draft" : "Innovation published successfully");
-      }
 
       const assetIdsToLink = [
         ...(coverAsset.assetId ? [coverAsset.assetId] : []),
         ...approvedGalleryAssets.map((asset) => asset.assetId).filter(Boolean),
       ] as string[];
 
-      if (innovationId && assetIdsToLink.length > 0) {
-        await supabase.from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
+      const performSave = async () => {
+        let innovationId = initialData?.id;
+
+        if (mode === "edit" && initialData?.id) {
+          const { error } = await supabase.from("innovations").update(innovationData).eq("id", initialData.id);
+          console.log("update innovation response", { error });
+
+          if (error) throw error;
+          toast.success(asDraft ? "Innovation saved as draft" : "Innovation updated successfully");
+        } else {
+          const { data: inserted, error } = await supabase
+            .from("innovations")
+            .insert(innovationData)
+            .select()
+            .single();
+          console.log("insert innovation response", { inserted, error });
+
+          if (error) throw error;
+          innovationId = inserted?.id || innovationId;
+          toast.success(asDraft ? "Innovation saved as draft" : "Innovation published successfully");
+        }
+
+        if (innovationId && assetIdsToLink.length > 0) {
+          await supabase.from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
+        }
+
+        if (innovationId && status !== "draft") {
+          console.log("invoking upsert-innovation-embedding", { innovationId });
+          const { data: embedData, error: embedError } = await supabase.functions.invoke("upsert-innovation-embedding", {
+            body: { innovation_id: innovationId },
+            headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey },
+          });
+          console.log("upsert-innovation-embedding result", { embedData, embedError });
+
+          if (embedError) {
+            toast.error("Published but embedding update failed");
+          }
+        }
+
+        navigate("/innovations");
+      };
+
+      if (!asDraft) {
+        try {
+          console.log("invoking check-innovation-redundancy", {
+            payload: {
+              innovator_id: user.id,
+              title: innovationData.title,
+              tagline: innovationData.tagline,
+              category: innovationData.category,
+              custom_category: innovationData.custom_category,
+              description: innovationData.description,
+              without_product: innovationData.without_product,
+              with_product: innovationData.with_product,
+            },
+          });
+
+          const { data: redundancyData, error: redundancyError } = await supabase.functions.invoke(
+            "check-innovation-redundancy",
+            {
+              body: {
+                innovator_id: user.id,
+                title: innovationData.title,
+                tagline: innovationData.tagline,
+                category: innovationData.category,
+                custom_category: innovationData.custom_category,
+                description: innovationData.description,
+                without_product: innovationData.without_product,
+                with_product: innovationData.with_product,
+              },
+              headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey },
+            },
+          );
+          let parsedErrorBody: any = null;
+          let redundancyStatus: number | undefined = (redundancyError as any)?.status;
+          if (redundancyError && (redundancyError as any)?.context?.response) {
+            const resp = (redundancyError as any).context.response as Response;
+            redundancyStatus = resp.status ?? redundancyStatus;
+            try {
+              parsedErrorBody = await resp.clone().json();
+            } catch {
+              parsedErrorBody = null;
+            }
+          }
+
+          const redundancyResult = (redundancyData as any) ?? parsedErrorBody;
+          console.log("check-innovation-redundancy result", {
+            redundancyData,
+            redundancyError,
+            redundancyStatus,
+            parsedErrorBody,
+          });
+
+          const blockResponse = redundancyResult?.block === true || redundancyStatus === 409;
+
+          if (blockResponse) {
+            const matches = (redundancyResult?.matches || []) as RedundancyMatch[];
+            setBlockData({
+              reason: redundancyResult?.reason || "This submission appears to be a duplicate",
+              matches,
+            });
+            setIsSubmitting(false);
+            return;
+          }
+
+          if (redundancyError && !redundancyResult) {
+            toast.warning("Could not check similarity. Continuing to publish.");
+            await performSave();
+            return;
+          }
+
+          if (redundancyResult?.warning) {
+            pendingPublishAction.current = performSave;
+            setRedundancyWarning({ matches: (redundancyResult?.matches || []) as RedundancyMatch[] });
+            setWarningOpen(true);
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (error) {
+          console.error("redundancy check failed:", error);
+          toast.warning("Could not check similarity. Continuing to publish.");
+        }
       }
 
-      navigate("/innovations");
+      await performSave();
     } catch (error: any) {
       console.error("Error submitting innovation:", error);
       toast.error(error.message || "Failed to submit innovation");
@@ -1142,6 +1281,115 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
           </Button>
         </div>
       </form>
+
+      {/* Redundancy warning dialog */}
+      <Dialog
+        open={warningOpen}
+        onOpenChange={(open) => {
+          setWarningOpen(open);
+          if (!open) {
+            setRedundancyWarning({ matches: [] });
+            pendingPublishAction.current = null;
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Similar innovations found</DialogTitle>
+            <DialogDescription>
+              We found similar published innovations. Review them before publishing or continue anyway.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {redundancyWarning.matches?.length === 0 && (
+              <p className="text-sm text-muted-foreground">No matches to display.</p>
+            )}
+            {redundancyWarning.matches?.map((match) => (
+              <div key={match.id} className="p-3 rounded-md border border-border">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold">{match.title}</p>
+                  <span className="text-xs text-muted-foreground">{match.bucket || "Related"}</span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2">{match.tagline || match.snippet}</p>
+                <p className="text-xs text-muted-foreground mt-1">Similarity: {(match.similarity * 100).toFixed(0)}%</p>
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="flex flex-col gap-2 sm:flex-row sm:justify-end">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setWarningOpen(false);
+              }}
+            >
+              Edit submission
+            </Button>
+            <Button
+              onClick={async () => {
+                setWarningOpen(false);
+                setIsSubmitting(true);
+                try {
+                  await pendingPublishAction.current?.();
+                } finally {
+                  setIsSubmitting(false);
+                  pendingPublishAction.current = null;
+                }
+              }}
+            >
+              Publish anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Blocking dialog */}
+      <Dialog open={!!blockData} onOpenChange={(open) => !open && setBlockData(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Potential duplicate</DialogTitle>
+            <DialogDescription>{blockData?.reason}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-64 overflow-y-auto">
+            {blockData?.matches?.map((match) => (
+              <div key={match.id} className="p-3 rounded-md border border-border">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold">{match.title}</p>
+                  <span className="text-xs text-muted-foreground">{match.bucket || "Likely duplicate"}</span>
+                </div>
+                <p className="text-sm text-muted-foreground line-clamp-2">{match.tagline || match.snippet}</p>
+                <p className="text-xs text-muted-foreground mt-1">Similarity: {(match.similarity * 100).toFixed(0)}%</p>
+              </div>
+            ))}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setBlockData(null);
+              }}
+            >
+              Edit submission
+            </Button>
+            <Button
+              disabled={!blockData?.matches?.[0]?.id}
+              onClick={() => {
+                const targetId = blockData?.matches?.[0]?.id;
+                if (targetId) {
+                  navigate(`/innovations/${targetId}`);
+                  setBlockData(null);
+                }
+              }}
+            >
+              View existing
+            </Button>
+            <Button variant="ghost" onClick={() => setBlockData(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Form>
   );
 };

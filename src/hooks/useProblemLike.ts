@@ -1,9 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { useAuth } from '@/contexts/AuthContext';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabaseClient";
 
 const getSessionId = (): string => {
   const key = 'problem_session_id';
@@ -22,27 +19,9 @@ export const useProblemLike = (problemId: string, initialLikeCount: number = 0) 
   const [isLoading, setIsLoading] = useState(false);
   const sessionId = getSessionId();
 
-  // Create a Supabase client that sends the session header so RLS can see it
-  const supabaseWithSession = useMemo(
-    () =>
-      createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: {
-          headers: {
-            'x-problem-session-id': sessionId,
-          },
-        },
-        auth: {
-          storage: localStorage,
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-      }),
-    [sessionId]
-  );
-
   useEffect(() => {
     const checkIfLiked = async () => {
-      const { data } = await supabaseWithSession
+      const { data } = await supabase
         .from('problem_likes')
         .select('id')
         .eq('problem_id', problemId)
@@ -53,7 +32,7 @@ export const useProblemLike = (problemId: string, initialLikeCount: number = 0) 
     };
 
     checkIfLiked();
-  }, [problemId, sessionId, supabaseWithSession]);
+  }, [problemId, sessionId]);
 
   useEffect(() => {
     setLikeCount(initialLikeCount);
@@ -74,7 +53,7 @@ export const useProblemLike = (problemId: string, initialLikeCount: number = 0) 
 
       try {
         if (previousIsLiked) {
-          const { error } = await supabaseWithSession
+          const { error } = await supabase
             .from('problem_likes')
             .delete()
             .eq('problem_id', problemId)
@@ -83,7 +62,7 @@ export const useProblemLike = (problemId: string, initialLikeCount: number = 0) 
           if (error) throw error;
         } else {
           // Insert with session_id; user_id will be stamped by trigger if logged in
-          const { error } = await supabaseWithSession
+          const { error } = await supabase
             .from('problem_likes')
             .insert({ problem_id: problemId, session_id: sessionId });
 

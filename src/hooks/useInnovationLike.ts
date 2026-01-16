@@ -1,8 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 const getSessionId = (): string => {
   const key = 'innovation_session_id';
@@ -20,28 +17,9 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
   const [isLoading, setIsLoading] = useState(false);
   const sessionId = getSessionId();
 
-  // Create a Supabase client that sends the session header so RLS can see it
-  // This client also inherits the auth session from localStorage
-  const supabaseWithSession = useMemo(
-    () =>
-      createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: {
-          headers: {
-            'x-innovation-session-id': sessionId,
-          },
-        },
-        auth: {
-          storage: localStorage,
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-      }),
-    [sessionId]
-  );
-
   useEffect(() => {
     const checkIfLiked = async () => {
-      const { data } = await supabaseWithSession
+      const { data } = await supabase
         .from('innovation_likes')
         .select('id')
         .eq('innovation_id', innovationId)
@@ -52,7 +30,7 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
     };
 
     checkIfLiked();
-  }, [innovationId, sessionId, supabaseWithSession]);
+  }, [innovationId, sessionId]);
 
   useEffect(() => {
     setLikeCount(initialLikeCount);
@@ -73,7 +51,7 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
 
       try {
         if (previousIsLiked) {
-          const { error } = await supabaseWithSession
+          const { error } = await supabase
             .from('innovation_likes')
             .delete()
             .eq('innovation_id', innovationId)
@@ -81,7 +59,7 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
 
           if (error) throw error;
         } else {
-          const { error } = await supabaseWithSession
+          const { error } = await supabase
             .from('innovation_likes')
             .insert({ innovation_id: innovationId, session_id: sessionId });
 
@@ -96,7 +74,7 @@ export const useInnovationLike = (innovationId: string, initialLikeCount: number
         setIsLoading(false);
       }
     },
-    [innovationId, sessionId, isLiked, likeCount, isLoading, supabaseWithSession]
+    [innovationId, sessionId, isLiked, likeCount, isLoading]
   );
 
   return { isLiked, likeCount, toggleLike, isLoading };

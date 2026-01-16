@@ -1,8 +1,5 @@
-import { useCallback, useMemo } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+import { useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
 
 const getSessionId = (): string => {
   const key = 'innovation_message_session_id';
@@ -17,25 +14,13 @@ const getSessionId = (): string => {
 export const useMessageClickTracker = (innovationId: string) => {
   const sessionId = getSessionId();
 
-  const supabaseWithSession = useMemo(
-    () =>
-      createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-          storage: localStorage,
-          persistSession: true,
-          autoRefreshToken: true,
-        },
-      }),
-    []
-  );
-
   const trackMessageClick = useCallback(async () => {
     if (!innovationId) return;
 
     try {
-      const { data: { user } } = await supabaseWithSession.auth.getUser();
-      
-      await supabaseWithSession.from('innovation_message_clicks').insert({
+      const { data: { user } } = await supabase.auth.getUser();
+
+      await supabase.from('innovation_message_clicks').insert({
         innovation_id: innovationId,
         session_id: sessionId,
         user_id: user?.id || null,
@@ -43,7 +28,7 @@ export const useMessageClickTracker = (innovationId: string) => {
     } catch (error) {
       console.error('Error tracking message click:', error);
     }
-  }, [innovationId, sessionId, supabaseWithSession]);
+  }, [innovationId, sessionId]);
 
   return { trackMessageClick };
 };
