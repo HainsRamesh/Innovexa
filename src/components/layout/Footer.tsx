@@ -1,12 +1,21 @@
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Youtube, Instagram, Linkedin, Sparkles } from "lucide-react";
+import { Facebook, Twitter, Youtube, Instagram, Linkedin } from "lucide-react";
+
+// Social Media URLs - Edit these to update your social links
+const SOCIAL_URLS = {
+  facebook: "https://facebook.com/yourpage",
+  twitter: "https://x.com/yourhandle",
+  youtube: "https://youtube.com/@yourchannel",
+  instagram: "https://instagram.com/yourhandle",
+  linkedin: "https://www.linkedin.com/company/yourcompany",
+};
 
 const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com", label: "Facebook" },
-  { icon: Twitter, href: "https://twitter.com", label: "X (Twitter)" },
-  { icon: Youtube, href: "https://youtube.com", label: "YouTube" },
-  { icon: Instagram, href: "https://instagram.com", label: "Instagram" },
-  { icon: Linkedin, href: "https://linkedin.com", label: "LinkedIn" },
+  { icon: Facebook, href: SOCIAL_URLS.facebook, label: "Facebook", title: "Follow us on Facebook" },
+  { icon: Twitter, href: SOCIAL_URLS.twitter, label: "X (Twitter)", title: "Follow us on X (Twitter)" },
+  { icon: Youtube, href: SOCIAL_URLS.youtube, label: "YouTube", title: "Subscribe to our YouTube channel" },
+  { icon: Instagram, href: SOCIAL_URLS.instagram, label: "Instagram", title: "Follow us on Instagram" },
+  { icon: Linkedin, href: SOCIAL_URLS.linkedin, label: "LinkedIn", title: "Connect with us on LinkedIn" },
 ];
 
 const footerColumns = [
@@ -87,6 +96,7 @@ export function Footer() {
                       rel="noopener noreferrer"
                       className="h-10 w-10 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 flex items-center justify-center transition-all duration-200 hover:scale-105"
                       aria-label={social.label}
+                      title={social.title}
                     >
                       <social.icon className="h-4 w-4" />
                     </a>
