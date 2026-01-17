@@ -38,9 +38,9 @@ export const usePrivacySettings = () => {
 
       if (data) {
         setSettings({
-          who_can_message: data.who_can_message || "everyone",
-          who_can_view_profile: data.who_can_view_profile || "everyone",
-          who_can_comment: data.who_can_comment || "everyone",
+          who_can_message: (data.who_can_message as PrivacyOption) || "everyone",
+          who_can_view_profile: (data.who_can_view_profile as PrivacyOption) || "everyone",
+          who_can_comment: (data.who_can_comment as PrivacyOption) || "everyone",
         });
       }
     } catch (error) {

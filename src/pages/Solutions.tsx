@@ -476,23 +476,6 @@ const Solutions = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 px-4 border-t border-border/50">
-        <div className="container mx-auto text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-4">
-            Have an Innovative Solution?
-          </h2>
-          <p className="text-muted-foreground mb-6 max-w-xl mx-auto">
-            Join our community of innovators and submit your solutions to real-world challenges
-          </p>
-          <Button size="lg" asChild>
-            <Link to="/auth?mode=signup">
-              Get Started <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-        </div>
-      </section>
-
       <Footer />
 
       {/* Solution Detail Dialog */}

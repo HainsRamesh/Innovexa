@@ -4,10 +4,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationDropdown } from './NotificationDropdown';
+import { useChat } from '@/contexts/ChatContext';
 
 export const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { closeDrawer: closeMessenger, isDrawerOpen: isMessengerOpen } = useChat();
   const {
     unreadCount,
     hasNewNotification,
@@ -53,6 +55,26 @@ export const NotificationBell = () => {
     };
   }, [isOpen]);
 
+  // Listen for close event from MessagesBell
+  useEffect(() => {
+    const handleCloseNotifications = () => {
+      setIsOpen(false);
+    };
+
+    window.addEventListener('closeNotifications', handleCloseNotifications);
+    return () => {
+      window.removeEventListener('closeNotifications', handleCloseNotifications);
+    };
+  }, []);
+
+  const handleClick = () => {
+    // Close messenger drawer if open
+    if (isMessengerOpen) {
+      closeMessenger();
+    }
+    setIsOpen(!isOpen);
+  };
+
   const displayCount = unreadCount > 99 ? '99+' : unreadCount;
 
   return (
@@ -66,7 +88,7 @@ export const NotificationBell = () => {
           isOpen && "bg-muted",
           hasNewNotification && "animate-wiggle"
         )}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleClick}
         aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ''}`}
         aria-expanded={isOpen}
         aria-haspopup="true"

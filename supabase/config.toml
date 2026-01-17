@@ -16,4 +16,5 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.backfill-innovation-embeddings]
+[functions.delete-account]
 verify_jwt = false

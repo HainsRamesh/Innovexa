@@ -6,6 +6,9 @@ import { useChat } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
+// Event emitter for closing notifications when messages is opened
+export const closeNotificationsEvent = new CustomEvent('closeNotifications');
+
 export const MessagesBell = () => {
   const { user } = useAuth();
   const { openChat, getTotalUnreadCount, setTotalUnreadCount } = useChat();
@@ -77,6 +80,8 @@ export const MessagesBell = () => {
   }, [user?.id, fetchUnreadCount]);
 
   const handleClick = () => {
+    // Dispatch event to close notification dropdown
+    window.dispatchEvent(new CustomEvent('closeNotifications'));
     openChat({ userId: "", userName: null });
   };
 

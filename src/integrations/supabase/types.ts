@@ -469,6 +469,7 @@ export type Database = {
           updated_at: string
           video_url: string | null
           view_count: number | null
+          visibility: string
           with_product: string
           without_product: string
         }
@@ -491,6 +492,7 @@ export type Database = {
           updated_at?: string
           video_url?: string | null
           view_count?: number | null
+          visibility?: string
           with_product: string
           without_product: string
         }
@@ -513,6 +515,7 @@ export type Database = {
           updated_at?: string
           video_url?: string | null
           view_count?: number | null
+          visibility?: string
           with_product?: string
           without_product?: string
         }
@@ -575,52 +578,392 @@ export type Database = {
           },
         ]
       }
-      media_assets: {
+      investor_interests: {
         Row: {
-          bucket: string
           created_at: string
           id: string
           innovation_id: string | null
-          kind: "cover" | "gallery"
-          moderated_at: string | null
-          moderation_result: Json | null
-          path: string
-          public_url: string | null
-          status: "pending" | "approved" | "rejected" | "error"
-          user_id: string
+          interest_type: string
+          investment_range: string | null
+          investor_id: string
+          investor_name: string
+          message: string | null
+          problem_id: string | null
+          status: string | null
+          updated_at: string
         }
         Insert: {
-          bucket: string
           created_at?: string
           id?: string
           innovation_id?: string | null
-          kind: "cover" | "gallery"
-          moderated_at?: string | null
-          moderation_result?: Json | null
-          path: string
-          public_url?: string | null
-          status?: "pending" | "approved" | "rejected" | "error"
-          user_id: string
+          interest_type: string
+          investment_range?: string | null
+          investor_id: string
+          investor_name: string
+          message?: string | null
+          problem_id?: string | null
+          status?: string | null
+          updated_at?: string
         }
         Update: {
-          bucket?: string
           created_at?: string
           id?: string
           innovation_id?: string | null
-          kind?: "cover" | "gallery"
-          moderated_at?: string | null
-          moderation_result?: Json | null
-          path?: string
-          public_url?: string | null
-          status?: "pending" | "approved" | "rejected" | "error"
-          user_id?: string
+          interest_type?: string
+          investment_range?: string | null
+          investor_id?: string
+          investor_name?: string
+          message?: string | null
+          problem_id?: string | null
+          status?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
-            foreignKeyName: "media_assets_innovation_id_fkey"
+            foreignKeyName: "investor_interests_innovation_id_fkey"
             columns: ["innovation_id"]
             isOneToOne: false
             referencedRelation: "innovations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investor_interests_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_attachments: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          message_id: string
+          mime_type: string
+          size: number
+          thumbnail_url: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          message_id: string
+          mime_type: string
+          size: number
+          thumbnail_url?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          message_id?: string
+          mime_type?: string
+          size?: number
+          thumbnail_url?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          conversation_id: string
+          created_at: string
+          deleted_for_user_ids: string[] | null
+          edited_at: string | null
+          id: string
+          is_deleted: boolean | null
+          read_at: string | null
+          reply_to_message_id: string | null
+          reply_to_sender_id: string | null
+          reply_to_snippet: string | null
+          sender_id: string
+          text: string
+          type: string
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string
+          deleted_for_user_ids?: string[] | null
+          edited_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          read_at?: string | null
+          reply_to_message_id?: string | null
+          reply_to_sender_id?: string | null
+          reply_to_snippet?: string | null
+          sender_id: string
+          text: string
+          type?: string
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string
+          deleted_for_user_ids?: string[] | null
+          edited_at?: string | null
+          id?: string
+          is_deleted?: boolean | null
+          read_at?: string | null
+          reply_to_message_id?: string | null
+          reply_to_sender_id?: string | null
+          reply_to_snippet?: string | null
+          sender_id?: string
+          text?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_message_id_fkey"
+            columns: ["reply_to_message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messaging_preferences: {
+        Row: {
+          allow_attachments: boolean
+          created_at: string
+          id: string
+          message_requests_enabled: boolean
+          read_receipts_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          allow_attachments?: boolean
+          created_at?: string
+          id?: string
+          message_requests_enabled?: boolean
+          read_receipts_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          allow_attachments?: boolean
+          created_at?: string
+          id?: string
+          message_requests_enabled?: boolean
+          read_receipts_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      nda_acceptances: {
+        Row: {
+          accepted_at: string
+          document_id: string
+          id: string
+          investor_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          document_id: string
+          id?: string
+          investor_id: string
+        }
+        Update: {
+          accepted_at?: string
+          document_id?: string
+          id?: string
+          investor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nda_acceptances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "innovation_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_preferences: {
+        Row: {
+          comments_enabled: boolean
+          created_at: string
+          id: string
+          investor_interest_enabled: boolean
+          likes_enabled: boolean
+          mentions_enabled: boolean
+          messages_enabled: boolean
+          mute_all: boolean
+          solutions_enabled: boolean
+          system_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          comments_enabled?: boolean
+          created_at?: string
+          id?: string
+          investor_interest_enabled?: boolean
+          likes_enabled?: boolean
+          mentions_enabled?: boolean
+          messages_enabled?: boolean
+          mute_all?: boolean
+          solutions_enabled?: boolean
+          system_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          comments_enabled?: boolean
+          created_at?: string
+          id?: string
+          investor_interest_enabled?: boolean
+          likes_enabled?: boolean
+          mentions_enabled?: boolean
+          messages_enabled?: boolean
+          mute_all?: boolean
+          solutions_enabled?: boolean
+          system_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          actor_avatar_url: string | null
+          actor_id: string | null
+          actor_name: string | null
+          created_at: string
+          data: Json | null
+          group_key: string | null
+          id: string
+          is_read: boolean
+          message: string
+          priority: number
+          read_at: string | null
+          related_id: string | null
+          related_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          actor_avatar_url?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          data?: Json | null
+          group_key?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          priority?: number
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          actor_avatar_url?: string | null
+          actor_id?: string | null
+          actor_name?: string | null
+          created_at?: string
+          data?: Json | null
+          group_key?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          priority?: number
+          read_at?: string | null
+          related_id?: string | null
+          related_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      privacy_settings: {
+        Row: {
+          created_at: string
+          id: string
+          profile_visibility: string
+          show_activity_status: boolean
+          updated_at: string
+          user_id: string
+          who_can_comment: string
+          who_can_message: string
+          who_can_view_profile: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_visibility?: string
+          show_activity_status?: boolean
+          updated_at?: string
+          user_id: string
+          who_can_comment?: string
+          who_can_message?: string
+          who_can_view_profile?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_visibility?: string
+          show_activity_status?: boolean
+          updated_at?: string
+          user_id?: string
+          who_can_comment?: string
+          who_can_message?: string
+          who_can_view_profile?: string
+        }
+        Relationships: []
+      }
+      problem_likes: {
+        Row: {
+          created_at: string
+          id: string
+          problem_id: string
+          session_id: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          problem_id: string
+          session_id: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          problem_id?: string
+          session_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "problem_likes_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
             referencedColumns: ["id"]
           },
         ]
@@ -646,6 +989,7 @@ export type Database = {
           title: string
           updated_at: string
           view_count: number | null
+          visibility: string
         }
         Insert: {
           ai_complexity_score?: number | null
@@ -667,6 +1011,7 @@ export type Database = {
           title: string
           updated_at?: string
           view_count?: number | null
+          visibility?: string
         }
         Update: {
           ai_complexity_score?: number | null
@@ -688,6 +1033,7 @@ export type Database = {
           title?: string
           updated_at?: string
           view_count?: number | null
+          visibility?: string
         }
         Relationships: []
       }
@@ -1003,6 +1349,10 @@ export type Database = {
       approve_solution: { Args: { _solution_id: string }; Returns: undefined }
       can_investor_view_solution: {
         Args: { _solution_id: string; _user_id: string }
+        Returns: boolean
+      }
+      can_view_profile: {
+        Args: { _target_user_id: string; _viewer_id: string }
         Returns: boolean
       }
       create_notification: {
