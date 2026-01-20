@@ -222,11 +222,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
 
   if (!accessToken) {
     console.error("No access token found", sessionError);
-    toast({
-      title: "Please log in again",
-      description: "Session token missing or expired.",
-      variant: "destructive",
-    });
+    toast.error("Please log in again - session token missing or expired.");
     return;
   }
 
@@ -648,7 +644,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       const accessToken = sessionData?.session?.access_token;
       const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
       const decoded = decodeJwt(accessToken);
-      console.log("supabase url", supabase.supabaseUrl, "token iss", decoded?.iss, "accessToken present", !!accessToken, "anonKey present", !!anonKey);
+      console.log("token iss", decoded?.iss, "accessToken present", !!accessToken, "anonKey present", !!anonKey);
       if (!accessToken) {
         toast.error("Please login again");
         setIsSubmitting(false);
@@ -719,9 +715,10 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
           toast.success(asDraft ? "Innovation saved as draft" : "Innovation published successfully");
         }
 
-        if (innovationId && assetIdsToLink.length > 0) {
-          await supabase.from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
-        }
+        // TODO: Link media assets when media_assets table is implemented
+        // if (innovationId && assetIdsToLink.length > 0) {
+        //   await supabase.from("media_assets").update({ innovation_id: innovationId }).in("id", assetIdsToLink);
+        // }
 
         if (innovationId && status !== "draft") {
           console.log("invoking upsert-innovation-embedding", { innovationId });
