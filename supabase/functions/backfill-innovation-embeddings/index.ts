@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
 
     const { error: upsertError } = await supabase
       .from("innovations")
-      .upsert(updates, { onConflict: "id", returning: "minimal" });
+      .upsert(updates, { onConflict: "id" });
 
     if (upsertError) {
       console.error("Backfill upsert error:", upsertError);

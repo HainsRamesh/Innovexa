@@ -77,7 +77,7 @@ export const useProblemLike = (problemId: string, initialLikeCount: number = 0) 
         setIsLoading(false);
       }
     },
-    [problemId, sessionId, isLiked, likeCount, isLoading, supabaseWithSession]
+    [problemId, sessionId, isLiked, likeCount, isLoading]
   );
 
   return { isLiked, likeCount, toggleLike, isLoading };
