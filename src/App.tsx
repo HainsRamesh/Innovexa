@@ -33,6 +33,14 @@ import Contact from "./pages/Contact";
 import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Cookies from "./pages/Cookies";
+import HelpCenter from "./pages/HelpCenter";
+import FAQs from "./pages/FAQs";
+import Troubleshooting from "./pages/Troubleshooting";
+import ReportBug from "./pages/ReportBug";
+import FeatureRequests from "./pages/FeatureRequests";
+import Accessibility from "./pages/Accessibility";
+import Roadmap from "./pages/Roadmap";
+import Community from "./pages/Community";
 
 // Dashboard Pages
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -160,6 +168,14 @@ const AppRoutes = () => {
       <Route path="/privacy" element={<Privacy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/cookies" element={<Cookies />} />
+      <Route path="/help-center" element={<HelpCenter />} />
+      <Route path="/faqs" element={<FAQs />} />
+      <Route path="/troubleshooting" element={<Troubleshooting />} />
+      <Route path="/report-bug" element={<ReportBug />} />
+      <Route path="/feature-requests" element={<FeatureRequests />} />
+      <Route path="/accessibility" element={<Accessibility />} />
+      <Route path="/roadmap" element={<Roadmap />} />
+      <Route path="/community" element={<Community />} />
       
       {/* Protected routes - require authentication */}
       <Route path="/innovations" element={

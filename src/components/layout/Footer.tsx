@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Linkedin, Twitter, Github } from "lucide-react";
+import { useCallback } from "react";
 
 // ============================================
 // SOCIAL MEDIA URLs - Edit these to update your social links
@@ -10,21 +11,90 @@ const SOCIAL_URLS = {
   github: "https://github.com/zynovexa",
 };
 
+// Reusable footer link with scroll-to-top behavior
+interface FooterLinkProps {
+  to: string;
+  children: React.ReactNode;
+}
+
+function FooterLink({ to, children }: FooterLinkProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLAnchorElement>) => {
+      e.preventDefault();
+      
+      if (location.pathname === to) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } else {
+        navigate(to);
+        requestAnimationFrame(() => {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+    },
+    [to, navigate, location.pathname]
+  );
+
+  return (
+    <Link
+      to={to}
+      onClick={handleClick}
+      className="text-gray-400 hover:text-white text-sm transition-colors duration-200 focus:outline-none focus:text-primary"
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function Footer() {
   const currentYear = new Date().getFullYear();
 
-  const mainLinks = [
-    { label: "About Us", to: "/about" },
-    { label: "Contact", to: "/contact" },
-    { label: "Features", to: "/features" },
-    { label: "Pricing", to: "/pricing" },
-    { label: "Blog", to: "/blog" },
-  ];
-
-  const legalLinks = [
-    { label: "Privacy Policy", to: "/privacy" },
-    { label: "Terms of Service", to: "/terms" },
-    { label: "Cookie Policy", to: "/cookies" },
+  // Footer sections with links
+  const footerSections = [
+    {
+      title: "Explore",
+      links: [
+        { label: "About Us", to: "/about" },
+        { label: "Contact", to: "/contact" },
+        { label: "Features", to: "/features" },
+        { label: "Pricing", to: "/pricing" },
+        { label: "Blog", to: "/blog" },
+      ],
+    },
+    {
+      title: "Product",
+      links: [
+        { label: "Road Map", to: "/roadmap" },
+      ],
+    },
+    {
+      title: "Support",
+      links: [
+        { label: "Help Center", to: "/help-center" },
+        { label: "FAQs", to: "/faqs" },
+        { label: "Troubleshooting", to: "/troubleshooting" },
+        { label: "Report a Bug", to: "/report-bug" },
+        { label: "Feature Requests", to: "/feature-requests" },
+        { label: "Accessibility", to: "/accessibility" },
+      ],
+    },
+    {
+      title: "Community",
+      links: [
+        { label: "Community Forum", to: "/community" },
+        { label: "Discord / Slack", to: "/community" },
+      ],
+    },
+    {
+      title: "Legal",
+      links: [
+        { label: "Privacy Policy", to: "/privacy" },
+        { label: "Terms of Service", to: "/terms" },
+        { label: "Cookie Policy", to: "/cookies" },
+      ],
+    },
   ];
 
   const socialLinks = [
@@ -37,24 +107,25 @@ export function Footer() {
     <footer className="bg-[#0B1120] border-t border-white/10" role="contentinfo">
       <div className="container mx-auto px-4 py-12 md:py-16">
         {/* Main Footer Content */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-10 lg:gap-16">
-          
-          {/* Brand & Social */}
-          <div className="lg:max-w-sm">
-            <Link to="/" className="inline-flex items-center gap-3 mb-4 group">
-              <img 
-                src="/zynovexa-logo.png" 
-                alt="" 
-                className="h-10 w-10 object-contain"
-                aria-hidden="true"
-              />
-              <span className="text-xl font-bold text-white tracking-tight">ZyNoveXa</span>
-            </Link>
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
-              Connecting enterprises with global innovators through AI-powered 
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 lg:gap-12">
+          {/* Brand & Social - Takes full width on mobile, 1 column on larger */}
+          <div className="col-span-2 md:col-span-3 lg:col-span-1">
+            <FooterLink to="/">
+              <span className="inline-flex items-center gap-3 mb-4 group">
+                <img
+                  src="/zynovexa-logo.png"
+                  alt=""
+                  className="h-10 w-10 object-contain"
+                  aria-hidden="true"
+                />
+                <span className="text-xl font-bold text-white tracking-tight">ZyNoveXa</span>
+              </span>
+            </FooterLink>
+            <p className="text-gray-400 text-sm leading-relaxed mb-6 mt-4">
+              Connecting enterprises with global innovators through AI-powered
               matching and intelligent collaboration.
             </p>
-            
+
             {/* Social Icons */}
             <nav aria-label="Social media links">
               <ul className="flex items-center gap-3">
@@ -76,46 +147,21 @@ export function Footer() {
             </nav>
           </div>
 
-          {/* Navigation Links */}
-          <nav aria-label="Footer navigation" className="flex flex-col sm:flex-row gap-10 sm:gap-16 lg:gap-20">
-            {/* Main Links */}
-            <div>
+          {/* Footer Link Sections */}
+          {footerSections.map((section) => (
+            <div key={section.title}>
               <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
-                Explore
+                {section.title}
               </h3>
               <ul className="space-y-3" role="list">
-                {mainLinks.map((link) => (
-                  <li key={link.to}>
-                    <Link
-                      to={link.to}
-                      className="text-gray-400 hover:text-white text-sm transition-colors duration-200 focus:outline-none focus:text-primary"
-                    >
-                      {link.label}
-                    </Link>
+                {section.links.map((link) => (
+                  <li key={link.to + link.label}>
+                    <FooterLink to={link.to}>{link.label}</FooterLink>
                   </li>
                 ))}
               </ul>
             </div>
-
-            {/* Legal Links */}
-            <div>
-              <h3 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
-                Legal
-              </h3>
-              <ul className="space-y-3" role="list">
-                {legalLinks.map((link) => (
-                  <li key={link.to}>
-                    <Link
-                      to={link.to}
-                      className="text-gray-400 hover:text-white text-sm transition-colors duration-200 focus:outline-none focus:text-primary"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </nav>
+          ))}
         </div>
 
         {/* Bottom Bar */}
