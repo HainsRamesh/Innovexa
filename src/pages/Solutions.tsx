@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Lightbulb, Search, DollarSign, Clock, CheckCircle, Eye } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
@@ -27,40 +28,12 @@ type Solution = Tables<'solutions'> & {
   author?: AuthorProfile | null;
 };
 
-type RecommendationMatch = {
-  id: string;
-  innovationId: string;
-  title: string;
-  tagline: string;
-  category: string;
-  score: number;
-  reasons: string[];
-};
-
-type ProblemRecommendation = {
-  problemId: string;
-  problemTitle: string;
-  problemCategory: string;
-  lastUpdated: string;
-  matches: RecommendationMatch[];
-};
-
 const Solutions = () => {
   const { user, role } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
   const [mySolutions, setMySolutions] = useState<Solution[]>([]);
   const [myProblemSolutions, setMyProblemSolutions] = useState<Solution[]>([]);
-
-  const [recommendedMatches, setRecommendedMatches] = useState<ProblemRecommendation[]>([]);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
-  const [refreshingRecommendations, setRefreshingRecommendations] = useState(false);
-  const [refreshError, setRefreshError] = useState<string | null>(null);
-  const [lastRefreshedAt, setLastRefreshedAt] = useState<string | null>(null);
-  const [expandedProblems, setExpandedProblems] = useState<Record<string, boolean>>({});
-  const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,22 +49,8 @@ const Solutions = () => {
   useEffect(() => {
     fetchSolutions();
 
-    if (user && isEnterprise) {
-      fetchRecommendations();
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, role]);
-
-  useEffect(() => {
-    if (rateLimitSeconds === null) return;
-    const timer = setInterval(() => {
-      setRateLimitSeconds((prev) => {
-        if (prev === null) return null;
-        return prev > 1 ? prev - 1 : null;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [rateLimitSeconds]);
 
   const fetchSolutions = async () => {
     setIsLoading(true);
@@ -187,6 +146,8 @@ const Solutions = () => {
         } else {
           setMyProblemSolutions([]);
         }
+      } else {
+        setMyProblemSolutions([]);
       }
     } catch (error) {
       console.error('Error fetching solutions:', error);
@@ -195,179 +156,6 @@ const Solutions = () => {
     }
   };
 
-  const fetchRecommendations = async () => {
-    if (!user || !isEnterprise) return;
-
-    setRecommendationsLoading(true);
-    setRefreshError(null);
-
-    try {
-      const [{ data, error }, { data: refreshState }] = await Promise.all([
-        supabase
-          .from('problem_innovation_matches')
-          .select(
-            `
-            id,
-            problem_id,
-            innovation_id,
-            score_total,
-            reasons,
-            updated_at,
-            created_at,
-            problems:problem_id (title, category),
-            innovations:innovation_id (title, tagline, category)
-          `,
-          )
-          .eq('org_id', user.id)
-          .order('score_total', { ascending: false }),
-        supabase
-          .from('problem_match_refresh_state')
-          .select('last_refreshed_at')
-          .eq('org_id', user.id)
-          .maybeSingle(),
-      ]);
-
-      if (error) throw error;
-
-      const grouped = new Map<string, ProblemRecommendation>();
-
-      (data || []).forEach((row: any) => {
-        const problemId = row.problem_id as string;
-
-        if (!grouped.has(problemId)) {
-          grouped.set(problemId, {
-            problemId,
-            problemTitle: row.problems?.title ?? 'Untitled problem',
-            problemCategory: row.problems?.category ?? 'other',
-            lastUpdated: row.updated_at ?? row.created_at,
-            matches: [],
-          });
-        }
-
-        const reasons = Array.isArray(row.reasons)
-          ? row.reasons.filter((r: any) => typeof r === 'string')
-          : [];
-
-        const rec = grouped.get(problemId)!;
-
-        rec.matches.push({
-          id: row.id,
-          innovationId: row.innovation_id,
-          title: row.innovations?.title ?? 'Innovation',
-          tagline: row.innovations?.tagline ?? '',
-          category: row.innovations?.category ?? 'other',
-          score: row.score_total ?? 0,
-          reasons: reasons.slice(0, 3) as string[],
-        });
-
-        if (row.updated_at && row.updated_at > rec.lastUpdated) {
-          rec.lastUpdated = row.updated_at;
-        }
-      });
-
-      const ordered = Array.from(grouped.values())
-        .map((rec) => ({
-          ...rec,
-          matches: rec.matches.sort((a, b) => b.score - a.score),
-        }))
-        .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
-
-      setRecommendedMatches(ordered);
-      setLastRefreshedAt(refreshState?.last_refreshed_at ?? null);
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      setRecommendedMatches([]);
-    } finally {
-      setRecommendationsLoading(false);
-    }
-  };
-
-  const refreshRecommendations = async () => {
-    if (!user || !isEnterprise) return;
-
-    setRefreshingRecommendations(true);
-    setRefreshError(null);
-
-    try {
-      const { data: s } = await supabase.auth.getSession();
-      const accessToken = s.session?.access_token;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      console.log("Invoking generate-problem-innovation-matches", {
-        hasSession: !!s.session,
-        hasToken: !!accessToken,
-        hasAnonKey: !!anonKey,
-      });
-
-      if (!accessToken) {
-        setRefreshError('Missing session token. Please sign in again.');
-        return;
-      }
-
-      const { data, error } = await supabase.functions.invoke(
-        'generate-problem-innovation-matches',
-        {
-          body: { refresh_org: true },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            apikey: anonKey,
-          },
-        },
-      );
-
-      if (error) {
-        const response = (error as any)?.context?.response as Response | undefined;
-        let retryAfterSeconds: number | null = null;
-        if (response) {
-          if (response.status === 429) {
-            const headerRetry = Number(response.headers.get('retry-after'));
-            if (Number.isFinite(headerRetry)) {
-              retryAfterSeconds = headerRetry;
-            }
-            try {
-              const body = await response.clone().json();
-              if (typeof body?.retry_after_seconds === 'number') {
-                retryAfterSeconds = body.retry_after_seconds;
-              }
-              if (body?.error) {
-                setRefreshError(body.error);
-              }
-            } catch {
-              // ignore JSON parse issues
-            }
-          }
-        }
-
-        if (response?.status === 429) {
-          setRateLimitSeconds(retryAfterSeconds ?? 120);
-          setRefreshError(
-            retryAfterSeconds
-              ? `Refresh is limited. Try again in ${retryAfterSeconds}s.`
-              : 'Refresh is rate limited. Please try again shortly.',
-          );
-          return;
-        }
-
-        throw error;
-      }
-
-      setLastRefreshedAt((data as any)?.last_refreshed_at ?? new Date().toISOString());
-      setRateLimitSeconds(null);
-      await fetchRecommendations();
-    } catch (err: any) {
-      setRefreshError(err?.message ?? 'Failed to refresh recommendations');
-    } finally {
-      setRefreshingRecommendations(false);
-    }
-  };
-
-  const toggleExpanded = (problemId: string) => {
-    setExpandedProblems((prev) => ({ ...prev, [problemId]: !prev[problemId] }));
-  };
-
-  const formatRefreshTime = (timestamp: string | null) => {
-    if (!timestamp) return 'Not refreshed yet';
-    return new Date(timestamp).toLocaleString();
-  };
 
   const filterSolutions = (solutions: Solution[]) => {
     return solutions.filter((solution) => {
@@ -442,12 +230,6 @@ const Solutions = () => {
   const handleViewDetails = (solution: Solution) => {
     setSelectedSolution(solution);
     setShowDetailDialog(true);
-  };
-
-  const handleViewInnovation = (innovationId: string) => {
-    navigate(`/dashboard/innovations/${innovationId}`, {
-      state: { returnTo: location.pathname + location.search },
-    });
   };
 
   const SolutionCard = ({
@@ -572,85 +354,92 @@ const Solutions = () => {
     </div>
   );
 
-  const renderRecommendations = () => {
-    if (recommendationsLoading) {
-      return <InnovexaSolutionsGridSkeleton cards={3} />;
+  const renderEnterpriseSolutionsTable = () => {
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Solutions submitted to your problems</CardTitle>
+            <CardDescription>Track submissions across the problems your organization owns.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-12 rounded-md bg-muted/50 animate-pulse"
+              />
+            ))}
+          </CardContent>
+        </Card>
+      );
     }
 
-    if (recommendedMatches.length === 0) {
+    if (filteredMyProblems.length === 0) {
       return (
         <EmptyState
-          message="No cached recommendations yet. Refresh to generate matches for your problems."
+          message={
+            searchQuery || categoryFilter !== 'all'
+              ? 'Try adjusting your search or filters'
+              : 'No solutions have been submitted to your problems yet.'
+          }
           showExplore={false}
         />
       );
     }
 
     return (
-      <div className="space-y-4">
-        {recommendedMatches.map((rec) => {
-          const matchesToShow = expandedProblems[rec.problemId] ? rec.matches : rec.matches.slice(0, 5);
-
-          return (
-            <Card key={rec.problemId} className="border-border/60 shadow-sm">
-              <CardHeader className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="outline" className="capitalize">
-                      {rec.problemCategory}
+      <Card>
+        <CardHeader>
+          <CardTitle>Solutions submitted to your problems</CardTitle>
+          <CardDescription>Review and track submissions for challenges your organization owns.</CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Solution</TableHead>
+                <TableHead>Problem</TableHead>
+                <TableHead>Submitted by</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMyProblems.map((solution) => (
+                <TableRow key={solution.id}>
+                  <TableCell>
+                    <div className="font-semibold">{solution.title}</div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{solution.description}</p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{solution.problems?.title || 'Untitled problem'}</div>
+                    <Badge variant="outline" className="mt-1 inline-flex capitalize">
+                      {solution.problems?.category || 'general'}
                     </Badge>
-                    <Badge variant="secondary">Problem</Badge>
-                  </div>
-                  <CardTitle className="text-lg">{rec.problemTitle}</CardTitle>
-                  <CardDescription>Updated {new Date(rec.lastUpdated).toLocaleString()}</CardDescription>
-                </div>
-
-                {rec.matches.length > 5 && (
-                  <Button variant="ghost" size="sm" onClick={() => toggleExpanded(rec.problemId)}>
-                    {expandedProblems[rec.problemId] ? 'Show top 5' : 'View all'}
-                  </Button>
-                )}
-              </CardHeader>
-
-              <CardContent className="space-y-4">
-                {matchesToShow.map((match) => (
-                  <div key={match.id} className="p-4 rounded-lg border border-border/60 bg-muted/30">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary">{Math.round(match.score)} pts</Badge>
-                          <Badge variant="outline" className="capitalize">
-                            {match.category}
-                          </Badge>
-                        </div>
-
-                        <div>
-                          <h4 className="text-base font-semibold leading-tight">{match.title}</h4>
-                          <p className="text-sm text-muted-foreground line-clamp-2">{match.tagline}</p>
-                        </div>
-
-                        <ul className="text-xs text-muted-foreground list-disc ml-5 space-y-1">
-                          {match.reasons.slice(0, 3).map((reason, idx) => (
-                            <li key={idx}>{reason}</li>
-                          ))}
-                        </ul>
-                      </div>
-
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewInnovation(match.innovationId)}
-                      >
-                        View
-                      </Button>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">
+                      {solution.author?.full_name || 'Innovator'}
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(solution.created_at).toLocaleDateString()}
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{getStatusBadge(solution.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => handleViewDetails(solution)}>
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     );
   };
 
@@ -765,68 +554,9 @@ const Solutions = () => {
               </TabsContent>
             </Tabs>
           ) : isEnterprise ? (
-            <>
-              <section className="mb-12 space-y-4">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h2 className="text-2xl font-semibold">Recommended Innovations matched to your problems</h2>
-                    <p className="text-sm text-muted-foreground">
-                      Cached matches are refreshed via vector search + heuristics. Last refreshed: {formatRefreshTime(lastRefreshedAt)}
-                    </p>
-                    {refreshError && <p className="text-sm text-destructive mt-1">{refreshError}</p>}
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={refreshRecommendations}
-                      disabled={
-                        refreshingRecommendations || recommendationsLoading || rateLimitSeconds !== null
-                      }
-                    >
-                      {refreshingRecommendations
-                        ? 'Refreshing...'
-                        : rateLimitSeconds
-                          ? `Try again in ${rateLimitSeconds}s`
-                          : 'Refresh recommendations'}
-                    </Button>
-
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={fetchRecommendations}
-                      disabled={recommendationsLoading || refreshingRecommendations}
-                    >
-                      Reload
-                    </Button>
-                  </div>
-                </div>
-
-                {renderRecommendations()}
-              </section>
-
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold">Solutions submitted to your problems</h2>
-                </div>
-
-                {isLoading ? (
-                  <InnovexaSolutionsGridSkeleton cards={6} />
-                ) : filteredMyProblems.length === 0 ? (
-                  <EmptyState
-                    message={
-                      searchQuery || categoryFilter !== 'all'
-                        ? 'Try adjusting your search or filters'
-                        : 'No solutions submitted for your problems yet.'
-                    }
-                    showExplore={false}
-                  />
-                ) : (
-                  renderSolutionsGrid(filteredMyProblems, true)
-                )}
-              </section>
-            </>
+            <div className="space-y-6">
+              {renderEnterpriseSolutionsTable()}
+            </div>
           ) : isInvestor ? (
             <>
               {isLoading ? (
