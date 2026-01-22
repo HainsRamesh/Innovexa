@@ -16,5 +16,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.backfill-innovation-embeddings]
+verify_jwt = false
+
 [functions.delete-account]
+verify_jwt = false
+
+[functions.generate-problem-innovation-matches]
 verify_jwt = false

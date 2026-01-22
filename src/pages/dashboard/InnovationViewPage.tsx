@@ -21,7 +21,9 @@ const InnovationViewPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [viewCount, setViewCount] = useState(0);
 
-  const fromLocation = location.state?.from;
+  const navigationState = location.state as { returnTo?: string; from?: string } | null;
+  const returnTo = navigationState?.returnTo;
+  const fromLocation = navigationState?.from;
   const { trackDemoPlay } = useDemoPlayTracker(innovationId || '');
 
   useEffect(() => {
@@ -56,13 +58,12 @@ const InnovationViewPage = () => {
   }, [trackDemoPlay]);
 
   const handleBack = () => {
-    if (fromLocation === 'overview') {
-      navigate('/dashboard');
-    } else if (fromLocation === 'my-innovations') {
-      navigate('/dashboard/innovations');
-    } else {
-      navigate('/dashboard/innovations');
+    if (returnTo) {
+      navigate(returnTo);
+      return;
     }
+
+    navigate(-1);
   };
 
   if (isLoading) {

@@ -248,23 +248,51 @@ const NewProblem = () => {
     }
   };
 
-  const performSubmission = useCallback(async (status: ProblemStatus) => {
+  const triggerMatchGeneration = useCallback(async (problemId: string, status: ProblemStatus) => {
+    if (status === 'draft') return;
     try {
-      const { error } = await supabase.from('problems').insert({
-        owner_id: user!.id,
-        title: formData.title,
-        description: formData.description,
-        category: (formData.category || 'other') as ProblemCategory,
-        industry: formData.industry || null,
-        budget_min: formData.budgetMin ? parseFloat(formData.budgetMin) : null,
-        budget_max: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
-        deadline: formData.deadline || null,
-        requirements: formData.requirements.length > 0 ? formData.requirements : null,
-        tags: formData.tags.length > 0 ? formData.tags : null,
-        status,
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      const { error } = await supabase.functions.invoke("generate-problem-innovation-matches", {
+        body: { problem_id: problemId },
+        headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey },
       });
 
+      if (error) {
+        console.error("generate-problem-innovation-matches error", error);
+      }
+    } catch (err) {
+      console.error("Failed to trigger match generation", err);
+    }
+  }, []);
+
+  const performSubmission = useCallback(async (status: ProblemStatus) => {
+    try {
+      const { data, error } = await supabase
+        .from('problems')
+        .insert({
+          owner_id: user!.id,
+          title: formData.title,
+          description: formData.description,
+          category: (formData.category || 'other') as ProblemCategory,
+          industry: formData.industry || null,
+          budget_min: formData.budgetMin ? parseFloat(formData.budgetMin) : null,
+          budget_max: formData.budgetMax ? parseFloat(formData.budgetMax) : null,
+          deadline: formData.deadline || null,
+          requirements: formData.requirements.length > 0 ? formData.requirements : null,
+          tags: formData.tags.length > 0 ? formData.tags : null,
+          status,
+        })
+        .select('id')
+        .single();
+
       if (error) throw error;
+      if (data?.id) {
+        void triggerMatchGeneration(data.id, status);
+      }
 
       setOverlayStatus("success");
       
@@ -285,7 +313,7 @@ const NewProblem = () => {
       setLastError('Failed to save problem. Please try again.');
       setOverlayStatus("error");
     }
-  }, [user, formData, toast, navigate, setOverlayStatus, hideOverlay]);
+  }, [user, formData, toast, navigate, setOverlayStatus, hideOverlay, triggerMatchGeneration]);
 
   const handleSubmit = async (status: ProblemStatus) => {
     const forPublish = status !== 'draft';

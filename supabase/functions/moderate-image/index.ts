@@ -1,5 +1,4 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -165,6 +164,46 @@ Deno.serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("authorization") ?? req.headers.get("Authorization");
+    const apiKeyHeader = req.headers.get("apikey") ?? req.headers.get("apikey");
+    console.log("moderate-image headers", {
+      hasAuth: !!authHeader,
+      hasApiKey: !!apiKeyHeader,
+      bearer: authHeader?.startsWith("Bearer "),
+    });
+
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("Missing Supabase environment variables");
+      return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const token = authHeader.replace("Bearer ", "");
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
+    if (userError || !userData?.user?.id) {
+      console.error("JWT validation failed:", userError);
+      return new Response(JSON.stringify({ error: "Invalid or expired token" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const body = (await req.json()) as ModerationRequest;
     const { asset_id, bucket, path, user_id, kind, innovation_id } = body;
 
@@ -175,21 +214,23 @@ Deno.serve(async (req) => {
       });
     }
 
-    const openAiKey = Deno.env.get("OPENAI_API_KEY_MODERATION");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (user_id && user_id !== userData.user.id) {
+      return new Response(JSON.stringify({ error: "Token/user mismatch" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    if (!openAiKey || !supabaseUrl || !serviceRoleKey) {
+    const effectiveUserId = userData.user.id;
+
+    const openAiKey = Deno.env.get("OPENAI_API_KEY_MODERATION");
+    if (!openAiKey) {
       console.error("Missing environment variables");
       return new Response(JSON.stringify({ error: "Server misconfiguration" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: { autoRefreshToken: false, persistSession: false },
-    });
 
     // Check existing asset status to avoid duplicate moderation attempts
     const { data: assetRow, error: assetLookupError } = await supabaseAdmin
@@ -323,7 +364,7 @@ Deno.serve(async (req) => {
       // Optionally retain a copy in quarantine for audit
       await supabaseAdmin.storage
         .from(QUARANTINE_BUCKET)
-        .upload(`${user_id}/${fileName}`, arrayBuffer, { contentType, upsert: false })
+        .upload(`${effectiveUserId}/${fileName}`, arrayBuffer, { contentType, upsert: false })
         .catch((error) => console.error("Quarantine upload failed", error));
 
       await updateAssetStatus(supabaseAdmin, asset_id, {
@@ -344,7 +385,7 @@ Deno.serve(async (req) => {
     }
 
     // Approved: move to public bucket and clean up temp copy
-    const approvedPath = `approved/${user_id}/${crypto.randomUUID()}.${fileExt}`;
+    const approvedPath = `approved/${effectiveUserId}/${crypto.randomUUID()}.${fileExt}`;
     const upload = await supabaseAdmin.storage.from(APPROVED_BUCKET).upload(approvedPath, arrayBuffer, {
       contentType,
       upsert: false,
@@ -373,7 +414,7 @@ Deno.serve(async (req) => {
       moderation_result: moderationResult,
     });
 
-    console.log(`Image approved for ${user_id} (${kind}) -> ${approvedPath}`);
+    console.log(`Image approved for ${effectiveUserId} (${kind}) -> ${approvedPath}`);
 
     return new Response(
       JSON.stringify({
