@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { Star, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { Sparkles, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -294,7 +294,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
           disabled={isToggling}
           className={isInterested ? "text-amber-500" : ""}
         >
-          <Star className={cn(
+          <Sparkles className={cn(
             "h-5 w-5 mr-2 transition-all duration-200",
             isInterested && "fill-current",
             isAnimating && "scale-125"

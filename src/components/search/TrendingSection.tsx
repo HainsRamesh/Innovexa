@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { TrendingUp, Eye, Star, MessageCircle, Flame } from "lucide-react";
+import { TrendingUp, Eye, Sparkles, MessageCircle, Flame } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -152,7 +152,7 @@ export const TrendingSection = ({
                   {item.view_count}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Star className="h-3 w-3" />
+                  <Sparkles className="h-3 w-3" />
                   {item.interest_count}
                 </span>
                 {item.comment_count !== undefined && (

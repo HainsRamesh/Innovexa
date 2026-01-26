@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, ArrowLeft, Play, Star, Edit, Calendar } from 'lucide-react';
+import { Loader2, ArrowLeft, Play, Sparkles, Edit, Calendar } from 'lucide-react';
 import { Innovation } from '@/types';
 import { getCategoryColor, getCategoryLabel } from '@/lib/categoryColors';
 import { format } from 'date-fns';
@@ -193,7 +193,7 @@ const InnovationViewPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Star className="h-4 w-4" />
+                  <Sparkles className="h-4 w-4" />
                   Interests
                 </div>
                 <span className="font-semibold">{innovation.interest_count || 0}</span>

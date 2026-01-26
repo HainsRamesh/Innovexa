@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { Innovation } from "@/types";
-import { Expand, Star } from "lucide-react";
+import { Expand, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useInnovationInterest } from "@/hooks/useInnovationInterest";
 import { InnovationTileMenu } from "./InnovationTileMenu";
@@ -239,7 +239,7 @@ export const InnovationTile = ({
                 : "bg-background/80 text-foreground hover:bg-background/90",
             )}
           >
-            <Star 
+            <Sparkles 
               className={cn(
                 "h-4 w-4 transition-all duration-200", 
                 isInterested && "fill-current",
