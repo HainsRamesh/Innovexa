@@ -55,10 +55,10 @@ export const RecommendedSection = ({
           // Get innovations similar to their interests (by category)
           const { data: innovations } = await supabase
             .from("innovations")
-            .select("id, title, category, view_count, like_count")
+            .select("id, title, category, view_count, interest_count")
             .in("status", ["published", "featured"])
             .not("id", "in", `(${interestedInnovationIds.length > 0 ? interestedInnovationIds.join(',') : 'null'})`)
-            .order("like_count", { ascending: false })
+            .order("interest_count", { ascending: false })
             .limit(limit);
 
           if (innovations) {
@@ -99,9 +99,9 @@ export const RecommendedSection = ({
 
           let query = supabase
             .from("problems")
-            .select("id, title, category, view_count, like_count")
+            .select("id, title, category, view_count, interest_count")
             .neq("status", "draft")
-            .order("like_count", { ascending: false })
+            .order("interest_count", { ascending: false })
             .limit(limit);
 
           if (mappedCategories.length > 0) {
@@ -116,7 +116,7 @@ export const RecommendedSection = ({
               title: p.title,
               type: 'problem' as const,
               category: p.category,
-              matchReason: mappedCategories.includes(p.category) ? "Matches your expertise" : "Popular problem",
+              matchReason: mappedCategories.includes(p.category as ProblemCategory) ? "Matches your expertise" : "Popular problem",
             })));
           }
         }
@@ -125,7 +125,7 @@ export const RecommendedSection = ({
         if (role === 'enterprise') {
           const { data: innovations } = await supabase
             .from("innovations")
-            .select("id, title, category, view_count, like_count")
+            .select("id, title, category, view_count, interest_count")
             .in("status", ["published", "featured"])
             .order("view_count", { ascending: false })
             .limit(limit);

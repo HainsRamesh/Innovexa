@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { TrendingUp, Eye, Heart, MessageCircle, Flame } from "lucide-react";
+import { TrendingUp, Eye, Star, MessageCircle, Flame } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +12,7 @@ interface TrendingItem {
   type: 'problem' | 'innovation';
   category: string;
   view_count: number;
-  like_count: number;
+  interest_count: number;
   comment_count?: number;
 }
 
@@ -39,10 +39,10 @@ export const TrendingSection = ({
         if (type === 'all' || type === 'problems') {
           const { data: problems } = await supabase
             .from("problems")
-            .select("id, title, category, view_count, like_count")
+            .select("id, title, category, view_count, interest_count")
             .neq("status", "draft")
             .order("view_count", { ascending: false })
-            .order("like_count", { ascending: false })
+            .order("interest_count", { ascending: false })
             .limit(type === 'all' ? Math.ceil(limit / 2) : limit);
 
           if (problems) {
@@ -50,7 +50,7 @@ export const TrendingSection = ({
               ...p,
               type: 'problem' as const,
               view_count: p.view_count || 0,
-              like_count: p.like_count || 0,
+              interest_count: p.interest_count || 0,
             })));
           }
         }
@@ -58,10 +58,10 @@ export const TrendingSection = ({
         if (type === 'all' || type === 'innovations') {
           const { data: innovations } = await supabase
             .from("innovations")
-            .select("id, title, category, view_count, like_count, comment_count")
+            .select("id, title, category, view_count, interest_count, comment_count")
             .in("status", ["published", "featured"])
             .order("view_count", { ascending: false })
-            .order("like_count", { ascending: false })
+            .order("interest_count", { ascending: false })
             .limit(type === 'all' ? Math.ceil(limit / 2) : limit);
 
           if (innovations) {
@@ -69,16 +69,16 @@ export const TrendingSection = ({
               ...i,
               type: 'innovation' as const,
               view_count: i.view_count || 0,
-              like_count: i.like_count || 0,
+              interest_count: i.interest_count || 0,
               comment_count: i.comment_count || 0,
             })));
           }
         }
 
-        // Sort by engagement score (views + likes*2 + comments*3)
+        // Sort by engagement score (views + interests*2 + comments*3)
         results.sort((a, b) => {
-          const scoreA = (a.view_count || 0) + (a.like_count || 0) * 2 + (a.comment_count || 0) * 3;
-          const scoreB = (b.view_count || 0) + (b.like_count || 0) * 2 + (b.comment_count || 0) * 3;
+          const scoreA = (a.view_count || 0) + (a.interest_count || 0) * 2 + (a.comment_count || 0) * 3;
+          const scoreB = (b.view_count || 0) + (b.interest_count || 0) * 2 + (b.comment_count || 0) * 3;
           return scoreB - scoreA;
         });
 
@@ -152,8 +152,8 @@ export const TrendingSection = ({
                   {item.view_count}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Heart className="h-3 w-3" />
-                  {item.like_count}
+                  <Star className="h-3 w-3" />
+                  {item.interest_count}
                 </span>
                 {item.comment_count !== undefined && (
                   <span className="flex items-center gap-1 text-xs text-muted-foreground">

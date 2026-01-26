@@ -385,7 +385,7 @@ export type Database = {
           },
         ]
       }
-      innovation_likes: {
+      innovation_interests: {
         Row: {
           created_at: string
           id: string
@@ -460,7 +460,7 @@ export type Database = {
           gallery_urls: string[] | null
           id: string
           innovator_id: string
-          like_count: number | null
+          interest_count: number | null
           message_click_count: number | null
           pdf_urls: string[] | null
           status: Database["public"]["Enums"]["innovation_status"]
@@ -483,7 +483,7 @@ export type Database = {
           gallery_urls?: string[] | null
           id?: string
           innovator_id: string
-          like_count?: number | null
+          interest_count?: number | null
           message_click_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
@@ -506,7 +506,7 @@ export type Database = {
           gallery_urls?: string[] | null
           id?: string
           innovator_id?: string
-          like_count?: number | null
+          interest_count?: number | null
           message_click_count?: number | null
           pdf_urls?: string[] | null
           status?: Database["public"]["Enums"]["innovation_status"]
@@ -936,7 +936,7 @@ export type Database = {
         }
         Relationships: []
       }
-      problem_likes: {
+      problem_interests: {
         Row: {
           created_at: string
           id: string
@@ -980,7 +980,7 @@ export type Database = {
           description: string
           id: string
           industry: string | null
-          like_count: number | null
+          interest_count: number | null
           owner_id: string
           requirements: string[] | null
           solutions_count: number | null
@@ -1002,7 +1002,7 @@ export type Database = {
           description: string
           id?: string
           industry?: string | null
-          like_count?: number | null
+          interest_count?: number | null
           owner_id: string
           requirements?: string[] | null
           solutions_count?: number | null
@@ -1024,7 +1024,7 @@ export type Database = {
           description?: string
           id?: string
           industry?: string | null
-          like_count?: number | null
+          interest_count?: number | null
           owner_id?: string
           requirements?: string[] | null
           solutions_count?: number | null

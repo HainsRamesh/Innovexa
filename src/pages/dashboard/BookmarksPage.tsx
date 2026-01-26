@@ -23,7 +23,7 @@ import {
   DollarSign,
   Lightbulb,
   Play,
-  Heart,
+  Star,
 } from 'lucide-react';
 import { Problem, Solution, Innovation, Bookmark as BookmarkType, SolutionStatus, ProblemStatus } from '@/types';
 import { useToast } from '@/hooks/use-toast';
@@ -318,8 +318,8 @@ const BookmarksPage = () => {
                         <span>{innovation.view_count || 0}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Heart className="h-4 w-4" />
-                        <span>{innovation.like_count || 0}</span>
+                        <Star className="h-4 w-4" />
+                        <span>{innovation.interest_count || 0}</span>
                       </div>
                     </div>
 

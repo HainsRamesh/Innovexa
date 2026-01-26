@@ -1,9 +1,9 @@
-import { Eye, Heart, MessageSquare, MessageCircle } from 'lucide-react';
+import { Eye, Star, MessageSquare, MessageCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface InnovationAnalyticsCardProps {
   viewCount: number;
-  likeCount: number;
+  interestCount: number;
   commentCount: number;
   messageClickCount: number;
   isOwner?: boolean;
@@ -11,14 +11,14 @@ interface InnovationAnalyticsCardProps {
 
 export const InnovationAnalyticsCard = ({
   viewCount,
-  likeCount,
+  interestCount,
   commentCount,
   messageClickCount,
   isOwner = false,
 }: InnovationAnalyticsCardProps) => {
   const stats = [
     { icon: Eye, label: 'Views', value: viewCount, color: 'text-blue-500' },
-    { icon: Heart, label: 'Likes', value: likeCount, color: 'text-red-500' },
+    { icon: Star, label: 'Interests', value: interestCount, color: 'text-amber-500' },
     { icon: MessageSquare, label: 'Comments', value: commentCount, color: 'text-green-500' },
   ];
 
