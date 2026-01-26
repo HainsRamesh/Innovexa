@@ -188,7 +188,7 @@ export const InnovationDetailModal = ({
             {/* Analytics */}
             <InnovationAnalyticsCard
               viewCount={(innovation as any).view_count || 0}
-              likeCount={(innovation as any).like_count || 0}
+              interestCount={(innovation as any).interest_count || 0}
               commentCount={(innovation as any).comment_count || 0}
               messageClickCount={(innovation as any).message_click_count || 0}
               isOwner={isOwnInnovation}

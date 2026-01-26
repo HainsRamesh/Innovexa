@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Search, Lightbulb, MoreVertical, Eye, Edit, Trash2, Play, Heart, Calendar, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Search, Lightbulb, MoreVertical, Eye, Edit, Trash2, Play, Star, Calendar, Bookmark, BookmarkCheck } from 'lucide-react';
 import { Innovation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
@@ -196,8 +196,8 @@ const MyInnovationsPage = () => {
               <span>{innovation.view_count || 0}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Heart className="h-4 w-4" />
-              <span>{innovation.like_count || 0}</span>
+              <Star className="h-4 w-4" />
+              <span>{innovation.interest_count || 0}</span>
             </div>
           </div>
 

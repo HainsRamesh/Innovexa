@@ -1,14 +1,14 @@
-import { Lightbulb, Play, Heart, FileText } from 'lucide-react';
+import { Lightbulb, Play, Star, FileText } from 'lucide-react';
 import { AnimatedMetricCard } from './AnimatedMetricCard';
 
 interface InnovatorMetrics {
   totalInnovations: number;
   demoPlays: number;
-  totalHearts: number;
+  totalInterests: number;
   problemsUploaded: number;
   innovationsTrend: number;
   demoPlaysTrend: number;
-  heartsTrend: number;
+  interestsTrend: number;
   problemsTrend: number;
   trendLabel: string;
 }
@@ -35,10 +35,10 @@ export const InnovatorMetricsPanel = ({ metrics }: InnovatorMetricsPanelProps) =
         trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard
-        title="Total Hearts"
-        value={metrics.totalHearts}
-        icon={<Heart className="h-6 w-6" />}
-        trend={metrics.heartsTrend}
+        title="Total Interests"
+        value={metrics.totalInterests}
+        icon={<Star className="h-6 w-6" />}
+        trend={metrics.interestsTrend}
         trendLabel={metrics.trendLabel}
       />
       <AnimatedMetricCard

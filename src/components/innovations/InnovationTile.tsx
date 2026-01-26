@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from "react";
 import { Innovation } from "@/types";
-import { Expand, Heart } from "lucide-react";
+import { Expand, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useInnovationLike } from "@/hooks/useInnovationLike";
+import { useInnovationInterest } from "@/hooks/useInnovationInterest";
 import { InnovationTileMenu } from "./InnovationTileMenu";
 import { UserProfileLink } from "@/components/user/UserProfileLink";
 
@@ -47,7 +47,7 @@ export const InnovationTile = ({
   isFirst = false,
   isLast = false,
 }: InnovationTileProps) => {
-  const { isLiked, likeCount, toggleLike, isLoading } = useInnovationLike(innovation.id, innovation.like_count ?? 0);
+  const { isInterested, interestCount, toggleInterest, isLoading, isAnimating } = useInnovationInterest(innovation.id, innovation.interest_count ?? 0);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -217,7 +217,7 @@ export const InnovationTile = ({
           </p>
         </div>
 
-        {/* Bottom row - Like and Expand */}
+        {/* Bottom row - Interest and Expand */}
         <div
           className="absolute bottom-3 right-3 flex items-center gap-2"
           style={{
@@ -225,22 +225,28 @@ export const InnovationTile = ({
             transition: "opacity 300ms ease-out",
           }}
         >
-          {/* Like button */}
+          {/* Interest button */}
           <button
             onClick={(e) => {
               e.stopPropagation();
-              toggleLike(e);
+              toggleInterest(e);
             }}
             disabled={isLoading}
             className={cn(
               "flex items-center gap-1.5 px-2.5 py-1.5 rounded-full backdrop-blur-sm transition-all duration-200",
-              isLiked
-                ? "bg-destructive/90 text-destructive-foreground"
+              isInterested
+                ? "bg-amber-500/90 text-white"
                 : "bg-background/80 text-foreground hover:bg-background/90",
             )}
           >
-            <Heart className={cn("h-4 w-4 transition-transform duration-200", isLiked && "fill-current scale-110")} />
-            <span className="text-xs font-medium">{likeCount}</span>
+            <Star 
+              className={cn(
+                "h-4 w-4 transition-all duration-200", 
+                isInterested && "fill-current",
+                isAnimating && "scale-125"
+              )} 
+            />
+            <span className="text-xs font-medium">{interestCount}</span>
           </button>
 
           {/* Expand Icon */}
