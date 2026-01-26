@@ -20,7 +20,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return a safe default for components that may render before provider is ready
+    return {
+      user: null,
+      session: null,
+      profile: null,
+      role: null,
+      isLoading: true,
+      signUp: async () => ({ error: new Error('AuthProvider not ready') }),
+      signIn: async () => ({ error: new Error('AuthProvider not ready') }),
+      signOut: async () => {},
+      updateProfile: async () => ({ error: new Error('AuthProvider not ready') }),
+    } as AuthContextType;
   }
   return context;
 };
