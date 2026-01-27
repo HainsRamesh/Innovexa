@@ -11,6 +11,10 @@ import { Lightbulb, ArrowLeft, Building2, Rocket, TrendingUp, Shield, Eye, EyeOf
 import { Footer } from "@/components/layout/Footer";
 import { AppRole } from "@/types";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
+import { EmailVerification, ForgotPassword } from "@/components/auth";
+
+type AuthView = "signIn" | "signUp" | "verify" | "forgotPassword";
 
 const signUpSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -47,18 +51,21 @@ const roleOptions = [
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
-  const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
+  const [view, setView] = useState<AuthView>(
+    searchParams.get("mode") === "signup" ? "signUp" : "signIn"
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [selectedRole, setSelectedRole] = useState<AppRole>("innovator");
 
-  const { signUp, signIn, user, role } = useAuth();
+  const { signIn, user, role } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -89,7 +96,7 @@ const Auth = () => {
 
   const validateForm = () => {
     try {
-      if (isSignUp) {
+      if (view === "signUp") {
         signUpSchema.parse({ fullName, email, password, role: selectedRole });
       } else {
         signInSchema.parse({ email, password });
@@ -110,39 +117,97 @@ const Auth = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSignUp = async () => {
     if (!validateForm()) return;
 
     setIsLoading(true);
-
     try {
-      if (isSignUp) {
-        const { error } = await signUp(email, password, fullName, selectedRole);
-        if (error) {
-          if (error.message.includes("already registered")) {
-            toast({
-              title: "Account exists",
-              description: "An account with this email already exists. Please sign in.",
-              variant: "destructive",
-            });
-          } else {
-            toast({
-              title: "Sign up failed",
-              description: error.message,
-              variant: "destructive",
-            });
-          }
+      // Use Supabase signUp with email verification
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth`,
+          data: {
+            full_name: fullName,
+          },
+        },
+      });
+
+      if (error) {
+        if (error.message.includes("already registered")) {
+          toast({
+            title: "Account exists",
+            description: "An account with this email already exists. Please sign in.",
+            variant: "destructive",
+          });
         } else {
           toast({
-            title: "Welcome to ZYNOVEXA!",
-            description: "Your account has been created successfully.",
+            title: "Sign up failed",
+            description: error.message,
+            variant: "destructive",
           });
         }
-      } else {
-        const { error } = await signIn(email, password);
-        if (error) {
+        return;
+      }
+
+      // Store role in user_roles table
+      if (data.user) {
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: data.user.id, role: selectedRole });
+
+        if (roleError) {
+          console.error("Failed to set role:", roleError);
+        }
+      }
+
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        // Email confirmation required
+        setPendingEmail(email);
+        setView("verify");
+        toast({
+          title: "Check your email",
+          description: "We've sent you a verification code.",
+        });
+      } else if (data.session) {
+        // Auto-confirmed (dev mode or auto-confirm enabled)
+        toast({
+          title: "Welcome to ZYNOVEXA!",
+          description: "Your account has been created successfully.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSignIn = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      const { error } = await signIn(email, password);
+      if (error) {
+        // Check if email not verified
+        if (error.message?.toLowerCase().includes("email not confirmed")) {
+          setPendingEmail(email);
+          setView("verify");
+          toast({
+            title: "Email not verified",
+            description: "Please verify your email to continue.",
+            variant: "destructive",
+          });
+          // Resend verification code
+          await supabase.auth.resend({ type: "signup", email });
+        } else {
           toast({
             title: "Sign in failed",
             description: "Invalid email or password. Please try again.",
@@ -159,6 +224,194 @@ const Auth = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (view === "signUp") {
+      await handleSignUp();
+    } else {
+      await handleSignIn();
+    }
+  };
+
+  const handleVerified = () => {
+    toast({
+      title: "Email verified!",
+      description: "You can now sign in to your account.",
+    });
+    setView("signIn");
+    setPendingEmail("");
+  };
+
+  const renderContent = () => {
+    if (view === "verify") {
+      return (
+        <EmailVerification
+          email={pendingEmail}
+          onVerified={handleVerified}
+          onBack={() => {
+            setView("signUp");
+            setPendingEmail("");
+          }}
+        />
+      );
+    }
+
+    if (view === "forgotPassword") {
+      return (
+        <ForgotPassword
+          onBack={() => setView("signIn")}
+          onSuccess={() => setView("signIn")}
+        />
+      );
+    }
+
+    const isSignUp = view === "signUp";
+
+    return (
+      <>
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">{isSignUp ? "Create your account" : "Welcome back"}</CardTitle>
+          <CardDescription>
+            {isSignUp ? "Join the global innovation platform" : "Sign in to access your dashboard"}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {isSignUp && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="John Doe"
+                    disabled={isLoading || isNavigating}
+                  />
+                  {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
+                </div>
+
+                <div className="space-y-3">
+                  <Label>I am a...</Label>
+                  <RadioGroup
+                    value={selectedRole}
+                    onValueChange={(value) => setSelectedRole(value as AppRole)}
+                    className="grid gap-3"
+                  >
+                    {roleOptions.map((option) => (
+                      <Label
+                        key={option.value}
+                        htmlFor={option.value}
+                        className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
+                          selectedRole === option.value
+                            ? "border-primary bg-primary/5"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
+                        <div
+                          className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                            selectedRole === option.value
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          {option.icon}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium">{option.label}</p>
+                          <p className="text-sm text-muted-foreground">{option.description}</p>
+                        </div>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                disabled={isLoading || isNavigating}
+              />
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={() => setView("forgotPassword")}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  disabled={isLoading || isNavigating}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+            </div>
+
+            <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading || isNavigating}>
+              {isNavigating ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Redirecting...
+                </span>
+              ) : isLoading ? (
+                <span className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Please wait...
+                </span>
+              ) : isSignUp ? "Create Account" : "Sign In"}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setView(isSignUp ? "signIn" : "signUp");
+                  setErrors({});
+                }}
+                className="text-primary hover:underline font-medium"
+              >
+                {isSignUp ? "Sign in" : "Sign up"}
+              </button>
+            </p>
+          </div>
+        </CardContent>
+      </>
+    );
   };
 
   return (
@@ -188,134 +441,7 @@ const Auth = () => {
           </div>
 
           <Card variant="elevated" className="border-border/50">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl">{isSignUp ? "Create your account" : "Welcome back"}</CardTitle>
-              <CardDescription>
-                {isSignUp ? "Join the global innovation platform" : "Sign in to access your dashboard"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {isSignUp && (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <Input
-                        id="fullName"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        placeholder="John Doe"
-                        disabled={isLoading || isNavigating}
-                      />
-                      {errors.fullName && <p className="text-xs text-destructive">{errors.fullName}</p>}
-                    </div>
-
-                    <div className="space-y-3">
-                      <Label>I am a...</Label>
-                      <RadioGroup
-                        value={selectedRole}
-                        onValueChange={(value) => setSelectedRole(value as AppRole)}
-                        className="grid gap-3"
-                      >
-                        {roleOptions.map((option) => (
-                          <Label
-                            key={option.value}
-                            htmlFor={option.value}
-                            className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all duration-200 ${
-                              selectedRole === option.value
-                                ? "border-primary bg-primary/5"
-                                : "border-border hover:border-primary/50"
-                            }`}
-                          >
-                            <RadioGroupItem value={option.value} id={option.value} className="sr-only" />
-                            <div
-                              className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                                selectedRole === option.value
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-secondary text-muted-foreground"
-                              }`}
-                            >
-                              {option.icon}
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-medium">{option.label}</p>
-                              <p className="text-sm text-muted-foreground">{option.description}</p>
-                            </div>
-                          </Label>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  </>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
-                    disabled={isLoading || isNavigating}
-                  />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      disabled={isLoading || isNavigating}
-                      className="pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      tabIndex={-1}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
-                </div>
-
-                <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading || isNavigating}>
-                  {isNavigating ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Redirecting...
-                    </span>
-                  ) : isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Please wait...
-                    </span>
-                  ) : isSignUp ? "Create Account" : "Sign In"}
-                </Button>
-              </form>
-
-              <div className="mt-6 text-center">
-                <p className="text-sm text-muted-foreground">
-                  {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsSignUp(!isSignUp);
-                      setErrors({});
-                    }}
-                    className="text-primary hover:underline font-medium"
-                  >
-                    {isSignUp ? "Sign in" : "Sign up"}
-                  </button>
-                </p>
-              </div>
-            </CardContent>
+            {renderContent()}
           </Card>
 
           {/* Security Note */}

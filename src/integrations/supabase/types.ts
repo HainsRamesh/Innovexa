@@ -968,115 +968,6 @@ export type Database = {
           },
         ]
       }
-      problem_innovation_matches: {
-        Row: {
-          created_at: string
-          id: string
-          innovation_id: string
-          matched_tags: Json | null
-          org_id: string
-          problem_id: string
-          reasons: Json | null
-          score_feasibility: number
-          score_impact: number
-          score_relevance: number
-          score_risk: number
-          score_total: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          innovation_id: string
-          matched_tags?: Json | null
-          org_id: string
-          problem_id: string
-          reasons?: Json | null
-          score_feasibility: number
-          score_impact: number
-          score_relevance: number
-          score_risk: number
-          score_total: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          innovation_id?: string
-          matched_tags?: Json | null
-          org_id?: string
-          problem_id?: string
-          reasons?: Json | null
-          score_feasibility?: number
-          score_impact?: number
-          score_relevance?: number
-          score_risk?: number
-          score_total?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "problem_innovation_matches_innovation_id_fkey"
-            columns: ["innovation_id"]
-            isOneToOne: false
-            referencedRelation: "innovations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "problem_innovation_matches_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "problem_innovation_matches_problem_id_fkey"
-            columns: ["problem_id"]
-            isOneToOne: false
-            referencedRelation: "problems"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      problem_match_refresh_state: {
-        Row: {
-          created_at: string
-          last_refreshed_at: string
-          org_id: string
-          refreshed_by: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          last_refreshed_at?: string
-          org_id: string
-          refreshed_by?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          last_refreshed_at?: string
-          org_id?: string
-          refreshed_by?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "problem_match_refresh_state_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "problem_match_refresh_state_refreshed_by_fkey"
-            columns: ["refreshed_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       problems: {
         Row: {
           ai_complexity_score: number | null
@@ -1089,10 +980,7 @@ export type Database = {
           description: string
           id: string
           industry: string | null
-          like_count: number | null
-          embedding: number[] | null
-          embedding_model: string | null
-          embedding_updated_at: string | null
+          interest_count: number | null
           owner_id: string
           requirements: string[] | null
           solutions_count: number | null
@@ -1136,10 +1024,7 @@ export type Database = {
           description?: string
           id?: string
           industry?: string | null
-          like_count?: number | null
-          embedding?: number[] | null
-          embedding_model?: string | null
-          embedding_updated_at?: string | null
+          interest_count?: number | null
           owner_id?: string
           requirements?: string[] | null
           solutions_count?: number | null
@@ -1527,24 +1412,6 @@ export type Database = {
       mark_conversation_read: {
         Args: { p_conversation_id: string }
         Returns: number
-      }
-      match_innovations_published: {
-        Args: {
-          exclude_ids?: string[] | null
-          match_count?: number
-          optional_category?: string | null
-          query_embedding: number[]
-        }
-        Returns: {
-          category: Database["public"]["Enums"]["innovation_category"]
-          custom_category: string | null
-          description: string
-          id: string
-          innovator_id: string
-          similarity: number
-          tagline: string
-          title: string
-        }[]
       }
       track_enterprise_video_view: {
         Args: { _innovation_id: string }
