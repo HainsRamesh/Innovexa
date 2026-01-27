@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { Sparkles, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -26,6 +27,7 @@ interface ProblemFeedItemProps {
 export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps) {
   const { user, role } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [isExpanded, setIsExpanded] = useState(false);
   const [showComments, setShowComments] = useState(false);
@@ -287,6 +289,14 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
 
       {/* Action Buttons */}
       <div className="flex items-center gap-2 pt-3 flex-wrap">
+        <Button
+          size="sm"
+          onClick={() => navigate(`/explore/${problem.id}`)}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          View full details
+        </Button>
+
         <Button
           variant="ghost"
           size="sm"

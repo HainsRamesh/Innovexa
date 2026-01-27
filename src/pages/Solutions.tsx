@@ -9,8 +9,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Lightbulb, Search, Calendar, DollarSign, Clock, ArrowRight, CheckCircle, Eye } from 'lucide-react';
+import { Lightbulb, Search, DollarSign, Clock, CheckCircle, Eye } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { SolutionDetailDialog } from '@/components/solutions/SolutionDetailDialog';
 import { InnovexaSolutionsGridSkeleton } from '@/components/ui/InnovexaSkeleton';
@@ -29,9 +30,11 @@ type Solution = Tables<'solutions'> & {
 
 const Solutions = () => {
   const { user, role } = useAuth();
+
   const [approvedSolutions, setApprovedSolutions] = useState<Solution[]>([]);
   const [mySolutions, setMySolutions] = useState<Solution[]>([]);
   const [myProblemSolutions, setMyProblemSolutions] = useState<Solution[]>([]);
+
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -45,25 +48,30 @@ const Solutions = () => {
 
   useEffect(() => {
     fetchSolutions();
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, role]);
 
   const fetchSolutions = async () => {
     setIsLoading(true);
+
     try {
       // Helper function to attach author profiles to solutions
-      const attachAuthorProfiles = async (solutions: Tables<'solutions'>[]): Promise<Solution[]> => {
+      const attachAuthorProfiles = async (
+        solutions: Tables<'solutions'>[],
+      ): Promise<Solution[]> => {
         if (!solutions || solutions.length === 0) return [];
-        
-        const innovatorIds = [...new Set(solutions.map(s => s.innovator_id))];
+
+        const innovatorIds = [...new Set(solutions.map((s) => s.innovator_id))];
         const { data: profiles } = await supabase
           .from('public_profiles')
           .select('id, full_name, avatar_url')
           .in('id', innovatorIds);
-        
+
         const profileMap = new Map<string, AuthorProfile>();
-        (profiles || []).forEach(p => profileMap.set(p.id, p));
-        
-        return solutions.map(s => ({
+        (profiles || []).forEach((p) => profileMap.set(p.id, p));
+
+        return solutions.map((s) => ({
           ...s,
           author: profileMap.get(s.innovator_id) || null,
         }));
@@ -72,15 +80,18 @@ const Solutions = () => {
       // Fetch all approved public solutions (for investors and general users)
       const { data: approved, error: approvedError } = await supabase
         .from('solutions')
-        .select(`
+        .select(
+          `
           *,
           problems:problem_id (title, category)
-        `)
+        `,
+        )
         .eq('status', 'accepted')
         .eq('visibility', 'public')
         .order('created_at', { ascending: false });
 
       if (approvedError) throw approvedError;
+
       const approvedWithAuthors = await attachAuthorProfiles(approved || []);
       setApprovedSolutions(approvedWithAuthors);
 
@@ -88,14 +99,17 @@ const Solutions = () => {
       if (user && isInnovator) {
         const { data: mine, error: mineError } = await supabase
           .from('solutions')
-          .select(`
+          .select(
+            `
             *,
             problems:problem_id (title, category)
-          `)
+          `,
+          )
           .eq('innovator_id', user.id)
           .order('created_at', { ascending: false });
 
         if (mineError) throw mineError;
+
         const mineWithAuthors = await attachAuthorProfiles(mine || []);
         setMySolutions(mineWithAuthors);
       }
@@ -115,20 +129,25 @@ const Solutions = () => {
         if (problemIds.length > 0) {
           const { data: mineForProblems, error: mineForProblemsError } = await supabase
             .from('solutions')
-            .select(`
+            .select(
+              `
               *,
               problems:problem_id (title, category)
-            `)
+            `,
+            )
             .in('problem_id', problemIds)
             .in('status', ['submitted', 'under_review', 'shortlisted', 'accepted'])
             .order('created_at', { ascending: false });
 
           if (mineForProblemsError) throw mineForProblemsError;
+
           const mineForProblemsWithAuthors = await attachAuthorProfiles(mineForProblems || []);
           setMyProblemSolutions(mineForProblemsWithAuthors);
         } else {
           setMyProblemSolutions([]);
         }
+      } else {
+        setMyProblemSolutions([]);
       }
     } catch (error) {
       console.error('Error fetching solutions:', error);
@@ -137,13 +156,16 @@ const Solutions = () => {
     }
   };
 
+
   const filterSolutions = (solutions: Solution[]) => {
     return solutions.filter((solution) => {
       const matchesSearch =
         solution.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         solution.description.toLowerCase().includes(searchQuery.toLowerCase());
+
       const matchesCategory =
         categoryFilter === 'all' || solution.problems?.category === categoryFilter;
+
       return matchesSearch && matchesCategory;
     });
   };
@@ -187,9 +209,17 @@ const Solutions = () => {
       case 'under_review':
         return <Badge variant="outline">Under Review</Badge>;
       case 'shortlisted':
-        return <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">Shortlisted</Badge>;
+        return (
+          <Badge className="bg-blue-500/10 text-blue-600 border-blue-500/20">
+            Shortlisted
+          </Badge>
+        );
       case 'draft':
-        return <Badge variant="outline" className="text-muted-foreground">Draft</Badge>;
+        return (
+          <Badge variant="outline" className="text-muted-foreground">
+            Draft
+          </Badge>
+        );
       case 'rejected':
         return <Badge variant="destructive">Rejected</Badge>;
       default:
@@ -202,7 +232,13 @@ const Solutions = () => {
     setShowDetailDialog(true);
   };
 
-  const SolutionCard = ({ solution, showViewButton = false }: { solution: Solution; showViewButton?: boolean }) => (
+  const SolutionCard = ({
+    solution,
+    showViewButton = false,
+  }: {
+    solution: Solution;
+    showViewButton?: boolean;
+  }) => (
     <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
       <CardHeader className="space-y-3">
         {/* Author Mini Profile - LinkedIn style */}
@@ -216,7 +252,8 @@ const Solutions = () => {
             nameClassName="text-sm font-semibold line-clamp-1"
           />
           <span className="text-xs text-muted-foreground">
-            · {new Date(solution.created_at).toLocaleDateString('en-US', {
+            ·{' '}
+            {new Date(solution.created_at).toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
               year: 'numeric',
@@ -242,10 +279,10 @@ const Solutions = () => {
             </Badge>
           )}
         </div>
-        <CardDescription className="line-clamp-2">
-          {solution.description}
-        </CardDescription>
+
+        <CardDescription className="line-clamp-2">{solution.description}</CardDescription>
       </CardHeader>
+
       <CardContent>
         <div className="space-y-3">
           {solution.problems?.title && (
@@ -254,6 +291,7 @@ const Solutions = () => {
               <span className="font-medium">{solution.problems.title}</span>
             </div>
           )}
+
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             {solution.estimated_cost && (
               <div className="flex items-center gap-1">
@@ -268,6 +306,7 @@ const Solutions = () => {
               </div>
             )}
           </div>
+
           {solution.technology_stack && solution.technology_stack.length > 0 && (
             <div className="flex flex-wrap gap-1">
               {solution.technology_stack.slice(0, 3).map((tech) => (
@@ -282,13 +321,9 @@ const Solutions = () => {
               )}
             </div>
           )}
+
           {showViewButton && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              onClick={() => handleViewDetails(solution)}
-            >
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => handleViewDetails(solution)}>
               <Eye className="h-4 w-4 mr-1" />
               View Details
             </Button>
@@ -319,6 +354,95 @@ const Solutions = () => {
     </div>
   );
 
+  const renderEnterpriseSolutionsTable = () => {
+    if (isLoading) {
+      return (
+        <Card>
+          <CardHeader>
+            <CardTitle>Solutions submitted to your problems</CardTitle>
+            <CardDescription>Track submissions across the problems your organization owns.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-12 rounded-md bg-muted/50 animate-pulse"
+              />
+            ))}
+          </CardContent>
+        </Card>
+      );
+    }
+
+    if (filteredMyProblems.length === 0) {
+      return (
+        <EmptyState
+          message={
+            searchQuery || categoryFilter !== 'all'
+              ? 'Try adjusting your search or filters'
+              : 'No solutions have been submitted to your problems yet.'
+          }
+          showExplore={false}
+        />
+      );
+    }
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Solutions submitted to your problems</CardTitle>
+          <CardDescription>Review and track submissions for challenges your organization owns.</CardDescription>
+        </CardHeader>
+        <CardContent className="overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Solution</TableHead>
+                <TableHead>Problem</TableHead>
+                <TableHead>Submitted by</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMyProblems.map((solution) => (
+                <TableRow key={solution.id}>
+                  <TableCell>
+                    <div className="font-semibold">{solution.title}</div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{solution.description}</p>
+                  </TableCell>
+                  <TableCell>
+                    <div className="font-medium">{solution.problems?.title || 'Untitled problem'}</div>
+                    <Badge variant="outline" className="mt-1 inline-flex capitalize">
+                      {solution.problems?.category || 'general'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">
+                      {solution.author?.full_name || 'Innovator'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(solution.created_at).toLocaleDateString()}
+                    </div>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{getStatusBadge(solution.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" variant="outline" onClick={() => handleViewDetails(solution)}>
+                      View
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -329,6 +453,7 @@ const Solutions = () => {
           <Badge variant="secondary" className="mb-4">
             {isEnterprise ? "My Problems' Solutions" : isInvestor ? 'Investment Opportunities' : 'Accepted Solutions'}
           </Badge>
+
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             {isEnterprise ? (
               <>
@@ -344,12 +469,13 @@ const Solutions = () => {
               </>
             )}
           </h1>
+
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             {isEnterprise
               ? 'Review solutions submitted to your posted problems'
               : isInvestor
-              ? 'Browse approved solutions from innovators solving real-world challenges'
-              : 'Discover accepted solutions from innovators tackling real-world challenges'}
+                ? 'Browse approved solutions from innovators solving real-world challenges'
+                : 'Discover accepted solutions from innovators tackling real-world challenges'}
           </p>
         </div>
       </section>
@@ -367,6 +493,7 @@ const Solutions = () => {
                 className="pl-10"
               />
             </div>
+
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="All Categories" />
@@ -393,31 +520,33 @@ const Solutions = () => {
                 <TabsTrigger value="approved">Approved Solutions</TabsTrigger>
                 <TabsTrigger value="my-solutions">My Solutions ({mySolutions.length})</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="approved">
                 {isLoading ? (
                   <InnovexaSolutionsGridSkeleton cards={6} />
                 ) : filteredApproved.length === 0 ? (
-                  <EmptyState 
-                    message={searchQuery || categoryFilter !== 'all' 
-                      ? 'Try adjusting your search or filters' 
-                      : 'No approved solutions yet. Be the first to get your solution approved!'
-                    } 
+                  <EmptyState
+                    message={
+                      searchQuery || categoryFilter !== 'all'
+                        ? 'Try adjusting your search or filters'
+                        : 'No approved solutions yet. Be the first to get your solution approved!'
+                    }
                   />
                 ) : (
                   renderSolutionsGrid(filteredApproved, true)
                 )}
               </TabsContent>
-              
+
               <TabsContent value="my-solutions">
                 {isLoading ? (
                   <InnovexaSolutionsGridSkeleton cards={6} />
                 ) : filteredMine.length === 0 ? (
-                  <EmptyState 
-                    message={searchQuery || categoryFilter !== 'all' 
-                      ? 'Try adjusting your search or filters' 
-                      : "You haven't submitted any solutions yet."
-                    } 
+                  <EmptyState
+                    message={
+                      searchQuery || categoryFilter !== 'all'
+                        ? 'Try adjusting your search or filters'
+                        : "You haven't submitted any solutions yet."
+                    }
                   />
                 ) : (
                   renderSolutionsGrid(filteredMine, true)
@@ -425,32 +554,20 @@ const Solutions = () => {
               </TabsContent>
             </Tabs>
           ) : isEnterprise ? (
-            <>
-              {isLoading ? (
-                <InnovexaSolutionsGridSkeleton cards={6} />
-              ) : filteredMyProblems.length === 0 ? (
-                <EmptyState
-                  message={
-                    searchQuery || categoryFilter !== 'all'
-                      ? 'Try adjusting your search or filters'
-                      : "No solutions submitted for your problems yet."
-                  }
-                  showExplore={false}
-                />
-              ) : (
-                renderSolutionsGrid(filteredMyProblems, true)
-              )}
-            </>
+            <div className="space-y-6">
+              {renderEnterpriseSolutionsTable()}
+            </div>
           ) : isInvestor ? (
-            // Investors see all approved public solutions
             <>
               {isLoading ? (
                 <InnovexaSolutionsGridSkeleton cards={6} />
               ) : filteredApproved.length === 0 ? (
-                <EmptyState 
-                  message={searchQuery || categoryFilter !== 'all'
-                    ? 'Try adjusting your search or filters'
-                    : 'No approved solutions available yet.'}
+                <EmptyState
+                  message={
+                    searchQuery || categoryFilter !== 'all'
+                      ? 'Try adjusting your search or filters'
+                      : 'No approved solutions available yet.'
+                  }
                   showExplore={false}
                 />
               ) : (
@@ -458,15 +575,16 @@ const Solutions = () => {
               )}
             </>
           ) : (
-            // Non-authenticated users see approved solutions
             <>
               {isLoading ? (
                 <InnovexaSolutionsGridSkeleton cards={6} />
               ) : filteredApproved.length === 0 ? (
-                <EmptyState 
-                  message={searchQuery || categoryFilter !== 'all'
-                    ? 'Try adjusting your search or filters'
-                    : 'Be the first to submit an innovative solution!'}
+                <EmptyState
+                  message={
+                    searchQuery || categoryFilter !== 'all'
+                      ? 'Try adjusting your search or filters'
+                      : 'Be the first to submit an innovative solution!'
+                  }
                 />
               ) : (
                 renderSolutionsGrid(filteredApproved, true)
@@ -478,7 +596,6 @@ const Solutions = () => {
 
       <Footer />
 
-      {/* Solution Detail Dialog */}
       <SolutionDetailDialog
         solution={selectedSolution}
         open={showDetailDialog}

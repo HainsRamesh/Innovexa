@@ -284,7 +284,7 @@ Deno.serve(async (req) => {
     const categoryMatchesRes = await supabase.rpc("match_innovations_published", {
       query_embedding: embedding,
       match_count: matchCount,
-      category_filter: category,
+      optional_category: category,
     });
 
     if (categoryMatchesRes.error) {
@@ -314,7 +314,7 @@ Deno.serve(async (req) => {
       const fallbackRes = await supabase.rpc("match_innovations_published", {
         query_embedding: embedding,
         match_count: remaining,
-        category_filter: null,
+        optional_category: null,
         exclude_ids: [...seen],
       });
 

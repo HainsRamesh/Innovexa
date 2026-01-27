@@ -6,7 +6,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,8 +14,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissionForm";
 import { SolutionsList } from "@/components/solutions/SolutionsList";
 import { InvestmentProposalForm } from "@/components/investments/InvestmentProposalForm";
-import type { Problem } from "@/types";
-import { TrendingUp, PlusCircle, Edit } from "lucide-react";
+import { InnovationDetailModal } from "@/components/innovations/InnovationDetailModal";
+import type { Innovation, Problem } from "@/types";
+import { TrendingUp, PlusCircle, Edit, Loader2 } from "lucide-react";
 
 const upsertMetaTag = (name: string, content: string) => {
   let tag = document.querySelector(`meta[name="${name}"]`) as HTMLMetaElement | null;
@@ -58,6 +59,12 @@ export default function ProblemDetails() {
   const [showInvestmentForm, setShowInvestmentForm] = useState(false);
   const [existingSolution, setExistingSolution] = useState<ExistingSolution | null>(null);
   const [isCheckingExistingSolution, setIsCheckingExistingSolution] = useState(false);
+  const [relatedInnovations, setRelatedInnovations] = useState<Innovation[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [relatedError, setRelatedError] = useState<string | null>(null);
+  const [relatedLoaded, setRelatedLoaded] = useState(false);
+  const [selectedInnovation, setSelectedInnovation] = useState<Innovation | null>(null);
+  const [showInnovationModal, setShowInnovationModal] = useState(false);
 
   const isInnovator = role === "innovator";
   const isInvestor = role === "investor";
@@ -165,6 +172,104 @@ export default function ProblemDetails() {
     if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`;
     if (max) return `Up to $${max.toLocaleString()}`;
     return `From $${min?.toLocaleString()}`;
+  };
+
+  const extractKeywords = (currentProblem: Problem | null) => {
+    if (!currentProblem) return [];
+
+    const stopwords = new Set([
+      "the","a","an","and","or","to","for","of","in","on","with","is","are","be","this","that","from","by","at","as","it","its","into","their","they","them","we","our","you","your","about","over","under","out","up","down","across","within","without","but",
+    ]);
+
+    const text = [
+      currentProblem.title,
+      currentProblem.category,
+      currentProblem.industry || "",
+      (currentProblem.tags || []).join(" "),
+      currentProblem.description || "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .replace(/[^\w\s]/g, " ");
+
+    const tokens = text
+      .split(/\s+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length >= 3 && !stopwords.has(t));
+
+    const unique = Array.from(new Set(tokens));
+    return unique.slice(0, 12);
+  };
+
+  const fetchRelatedInnovations = async () => {
+    if (!problem) return;
+
+    setRelatedError(null);
+    setRelatedLoading(true);
+
+    try {
+      // Quick visibility check (helps detect RLS issues in logs)
+      supabase
+        .from("innovations")
+        .select("id,title,tagline,created_at")
+        .order("created_at", { ascending: false })
+        .limit(5)
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Innovation visibility check failed:", error);
+          } else {
+            console.log("Innovation visibility check:", data);
+          }
+        });
+
+      const keywords = extractKeywords(problem);
+
+      const baseQuery = supabase
+        .from("innovations")
+        .select("*")
+        .eq("status", "published" as any)
+        .order("updated_at", { ascending: false })
+        .limit(12);
+
+      let query = baseQuery;
+
+      if (keywords.length > 0) {
+        const orParts = keywords.flatMap((kw) => [
+          `title.ilike.%${kw}%`,
+          `tagline.ilike.%${kw}%`,
+          `description.ilike.%${kw}%`,
+        ]);
+
+        query = query.or(orParts.join(","));
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      setRelatedInnovations((data as Innovation[]) || []);
+      setRelatedLoaded(true);
+    } catch (error: any) {
+      console.error("Error fetching related innovations:", error);
+      setRelatedError(error?.message ?? "Could not load related innovations.");
+      setRelatedInnovations([]);
+      setRelatedLoaded(true);
+    } finally {
+      setRelatedLoading(false);
+    }
+  };
+
+  const handleOpenInnovation = (innovation: Innovation) => {
+    setSelectedInnovation(innovation);
+    setShowInnovationModal(true);
+  };
+
+  const handleInnovationModalChange = (open: boolean) => {
+    setShowInnovationModal(open);
+    if (!open) {
+      setSelectedInnovation(null);
+    }
   };
 
   const handleFormSuccess = () => {
@@ -366,6 +471,85 @@ export default function ProblemDetails() {
                 </CardContent>
               </Card>
 
+              <section className="mt-8 space-y-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold">Discover related innovations</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Search for innovations that align with this problem&apos;s needs.
+                    </p>
+                  </div>
+                  <Button
+                    onClick={fetchRelatedInnovations}
+                    disabled={relatedLoading || !problem}
+                    className="whitespace-nowrap"
+                  >
+                    {relatedLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Searching...
+                      </>
+                    ) : (
+                      "Discover related innovations"
+                    )}
+                  </Button>
+                </div>
+
+                {relatedError && <p className="text-sm text-destructive">{relatedError}</p>}
+
+                {relatedLoading && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {Array.from({ length: 4 }).map((_, idx) => (
+                      <Card key={idx}>
+                        <CardContent className="space-y-3 p-6">
+                          <div className="h-4 w-24 bg-muted/60 rounded animate-pulse" />
+                          <div className="h-5 w-3/4 bg-muted/60 rounded animate-pulse" />
+                          <div className="h-16 w-full bg-muted/60 rounded animate-pulse" />
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+
+                {relatedLoaded && !relatedLoading && (
+                  relatedInnovations.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {relatedInnovations.map((innovation) => (
+                        <Card key={innovation.id} className="border-border/60">
+                          <CardHeader className="space-y-2">
+                            <div className="flex items-center justify-between gap-2">
+                              <Badge variant="outline" className="capitalize">
+                                {innovation.category}
+                              </Badge>
+                            </div>
+                            <CardTitle className="text-lg">{innovation.title}</CardTitle>
+                            <CardDescription className="line-clamp-2">{innovation.tagline}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <p className="text-sm text-muted-foreground line-clamp-3">
+                              {innovation.description}
+                            </p>
+                            <div className="flex justify-end">
+                              <Button size="sm" variant="outline" onClick={() => handleOpenInnovation(innovation)}>
+                                View details
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <Card>
+                      <CardContent className="p-6 text-center">
+                        <p className="text-sm text-muted-foreground">
+                          No related innovations found yet. Add clearer tags or context to improve matches.
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )
+                )}
+              </section>
+
               {/* Solution Submission Form - Above Solutions List */}
               {showSubmissionForm && problemId && (
                 <SolutionSubmissionForm
@@ -401,6 +585,12 @@ export default function ProblemDetails() {
           )}
         </section>
       </main>
+
+      <InnovationDetailModal
+        innovation={selectedInnovation}
+        open={showInnovationModal}
+        onOpenChange={handleInnovationModalChange}
+      />
 
       <Footer />
     </div>

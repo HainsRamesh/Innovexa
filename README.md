@@ -78,6 +78,13 @@ This repo now gates all innovation images (cover + gallery) through an OpenAI mo
 
 - Buckets: `temp-uploads` (private, pending scans), `quarantine-uploads` (private, rejected copies), existing `innovations` bucket holds approved/public files.
 - Database: new `media_assets` table tracks `{kind, bucket, path, status, moderation_result, user_id, innovation_id}` with RLS (owners only).
+
+## Recommended innovation matching (Problems → Innovations)
+
+- New Supabase edge functions: `upsert-problem-embedding` (problem vector sync) and `generate-problem-innovation-matches` (vector search + heuristic re-rank + cache).
+- Database: `problems.embedding` (vector), cached results in `problem_innovation_matches`, refresh throttling in `problem_match_refresh_state`; RPC `match_innovations_published` powers vector search (pgvector hnsw).
+- Env required for functions: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY`, `OPENAI_API_KEY_TEXT` (for embeddings).
+- Triggering: client calls matching after problem create/update; enterprise users can hit “Refresh recommendations” in the Solutions tab (rate limited to once every 10 minutes, refreshes last ~20 recent problems) and the UI reads only from the cached matches table for fast loads.
 - Edge Function: `moderate-image` creates a signed URL, calls `omni-moderation-latest`, rejects unsafe images, moves approved ones to `innovations`, deletes temp files, and logs results.
 - Frontend: Innovator Media section shows per-image status chips (Scanning/Approved/Rejected/Error), blocks submit if cover not approved or any gallery pending, and offers “Retry scan” on transient errors.
 

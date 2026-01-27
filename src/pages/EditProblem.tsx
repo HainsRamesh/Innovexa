@@ -108,6 +108,25 @@ export default function EditProblem() {
     fetchProblem();
   }, [problemId, user, toast, navigate]);
 
+  const triggerMatchGeneration = async () => {
+    if (!problemId || status === "draft") return;
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) return;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const { error } = await supabase.functions.invoke("generate-problem-innovation-matches", {
+        body: { problem_id: problemId },
+        headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey },
+      });
+      if (error) {
+        console.error("generate-problem-innovation-matches error", error);
+      }
+    } catch (err) {
+      console.error("Failed to trigger match generation", err);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -157,6 +176,7 @@ export default function EditProblem() {
         variant: "destructive",
       });
     } else {
+      void triggerMatchGeneration();
       toast({ title: "Problem updated" });
       navigate("/explore");
     }

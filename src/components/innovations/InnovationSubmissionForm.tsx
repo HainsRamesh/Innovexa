@@ -210,7 +210,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     return `${user?.id}/${kind}/${fileName}`;
   };
 
-  const moderateAsset = async (
+const moderateAsset = async (
    assetId: string,
   path: string,
   kind: "cover" | "gallery",
@@ -219,13 +219,20 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   // Ensure we have a valid session token for JWT-protected functions
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
   const accessToken = sessionData?.session?.access_token;
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   if (!accessToken) {
     console.error("No access token found", sessionError);
     toast.error("Please log in again - session token missing or expired.");
-    return;
+    throw new Error("Missing access token for moderation");
   }
 
+  console.log("Invoking moderate-image", {
+    hasToken: !!accessToken,
+    hasAnonKey: !!anonKey,
+    bucket,
+    kind,
+  });
 
   const { data, error } = await supabase.functions.invoke("moderate-image", {
       body: {
@@ -238,6 +245,7 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
       },
       headers: {
         Authorization: `Bearer ${accessToken}`,
+        apikey: anonKey,
       },
     });
       if (error) throw error;
@@ -549,8 +557,23 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     setTaglineSuggestions([]);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log("Invoking generate-taglines", { hasToken: !!accessToken, hasAnonKey: !!anonKey });
+
+      if (!accessToken) {
+        toast.error("Please log in again to generate taglines.");
+        setIsGeneratingTaglines(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-taglines", {
         body: { title, count: 5 },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: anonKey,
+        },
       });
 
       if (error) throw error;
@@ -579,8 +602,23 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
     setIsRewritingDescription(true);
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      console.log("Invoking rewrite-description", { hasToken: !!accessToken, hasAnonKey: !!anonKey });
+
+      if (!accessToken) {
+        toast.error("Please log in again to rewrite the description.");
+        setIsRewritingDescription(false);
+        return;
+      }
+
       const { data, error } = await supabase.functions.invoke("rewrite-description", {
         body: { text: description, tone: "professional", maxWords: 150 },
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: anonKey,
+        },
       });
 
       if (error) throw error;

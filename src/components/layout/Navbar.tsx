@@ -101,6 +101,7 @@ export const Navbar = () => {
   const isActiveRoute = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
+  const logoSrc = "/zynovexa-logo.png";
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
@@ -109,8 +110,11 @@ export const Navbar = () => {
           {/* Logo */}
           <Link to={getLogoRedirect()} className="flex items-center group">
             <img
-              src="/zynovexa-logo.png"
+              src={logoSrc}
               alt="Zynovexa"
+              onError={(e) => {
+                e.currentTarget.src = "/favicon.ico";
+              }}
               className="h-12 w-12 object-contain transition-transform group-hover:scale-105"
             />
             <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>

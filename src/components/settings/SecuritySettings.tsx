@@ -101,9 +101,25 @@ export const SecuritySettings = () => {
     setDeleteError('');
 
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+      if (!accessToken) {
+        setDeleteError('Missing session token. Please sign in again.');
+        setIsDeleting(false);
+        return;
+      }
+
+      console.log('Invoking delete-account', { hasToken: !!accessToken, hasAnonKey: !!anonKey });
+
       // Call the Edge Function to delete the account
       const { data, error } = await supabase.functions.invoke('delete-account', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          apikey: anonKey,
+        },
       });
 
       if (error) {
