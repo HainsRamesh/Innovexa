@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +12,12 @@ interface OTPInputProps {
   autoFocus?: boolean;
 }
 
-export const OTPInput = ({
+export interface OTPInputRef {
+  focus: () => void;
+  clear: () => void;
+}
+
+export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(({
   length = 6,
   value,
   onChange,
@@ -20,8 +25,16 @@ export const OTPInput = ({
   error = false,
   className,
   autoFocus = true,
-}: OTPInputProps) => {
+}, ref) => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRefs.current[0]?.focus(),
+    clear: () => {
+      onChange("");
+      inputRefs.current[0]?.focus();
+    },
+  }));
 
   useEffect(() => {
     if (autoFocus && inputRefs.current[0] && !disabled) {
@@ -105,4 +118,6 @@ export const OTPInput = ({
       ))}
     </div>
   );
-};
+});
+
+OTPInput.displayName = "OTPInput";

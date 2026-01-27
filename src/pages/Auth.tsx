@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Lightbulb, ArrowLeft, Building2, Rocket, TrendingUp, Shield, Loader2 } from "lucide-react";
-import { Footer } from "@/components/layout/Footer";
+// Footer removed for clean auth screens
 import { AppRole } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailVerification, ForgotPassword } from "@/components/auth";
@@ -442,7 +442,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-hero flex flex-col justify-between">
+    <div className="min-h-screen bg-gradient-hero flex flex-col">
       {/* Header */}
       <header className="p-4">
         <Link
@@ -476,8 +476,6 @@ const Auth = () => {
           </p>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 };

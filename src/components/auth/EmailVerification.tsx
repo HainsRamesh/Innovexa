@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "./OTPInput";
-import { AuthCard } from "./AuthCard";
 import { Loader2, Mail, CheckCircle, RefreshCw, ArrowLeft, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,11 +13,11 @@ interface EmailVerificationProps {
   onBack: () => void;
 }
 
-export const EmailVerification = ({
+export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationProps>(({
   email,
   onVerified,
   onBack,
-}: EmailVerificationProps) => {
+}, ref) => {
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -64,7 +63,7 @@ export const EmailVerification = ({
         setIsSuccess(true);
         toast({
           title: "Email verified! ✓",
-          description: "Your account is now active. Redirecting...",
+          description: "Your account is now active. Redirecting to sign in...",
         });
         // Brief delay to show success state
         setTimeout(onVerified, 1500);
@@ -129,7 +128,7 @@ export const EmailVerification = ({
 
   if (isSuccess) {
     return (
-      <div className="space-y-6 text-center py-4 animate-in fade-in-0 duration-300">
+      <div ref={ref} className="space-y-6 text-center py-6 animate-in fade-in-0 duration-300">
         <div className="flex justify-center">
           <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center animate-in zoom-in-50 duration-300">
             <CheckCircle className="h-8 w-8 text-green-500" />
@@ -149,7 +148,7 @@ export const EmailVerification = ({
   }
 
   return (
-    <div className="space-y-6 text-center py-4">
+    <div ref={ref} className="space-y-6 text-center py-6">
       <div className="flex justify-center">
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
           <Mail className="h-8 w-8 text-primary" />
@@ -161,10 +160,10 @@ export const EmailVerification = ({
         <p className="text-muted-foreground">
           We've sent a 6-digit code to
         </p>
-        <p className="font-medium text-foreground break-all">{email}</p>
+        <p className="font-medium text-foreground break-all px-4">{email}</p>
       </div>
 
-      <div className="space-y-4 pt-2">
+      <div className="space-y-4 pt-2 px-2">
         <OTPInput
           value={otp}
           onChange={(val) => {
@@ -180,7 +179,7 @@ export const EmailVerification = ({
             className="flex items-center justify-center gap-2 text-sm text-destructive animate-in fade-in-0 slide-in-from-top-1"
             role="alert"
           >
-            <AlertCircle className="h-4 w-4" />
+            <AlertCircle className="h-4 w-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
         )}
@@ -235,4 +234,6 @@ export const EmailVerification = ({
       </Button>
     </div>
   );
-};
+});
+
+EmailVerification.displayName = "EmailVerification";

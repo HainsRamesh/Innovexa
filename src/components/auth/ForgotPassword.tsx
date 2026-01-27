@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "./OTPInput";
 import { FormField } from "./FormField";
@@ -16,7 +16,7 @@ interface ForgotPasswordProps {
   onSuccess: () => void;
 }
 
-export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
+export const ForgotPassword = forwardRef<HTMLDivElement, ForgotPasswordProps>(({ onBack, onSuccess }, ref) => {
   const [step, setStep] = useState<ForgotPasswordStep>("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -211,7 +211,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
   // Success state
   if (step === "success") {
     return (
-      <div className="space-y-6 text-center py-4 animate-in fade-in-0 duration-300">
+      <div ref={ref} className="space-y-6 text-center py-6 px-2 animate-in fade-in-0 duration-300">
         <div className="flex justify-center">
           <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center animate-in zoom-in-50 duration-300">
             <ShieldCheck className="h-8 w-8 text-green-500" />
@@ -234,7 +234,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
   // New password step
   if (step === "newPassword") {
     return (
-      <div className="space-y-6 py-4">
+      <div ref={ref} className="space-y-6 py-6 px-2">
         <StepIndicator />
         
         <div className="text-center">
@@ -250,7 +250,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
         </div>
 
         <div className="space-y-4">
-          <div>
+          <div className="space-y-2">
             <FormField
               label="New Password"
               type="password"
@@ -265,7 +265,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
               showPasswordToggle
               autoComplete="new-password"
             />
-            <PasswordStrengthIndicator password={newPassword} />
+            {newPassword && <PasswordStrengthIndicator password={newPassword} />}
           </div>
 
           <FormField
@@ -310,7 +310,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
   // OTP code step
   if (step === "code") {
     return (
-      <div className="space-y-6 text-center py-4">
+      <div ref={ref} className="space-y-6 text-center py-6 px-2">
         <StepIndicator />
         
         <div className="flex justify-center">
@@ -343,7 +343,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
               className="flex items-center justify-center gap-2 text-sm text-destructive animate-in fade-in-0 slide-in-from-top-1"
               role="alert"
             >
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <span>{otpError}</span>
             </div>
           )}
@@ -361,7 +361,10 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
                 Verifying...
               </>
             ) : (
-              "Verify Code"
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Verify Code
+              </>
             )}
           </Button>
         </div>
@@ -399,7 +402,7 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
 
   // Email step (default)
   return (
-    <div className="space-y-6 py-4">
+    <div ref={ref} className="space-y-6 py-6 px-2">
       <StepIndicator />
       
       <div className="text-center">
@@ -461,4 +464,6 @@ export const ForgotPassword = ({ onBack, onSuccess }: ForgotPasswordProps) => {
       </Button>
     </div>
   );
-};
+});
+
+ForgotPassword.displayName = "ForgotPassword";
