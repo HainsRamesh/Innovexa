@@ -110,6 +110,12 @@ const Auth = () => {
     return Object.keys(newErrors).length === 0;
   }, [email, password]);
 
+  // Store pending signup data until verification is complete
+  const [pendingSignupData, setPendingSignupData] = useState<{
+    userId: string;
+    role: AppRole;
+  } | null>(null);
+
   const handleSignUp = async () => {
     if (!validateSignUpForm()) return;
 
@@ -123,6 +129,7 @@ const Auth = () => {
         options: {
           data: {
             full_name: fullName,
+            pending_role: selectedRole, // Store role in metadata for later
           },
         },
       });
@@ -148,15 +155,12 @@ const Auth = () => {
         return;
       }
 
-      // Store role in user_roles table
+      // Store signup data for role creation after verification
       if (data.user) {
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({ user_id: data.user.id, role: selectedRole });
-
-        if (roleError) {
-          console.error("Failed to set role:", roleError);
-        }
+        setPendingSignupData({
+          userId: data.user.id,
+          role: selectedRole,
+        });
       }
 
       // Check if email confirmation is required
@@ -176,7 +180,12 @@ const Auth = () => {
           description: "We've sent you a 6-digit verification code.",
         });
       } else if (data.session) {
-        // Auto-confirmed (dev mode or auto-confirm enabled)
+        // Auto-confirmed - create role immediately
+        if (data.user) {
+          await supabase
+            .from("user_roles")
+            .insert({ user_id: data.user.id, role: selectedRole });
+        }
         toast({
           title: "Welcome to ZYNOVEXA! 🎉",
           description: "Your account has been created successfully.",
@@ -269,13 +278,32 @@ const Auth = () => {
     }
   };
 
-  const handleVerified = () => {
+  const handleVerified = async () => {
+    // Now that email is verified, create the user role
+    if (pendingSignupData) {
+      try {
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ 
+            user_id: pendingSignupData.userId, 
+            role: pendingSignupData.role 
+          });
+
+        if (roleError) {
+          console.error("Failed to set role after verification:", roleError);
+        }
+      } catch (err) {
+        console.error("Error creating role:", err);
+      }
+    }
+
     toast({
       title: "Email verified! ✓",
       description: "You can now sign in to your account.",
     });
     setView("signIn");
     setPendingEmail("");
+    setPendingSignupData(null);
     // Clear form for fresh sign in
     setPassword("");
   };
