@@ -15,6 +15,10 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   "Email rate limit exceeded": "Too many attempts. Please wait a few minutes and try again.",
   "email_address_invalid": "Please enter a valid email address.",
   
+  // Weak password errors
+  "weak_password": "This password is too common or has been exposed in data breaches. Please choose a stronger password.",
+  "Password is known to be weak": "This password is too common or has been exposed in data breaches. Please choose a stronger password.",
+  
   // OTP errors
   "Token has expired or is invalid": "This verification code has expired. Please request a new one.",
   "Invalid OTP": "The code you entered is incorrect. Please try again.",
@@ -37,6 +41,12 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
 
 export function getAuthErrorMessage(error: any): string {
   if (!error) return "An unexpected error occurred. Please try again.";
+  
+  // Handle Supabase error codes (like "weak_password")
+  const code = error.code || "";
+  if (code && AUTH_ERROR_MESSAGES[code]) {
+    return AUTH_ERROR_MESSAGES[code];
+  }
   
   const message = error.message || error.error_description || String(error);
   
@@ -71,6 +81,10 @@ export function getAuthErrorMessage(error: any): string {
   
   if (message.includes("invalid") && message.includes("email")) {
     return "Please enter a valid email address.";
+  }
+  
+  if (message.includes("weak") || message.includes("pwned") || message.includes("easy to guess")) {
+    return "This password is too common or has been exposed in data breaches. Please choose a stronger password.";
   }
   
   // Generic fallback
