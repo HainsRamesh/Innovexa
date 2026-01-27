@@ -94,7 +94,7 @@ const DashboardOverview = () => {
       const existing = categoryMap.get(cat) || { views: 0, likes: 0 };
       categoryMap.set(cat, {
         views: existing.views + (inn.view_count || 0),
-        likes: existing.likes + (inn.like_count || 0),
+        likes: existing.likes + (inn.interest_count || 0),
       });
     });
 

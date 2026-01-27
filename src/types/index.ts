@@ -41,6 +41,7 @@ export interface Problem {
   ai_summary: string | null;
   ai_complexity_score: number | null;
   view_count: number;
+  interest_count?: number;
   created_at: string;
   updated_at: string;
   profiles?: Profile;
@@ -118,7 +119,9 @@ export interface Innovation {
   with_product: string;
   status: InnovationStatus;
   view_count: number;
-  like_count: number;
+  interest_count?: number;
+  comment_count?: number;
+  message_click_count?: number;
   created_at: string;
   updated_at: string;
   profiles?: Profile;

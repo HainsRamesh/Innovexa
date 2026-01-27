@@ -141,21 +141,21 @@ const PublicProfile = () => {
         .eq("innovator_id", uid)
         .eq("status", "accepted");
 
-      // Total likes on problems
+      // Total interests on problems
       const { data: userProblems } = await supabase
         .from("problems")
-        .select("like_count")
+        .select("interest_count")
         .eq("owner_id", uid);
 
-      const problemLikes = userProblems?.reduce((sum, p) => sum + (p.like_count || 0), 0) || 0;
+      const problemInterests = userProblems?.reduce((sum, p) => sum + (p.interest_count || 0), 0) || 0;
 
-      // Total likes on innovations
+      // Total interests on innovations
       const { data: userInnovations } = await supabase
         .from("innovations")
-        .select("like_count")
+        .select("interest_count")
         .eq("innovator_id", uid);
 
-      const innovationLikes = userInnovations?.reduce((sum, i) => sum + (i.like_count || 0), 0) || 0;
+      const innovationInterests = userInnovations?.reduce((sum, i) => sum + (i.interest_count || 0), 0) || 0;
 
       // Investments made (only visible to the investor themselves or publicly available count)
       let investmentsMade = 0;
@@ -178,7 +178,7 @@ const PublicProfile = () => {
         problemsPosted: problemsCount || 0,
         solutionsSubmitted: solutionsCount || 0,
         solutionsApproved: approvedCount || 0,
-        likesReceived: problemLikes + innovationLikes,
+        likesReceived: problemInterests + innovationInterests,
         investmentsMade,
         innovationsPublished: innovationsCount || 0,
       });
@@ -504,7 +504,7 @@ const PublicProfile = () => {
                       imageUrl={innovation.cover_image_url}
                       stats={
                         <>
-                          <span>{innovation.like_count || 0} likes</span>
+                          <span>{(innovation as any).interest_count || 0} interests</span>
                           <span>{innovation.view_count || 0} views</span>
                         </>
                       }

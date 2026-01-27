@@ -6,11 +6,11 @@ import { getComparisonDateRanges, calculateTrendByAccountAge } from '@/lib/trend
 interface InnovatorMetrics {
   totalInnovations: number;
   demoPlays: number;
-  totalHearts: number;
+  totalInterests: number;
   problemsUploaded: number;
   innovationsTrend: number;
   demoPlaysTrend: number;
-  heartsTrend: number;
+  interestsTrend: number;
   problemsTrend: number;
   trendLabel: string;
 }
@@ -83,7 +83,7 @@ export const useDashboardMetrics = (userId: string | undefined, role: AppRole | 
       const [innovationsRes, problemsRes] = await Promise.all([
         supabase
           .from('innovations')
-          .select('id, view_count, like_count, created_at')
+          .select('id, view_count, interest_count, created_at')
           .eq('innovator_id', userId),
         supabase
           .from('problems')
@@ -96,21 +96,20 @@ export const useDashboardMetrics = (userId: string | undefined, role: AppRole | 
       
       const totalInnovations = innovations.length;
       const demoPlays = innovations.reduce((sum, i) => sum + (i.view_count || 0), 0);
-      const totalHearts = innovations.reduce((sum, i) => sum + (i.like_count || 0), 0);
+      const totalInterests = innovations.reduce((sum, i) => sum + (i.interest_count || 0), 0);
       const problemsUploaded = problems.length;
 
       // Calculate trends based on account age
       let trendLabel = 'New account';
       let innovationsTrend = 0;
       let demoPlaysTrend = 0;
-      let heartsTrend = 0;
+      let interestsTrend = 0;
       let problemsTrend = 0;
 
       if (dateRanges) {
         trendLabel = dateRanges.type === 'yesterday' ? 'Since yesterday' : 
                      dateRanges.type === 'week' ? 'this week' : 'this month';
 
-        // Count items in current vs previous periods
         const currentInnovations = innovations.filter(i => {
           const date = new Date(i.created_at);
           return date >= dateRanges.current.start && date <= dateRanges.current.end;
@@ -134,20 +133,18 @@ export const useDashboardMetrics = (userId: string | undefined, role: AppRole | 
         innovationsTrend = calculateTrendByAccountAge(accountCreatedAt, currentInnovations, previousInnovations).percentage;
         problemsTrend = calculateTrendByAccountAge(accountCreatedAt, currentProblems, previousProblems).percentage;
         
-        // For demo plays and hearts, compare current total vs what it was in the previous period
-        // This is a simplified approach - in production you'd track historical data
         demoPlaysTrend = demoPlays > 0 ? Math.min(Math.max(Math.floor((demoPlays / Math.max(totalInnovations, 1)) * 2), -50), 50) : 0;
-        heartsTrend = totalHearts > 0 ? Math.min(Math.max(Math.floor((totalHearts / Math.max(totalInnovations, 1)) * 3), -50), 50) : 0;
+        interestsTrend = totalInterests > 0 ? Math.min(Math.max(Math.floor((totalInterests / Math.max(totalInnovations, 1)) * 3), -50), 50) : 0;
       }
 
       setMetrics({
         totalInnovations,
         demoPlays,
-        totalHearts,
+        totalInterests,
         problemsUploaded,
         innovationsTrend,
         demoPlaysTrend,
-        heartsTrend,
+        interestsTrend,
         problemsTrend,
         trendLabel,
       });

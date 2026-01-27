@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 const getSessionId = (): string => {
   const key = 'problem_session_id';
@@ -12,73 +13,81 @@ const getSessionId = (): string => {
   return sessionId;
 };
 
-export const useProblemLike = (problemId: string, initialLikeCount: number = 0) => {
+export const useProblemInterest = (problemId: string, initialInterestCount: number = 0) => {
   const { user } = useAuth();
-  const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(initialLikeCount);
+  const [isInterested, setIsInterested] = useState(false);
+  const [interestCount, setInterestCount] = useState(initialInterestCount);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
   const sessionId = getSessionId();
 
   useEffect(() => {
-    const checkIfLiked = async () => {
+    const checkIfInterested = async () => {
       const { data } = await supabase
-        .from('problem_likes')
+        .from('problem_interests')
         .select('id')
         .eq('problem_id', problemId)
         .eq('session_id', sessionId)
         .maybeSingle();
 
-      setIsLiked(!!data);
+      setIsInterested(!!data);
     };
 
-    checkIfLiked();
+    checkIfInterested();
   }, [problemId, sessionId]);
 
   useEffect(() => {
-    setLikeCount(initialLikeCount);
-  }, [initialLikeCount]);
+    setInterestCount(initialInterestCount);
+  }, [initialInterestCount]);
 
-  const toggleLike = useCallback(
+  const toggleInterest = useCallback(
     async (e?: React.MouseEvent) => {
       if (e) e.stopPropagation();
       if (isLoading) return;
 
       setIsLoading(true);
-      const previousIsLiked = isLiked;
-      const previousCount = likeCount;
+      const previousIsInterested = isInterested;
+      const previousCount = interestCount;
 
       // Optimistic update
-      setIsLiked(!isLiked);
-      setLikeCount(isLiked ? likeCount - 1 : likeCount + 1);
+      setIsInterested(!isInterested);
+      setInterestCount(isInterested ? interestCount - 1 : interestCount + 1);
+
+      // Trigger animation
+      setIsAnimating(true);
+      setTimeout(() => setIsAnimating(false), 300);
 
       try {
-        if (previousIsLiked) {
+        if (previousIsInterested) {
           const { error } = await supabase
-            .from('problem_likes')
+            .from('problem_interests')
             .delete()
             .eq('problem_id', problemId)
             .eq('session_id', sessionId);
 
           if (error) throw error;
+          toast.success("Removed from your interests");
         } else {
           // Insert with session_id; user_id will be stamped by trigger if logged in
           const { error } = await supabase
-            .from('problem_likes')
+            .from('problem_interests')
             .insert({ problem_id: problemId, session_id: sessionId });
 
           if (error) throw error;
+          toast.success("Added to your interests");
         }
       } catch (error) {
         // Revert on error
-        setIsLiked(previousIsLiked);
-        setLikeCount(previousCount);
-        console.error('Error toggling problem like:', error);
+        setIsInterested(previousIsInterested);
+        setInterestCount(previousCount);
+        console.error('Error toggling problem interest:', error);
+        toast.error("Failed to update interest");
       } finally {
         setIsLoading(false);
       }
     },
-    [problemId, sessionId, isLiked, likeCount, isLoading]
+    [problemId, sessionId, isInterested, interestCount, isLoading]
   );
 
-  return { isLiked, likeCount, toggleLike, isLoading };
+  return { isInterested, interestCount, toggleInterest, isLoading, isAnimating };
 };

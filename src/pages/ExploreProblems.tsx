@@ -21,7 +21,7 @@ import { Problem } from '@/types';
 const PROBLEMS_PER_PAGE = 10;
 
 interface ProblemWithCounts extends Problem {
-  like_count?: number;
+  interest_count?: number;
   solutions_count?: number;
 }
 
@@ -55,7 +55,7 @@ const ExploreProblems = () => {
     try {
       let query = supabase
         .from('problems')
-        .select('*, like_count, solutions_count')
+        .select('*, interest_count, solutions_count')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 

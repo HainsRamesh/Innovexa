@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
-import { Heart, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar, TrendingUp } from "lucide-react";
+import { Sparkles, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCircle, Eye, DollarSign, Calendar, TrendingUp } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,12 @@ import { SolutionDetailDialog } from "@/components/solutions/SolutionDetailDialo
 import { InvestorInterestModal } from "@/components/investor/InvestorInterestModal";
 import { InvestorReadyBadge } from "@/components/investor/InvestorReadyBadge";
 import { useHasApprovedSolutions, useInvestorInterests } from "@/hooks/useInvestorInterests";
-import { useProblemLike } from "@/hooks/useProblemLike";
+import { useProblemInterest } from "@/hooks/useProblemInterest";
 import { UserProfileLink } from "@/components/user/UserProfileLink";
+import { cn } from "@/lib/utils";
 
 interface ProblemFeedItemProps {
-  problem: Problem & { like_count?: number; solutions_count?: number };
+  problem: Problem & { interest_count?: number; solutions_count?: number };
   ownerProfile?: { full_name: string | null; avatar_url: string | null } | null;
 }
 
@@ -34,10 +35,10 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   const [isLoadingSolutions, setIsLoadingSolutions] = useState(false);
   const solutionsCount = problem.solutions_count ?? 0;
   
-  // Use the problem like hook for persistent likes + notifications
-  const { isLiked, likeCount, toggleLike, isLoading: isLiking } = useProblemLike(
+  // Use the problem interest hook for persistent interests + notifications
+  const { isInterested, interestCount, toggleInterest, isLoading: isToggling, isAnimating } = useProblemInterest(
     problem.id,
-    problem.like_count ?? 0
+    problem.interest_count ?? 0
   );
   
   // Solution submission state
@@ -53,7 +54,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   // Investor interest state
   const [showInvestorModal, setShowInvestorModal] = useState(false);
   const { hasApproved } = useHasApprovedSolutions(problem.id);
-  const { count: interestCount, hasUserInterest, refetch: refetchInterests } = useInvestorInterests("problem", problem.id);
+  const { count: investorInterestCount, hasUserInterest, refetch: refetchInterests } = useInvestorInterests("problem", problem.id);
 
   const isInnovator = role === "innovator";
   const isEnterprise = role === "enterprise";
@@ -117,9 +118,9 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
     }
   };
 
-  // Like handler now uses the hook
-  const handleLike = async () => {
-    await toggleLike();
+  // Interest handler now uses the hook
+  const handleInterest = async () => {
+    await toggleInterest();
   };
 
   const handleSubmitSolution = async () => {
@@ -282,7 +283,7 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
 
       {/* Engagement Stats Bar */}
       <div className="flex items-center gap-4 py-3 border-t border-b border-border/50 text-sm text-muted-foreground">
-        <span>{likeCount} likes</span>
+        <span>{interestCount} interests</span>
         <span>{solutions.length > 0 ? solutions.length : solutionsCount} solutions</span>
       </div>
 
@@ -299,12 +300,16 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
         <Button
           variant="ghost"
           size="sm"
-          onClick={handleLike}
-          disabled={isLiking}
-          className={isLiked ? "text-red-500" : ""}
+          onClick={handleInterest}
+          disabled={isToggling}
+          className={isInterested ? "text-amber-500" : ""}
         >
-          <Heart className={`h-5 w-5 mr-2 ${isLiked ? "fill-current" : ""}`} />
-          Like
+          <Sparkles className={cn(
+            "h-5 w-5 mr-2 transition-all duration-200",
+            isInterested && "fill-current",
+            isAnimating && "scale-125"
+          )} />
+          Interested
         </Button>
         
         <Button
@@ -503,20 +508,21 @@ function SolutionComment({ solution, isProblemOwner, onApprove, onViewDetails }:
           )}
         </div>
         
-        <h4 className="font-semibold mb-1">{solution.title}</h4>
-        <p className="text-sm text-muted-foreground line-clamp-2">{solution.description}</p>
+        <h4 className="font-medium mb-1">{solution.title}</h4>
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {solution.description}
+        </p>
         
         <div className="flex items-center gap-2 mt-3">
           <Button variant="outline" size="sm" onClick={onViewDetails}>
-            <Eye className="h-4 w-4 mr-1" />
             View Details
           </Button>
-          
           {isProblemOwner && !isApproved && (
             <Button
               size="sm"
               onClick={handleApprove}
               disabled={isApproving}
+              className="bg-green-600 hover:bg-green-700"
             >
               {isApproving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
