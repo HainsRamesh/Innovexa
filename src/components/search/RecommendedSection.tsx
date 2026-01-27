@@ -99,9 +99,9 @@ export const RecommendedSection = ({
 
           let query = supabase
             .from("problems")
-            .select("id, title, category, view_count, interest_count")
+            .select("id, title, category, view_count")
             .neq("status", "draft")
-            .order("interest_count", { ascending: false })
+            .order("view_count", { ascending: false })
             .limit(limit);
 
           if (mappedCategories.length > 0) {
@@ -111,7 +111,7 @@ export const RecommendedSection = ({
           const { data: problems } = await query;
 
           if (problems) {
-            results.push(...problems.map(p => ({
+            results.push(...problems.map((p: any) => ({
               id: p.id,
               title: p.title,
               type: 'problem' as const,

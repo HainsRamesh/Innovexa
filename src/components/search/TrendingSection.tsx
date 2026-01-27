@@ -39,18 +39,19 @@ export const TrendingSection = ({
         if (type === 'all' || type === 'problems') {
           const { data: problems } = await supabase
             .from("problems")
-            .select("id, title, category, view_count, interest_count")
+            .select("id, title, category, view_count")
             .neq("status", "draft")
             .order("view_count", { ascending: false })
-            .order("interest_count", { ascending: false })
             .limit(type === 'all' ? Math.ceil(limit / 2) : limit);
 
           if (problems) {
-            results.push(...problems.map(p => ({
-              ...p,
+            results.push(...problems.map((p: any) => ({
+              id: p.id,
+              title: p.title,
+              category: p.category,
               type: 'problem' as const,
               view_count: p.view_count || 0,
-              interest_count: p.interest_count || 0,
+              interest_count: 0,
             })));
           }
         }

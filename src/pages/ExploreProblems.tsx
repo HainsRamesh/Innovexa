@@ -55,7 +55,7 @@ const ExploreProblems = () => {
     try {
       let query = supabase
         .from('problems')
-        .select('*, interest_count, solutions_count')
+        .select('*')
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
@@ -74,7 +74,7 @@ const ExploreProblems = () => {
 
       if (error) throw error;
 
-      const newProblems = (data as ProblemWithCounts[]) || [];
+      const newProblems = ((data || []) as unknown as ProblemWithCounts[]);
       setHasMore(newProblems.length === PROBLEMS_PER_PAGE);
 
       // Ensure accurate solution counts on first render (backend-derived)

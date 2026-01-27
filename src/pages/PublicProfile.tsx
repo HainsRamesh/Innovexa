@@ -144,10 +144,10 @@ const PublicProfile = () => {
       // Total interests on problems
       const { data: userProblems } = await supabase
         .from("problems")
-        .select("interest_count")
+        .select("id")
         .eq("owner_id", uid);
 
-      const problemInterests = userProblems?.reduce((sum, p) => sum + (p.interest_count || 0), 0) || 0;
+      const problemInterests = userProblems?.length || 0;
 
       // Total interests on innovations
       const { data: userInnovations } = await supabase

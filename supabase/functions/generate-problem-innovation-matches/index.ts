@@ -243,7 +243,7 @@ function calculateScores(
 
 async function ensureProblemEmbedding(
   problem: ProblemRow,
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: any,
 ): Promise<number[]> {
   if (Array.isArray(problem.embedding) && problem.embedding.length === EMBEDDING_DIMENSION) {
     return problem.embedding;
@@ -305,7 +305,7 @@ async function ensureProblemEmbedding(
 }
 
 async function loadProblem(
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: any,
   problemId: string,
 ): Promise<ProblemRow | null> {
   const { data, error } = await supabaseService
@@ -325,7 +325,7 @@ async function loadProblem(
 }
 
 async function fetchCandidates(
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: any,
   embedding: number[],
   category: string | null,
 ): Promise<InnovationRow[]> {
@@ -344,7 +344,7 @@ async function fetchCandidates(
 }
 
 async function hydrateCandidateDetails(
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: any,
   candidateIds: string[],
 ): Promise<Map<string, Partial<InnovationRow>>> {
   if (candidateIds.length === 0) return new Map();
@@ -366,7 +366,7 @@ async function hydrateCandidateDetails(
 }
 
 async function storeMatches(
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: any,
   orgId: string,
   problemId: string,
   matches: Array<InnovationRow & { scoring: ReturnType<typeof calculateScores> }>,
@@ -412,7 +412,7 @@ async function storeMatches(
 }
 
 async function processProblem(
-  supabaseService: ReturnType<typeof createClient>,
+  supabaseService: any,
   orgId: string,
   problemId: string,
 ) {
