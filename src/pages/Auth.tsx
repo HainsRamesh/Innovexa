@@ -114,12 +114,13 @@ const Auth = () => {
     if (!validateSignUpForm()) return;
 
     setIsLoading(true);
+    setErrors({});
+    
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth`,
           data: {
             full_name: fullName,
           },
@@ -127,13 +128,16 @@ const Auth = () => {
       });
 
       if (error) {
+        console.error("Sign up error:", error);
         const message = getAuthErrorMessage(error);
         
         // Set inline error for specific cases
-        if (message.includes("email")) {
+        if (message.toLowerCase().includes("email")) {
           setErrors({ email: message });
-        } else if (message.includes("password")) {
+        } else if (message.toLowerCase().includes("password")) {
           setErrors({ password: message });
+        } else {
+          setErrors({ email: message });
         }
         
         toast({
@@ -157,12 +161,19 @@ const Auth = () => {
 
       // Check if email confirmation is required
       if (data.user && !data.session) {
-        // Email confirmation required
+        // Email confirmation required - request OTP to be sent
         setPendingEmail(email);
+        
+        // Resend as OTP type to ensure user gets the code
+        await supabase.auth.resend({
+          type: "signup",
+          email,
+        });
+        
         setView("verify");
         toast({
           title: "Check your email",
-          description: "We've sent you a verification code to confirm your email address.",
+          description: "We've sent you a 6-digit verification code.",
         });
       } else if (data.session) {
         // Auto-confirmed (dev mode or auto-confirm enabled)
@@ -172,9 +183,12 @@ const Auth = () => {
         });
       }
     } catch (error: any) {
+      console.error("Unexpected sign up error:", error);
+      const message = getAuthErrorMessage(error);
+      setErrors({ email: message });
       toast({
         title: "Something went wrong",
-        description: getAuthErrorMessage(error),
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -186,9 +200,16 @@ const Auth = () => {
     if (!validateSignInForm()) return;
 
     setIsLoading(true);
+    setErrors({});
+    
     try {
-      const { error } = await signIn(email, password);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
       if (error) {
+        console.error("Sign in error:", error);
         const message = getAuthErrorMessage(error);
         
         // Check if email not verified
@@ -200,16 +221,14 @@ const Auth = () => {
             description: "Please verify your email to continue.",
             variant: "destructive",
           });
-          // Resend verification code
+          // Resend verification OTP
           await supabase.auth.resend({ type: "signup", email });
         } else {
-          // Set inline error
-          if (message.includes("email") || message.includes("password") || message.includes("credentials")) {
-            setErrors({ 
-              email: " ", // Empty space to trigger error state
-              password: message 
-            });
-          }
+          // Set inline error for credentials issues
+          setErrors({ 
+            email: " ", // Trigger error state on email field
+            password: message 
+          });
           
           toast({
             title: "Sign in failed",
@@ -217,11 +236,23 @@ const Auth = () => {
             variant: "destructive",
           });
         }
+        return;
+      }
+
+      // Success - the auth state change will handle redirect
+      if (data.session) {
+        toast({
+          title: "Welcome back!",
+          description: "You've signed in successfully.",
+        });
       }
     } catch (error: any) {
+      console.error("Unexpected sign in error:", error);
+      const message = getAuthErrorMessage(error);
+      setErrors({ password: message });
       toast({
         title: "Something went wrong",
-        description: getAuthErrorMessage(error),
+        description: message,
         variant: "destructive",
       });
     } finally {
