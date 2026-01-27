@@ -91,6 +91,9 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",
         email,
+        options: {
+          emailRedirectTo: undefined, // Force OTP instead of link
+        },
       });
 
       if (resendError) {
@@ -103,7 +106,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
       } else {
         toast({
           title: "Code sent!",
-          description: "Check your email for the new verification code.",
+          description: "Check your email for the new 6-digit verification code.",
         });
         setResendCooldown(60);
         setOtp("");

@@ -1,30 +1,38 @@
 // Map Supabase auth errors to user-friendly messages
 export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   // Sign in errors
-  "Invalid login credentials": "The email or password you entered is incorrect. Please try again.",
+  "Invalid login credentials": "The email or password you entered is incorrect.",
+  "invalid_credentials": "The email or password you entered is incorrect.",
   "Email not confirmed": "Please verify your email address before signing in.",
   "Invalid email or password": "The email or password you entered is incorrect.",
+  "invalid login credentials": "The email or password you entered is incorrect.",
   
   // Sign up errors
   "User already registered": "An account with this email already exists. Please sign in instead.",
+  "user already registered": "An account with this email already exists. Please sign in instead.",
   "Password should be at least 6 characters": "Password must be at least 8 characters long.",
   "Signup requires a valid password": "Please enter a valid password.",
   "Email rate limit exceeded": "Too many attempts. Please wait a few minutes and try again.",
+  "email_address_invalid": "Please enter a valid email address.",
   
   // OTP errors
   "Token has expired or is invalid": "This verification code has expired. Please request a new one.",
   "Invalid OTP": "The code you entered is incorrect. Please try again.",
+  "otp_expired": "This verification code has expired. Please request a new one.",
   "Email link is invalid or has expired": "This verification link has expired. Please request a new one.",
   
   // Password reset errors
   "New password should be different from the old password": "Please choose a different password from your current one.",
+  "same_password": "Please choose a different password from your current one.",
   
   // Rate limiting
   "For security purposes, you can only request this once every 60 seconds": "Please wait a moment before requesting another code.",
+  "over_email_send_rate_limit": "Too many attempts. Please wait a moment and try again.",
   
   // Network errors
   "Failed to fetch": "Unable to connect. Please check your internet connection.",
   "NetworkError": "Network error. Please check your connection and try again.",
+  "fetch failed": "Unable to connect. Please check your internet connection.",
 };
 
 export function getAuthErrorMessage(error: any): string {
