@@ -1,9 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "./OTPInput";
-import { Loader2, Mail, CheckCircle, RefreshCw } from "lucide-react";
+import { AuthCard } from "./AuthCard";
+import { Loader2, Mail, CheckCircle, RefreshCw, ArrowLeft, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { getAuthErrorMessage } from "@/lib/authErrors";
+import { cn } from "@/lib/utils";
 
 interface EmailVerificationProps {
   email: string;
@@ -20,74 +23,82 @@ export const EmailVerification = ({
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
+  const [error, setError] = useState("");
+  const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (resendCooldown > 0) {
-      timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
-    } else {
-      setCanResend(true);
+      timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
     }
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
-  const handleVerify = async () => {
+  const handleVerify = useCallback(async () => {
     if (otp.length !== 6) {
-      toast({
-        title: "Invalid code",
-        description: "Please enter all 6 digits",
-        variant: "destructive",
-      });
+      setError("Please enter all 6 digits");
       return;
     }
 
     setIsVerifying(true);
+    setError("");
+    
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { error: verifyError } = await supabase.auth.verifyOtp({
         email,
         token: otp,
         type: "signup",
       });
 
-      if (error) {
+      if (verifyError) {
+        const message = getAuthErrorMessage(verifyError);
+        setError(message);
         toast({
           title: "Verification failed",
-          description: error.message || "Invalid or expired code. Please try again.",
+          description: message,
           variant: "destructive",
         });
         setOtp("");
       } else {
+        setIsSuccess(true);
         toast({
-          title: "Email verified!",
-          description: "Your account is now active.",
+          title: "Email verified! ✓",
+          description: "Your account is now active. Redirecting...",
         });
-        onVerified();
+        // Brief delay to show success state
+        setTimeout(onVerified, 1500);
       }
-    } catch (error: any) {
+    } catch (err: any) {
+      const message = getAuthErrorMessage(err);
+      setError(message);
       toast({
         title: "Error",
-        description: "Something went wrong. Please try again.",
+        description: message,
         variant: "destructive",
       });
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [otp, email, onVerified, toast]);
 
-  const handleResend = async () => {
+  const handleResend = useCallback(async () => {
+    if (resendCooldown > 0) return;
+    
     setIsResending(true);
+    setError("");
+    
     try {
-      const { error } = await supabase.auth.resend({
+      const { error: resendError } = await supabase.auth.resend({
         type: "signup",
         email,
       });
 
-      if (error) {
+      if (resendError) {
+        const message = getAuthErrorMessage(resendError);
         toast({
           title: "Failed to resend",
-          description: error.message,
+          description: message,
           variant: "destructive",
         });
       } else {
@@ -96,46 +107,88 @@ export const EmailVerification = ({
           description: "Check your email for the new verification code.",
         });
         setResendCooldown(60);
-        setCanResend(false);
         setOtp("");
       }
-    } catch (error) {
+    } catch (err: any) {
       toast({
         title: "Error",
-        description: "Failed to resend code. Please try again.",
+        description: getAuthErrorMessage(err),
         variant: "destructive",
       });
     } finally {
       setIsResending(false);
     }
-  };
+  }, [email, resendCooldown, toast]);
+
+  // Auto-submit when OTP is complete
+  useEffect(() => {
+    if (otp.length === 6 && !isVerifying && !isSuccess) {
+      handleVerify();
+    }
+  }, [otp, isVerifying, isSuccess, handleVerify]);
+
+  if (isSuccess) {
+    return (
+      <div className="space-y-6 text-center py-4 animate-in fade-in-0 duration-300">
+        <div className="flex justify-center">
+          <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center animate-in zoom-in-50 duration-300">
+            <CheckCircle className="h-8 w-8 text-green-500" />
+          </div>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Email Verified!</h2>
+          <p className="text-muted-foreground">
+            Your account is now active. Redirecting you to sign in...
+          </p>
+        </div>
+        <div className="flex justify-center">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 text-center">
+    <div className="space-y-6 text-center py-4">
       <div className="flex justify-center">
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
           <Mail className="h-8 w-8 text-primary" />
         </div>
       </div>
 
-      <div>
-        <h2 className="text-2xl font-bold mb-2">Verify your email</h2>
+      <div className="space-y-1">
+        <h2 className="text-2xl font-bold">Verify your email</h2>
         <p className="text-muted-foreground">
           We've sent a 6-digit code to
         </p>
-        <p className="font-medium text-foreground">{email}</p>
+        <p className="font-medium text-foreground break-all">{email}</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 pt-2">
         <OTPInput
           value={otp}
-          onChange={setOtp}
+          onChange={(val) => {
+            setOtp(val);
+            setError("");
+          }}
           disabled={isVerifying}
+          error={!!error}
         />
+
+        {error && (
+          <div 
+            className="flex items-center justify-center gap-2 text-sm text-destructive animate-in fade-in-0 slide-in-from-top-1"
+            role="alert"
+          >
+            <AlertCircle className="h-4 w-4" />
+            <span>{error}</span>
+          </div>
+        )}
 
         <Button
           onClick={handleVerify}
           disabled={otp.length !== 6 || isVerifying}
+          variant="hero"
           className="w-full"
           size="lg"
         >
@@ -153,26 +206,31 @@ export const EmailVerification = ({
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-3 pt-2">
         <p className="text-sm text-muted-foreground">
           Didn't receive the code?
         </p>
         <Button
           variant="outline"
           onClick={handleResend}
-          disabled={!canResend || isResending}
+          disabled={resendCooldown > 0 || isResending}
           className="gap-2"
         >
           {isResending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={cn("h-4 w-4", resendCooldown > 0 && "opacity-50")} />
           )}
-          {canResend ? "Resend Code" : `Resend in ${resendCooldown}s`}
+          {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend Code"}
         </Button>
       </div>
 
-      <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
+      <Button 
+        variant="ghost" 
+        onClick={onBack} 
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" />
         Use a different email
       </Button>
     </div>
