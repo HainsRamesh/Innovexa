@@ -255,7 +255,7 @@ const Auth = () => {
         console.log("[Auth] Login successful for user:", data.user.id);
         
         // Fetch role directly to avoid waiting for context update
-        const { data: roleData, error: roleError } = await supabase
+        let { data: roleData, error: roleError } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", data.user.id)
@@ -265,15 +265,35 @@ const Auth = () => {
           console.error("[Auth] Error fetching role:", roleError);
         }
 
-        const userRole = roleData?.role as AppRole | null;
-        console.log("[Auth] User role:", userRole);
+        let userRole = roleData?.role as AppRole | null;
+        console.log("[Auth] User role from DB:", userRole);
+        
+        // If no role found, check user metadata for pending_role and create it
+        if (!userRole) {
+          const pendingRole = data.user.user_metadata?.pending_role as AppRole | undefined;
+          console.log("[Auth] No role in DB, checking metadata pending_role:", pendingRole);
+          
+          if (pendingRole) {
+            // Create the missing role
+            const { error: insertError } = await supabase
+              .from("user_roles")
+              .insert({ user_id: data.user.id, role: pendingRole });
+            
+            if (insertError) {
+              console.error("[Auth] Failed to create role:", insertError);
+            } else {
+              userRole = pendingRole;
+              console.log("[Auth] Created role from metadata:", userRole);
+            }
+          }
+        }
         
         toast({
           title: "Welcome back!",
           description: "You've signed in successfully.",
         });
 
-        // Determine redirect path
+        // Determine redirect path (use role or default to /innovations)
         const redirectPath = getRedirectPath(userRole);
         console.log("[Auth] Redirecting to:", redirectPath);
         
