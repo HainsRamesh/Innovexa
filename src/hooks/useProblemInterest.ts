@@ -23,18 +23,22 @@ export const useProblemInterest = (problemId: string, initialInterestCount: numb
 
   useEffect(() => {
     const checkIfInterested = async () => {
+      // Use user ID if logged in, otherwise fall back to session ID
+      const identifier = user?.id || sessionId;
+      const identifierColumn = user?.id ? 'user_id' : 'session_id';
+      
       const { data } = await supabase
         .from('problem_interests')
         .select('id')
         .eq('problem_id', problemId)
-        .eq('session_id', sessionId)
+        .eq(identifierColumn, identifier)
         .maybeSingle();
 
       setIsInterested(!!data);
     };
 
     checkIfInterested();
-  }, [problemId, sessionId]);
+  }, [problemId, sessionId, user?.id]);
 
   useEffect(() => {
     setInterestCount(initialInterestCount);

@@ -153,9 +153,7 @@ const AppRoutes = () => {
       <Route path="/" element={
         <PublicOnlyRoute><Index /></PublicOnlyRoute>
       } />
-      <Route path="/about" element={
-        <PublicOnlyRoute><About /></PublicOnlyRoute>
-      } />
+      <Route path="/about" element={<About />} />
       <Route path="/auth" element={<Auth />} />
       
       {/* Public informational pages */}

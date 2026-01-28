@@ -101,24 +101,29 @@ export const Navbar = () => {
   const isActiveRoute = (path: string) => {
     return location.pathname === path || location.pathname.startsWith(path + "/");
   };
-  const logoSrc = "/zynovexa-logo.png";
+  // Memoize logo to prevent re-renders
+  const logoElement = useMemo(() => (
+    <Link to={getLogoRedirect()} className="flex items-center group">
+      <img
+        src="/zynovexa-logo.png"
+        alt="Zynovexa"
+        onError={(e) => {
+          e.currentTarget.src = "/favicon.ico";
+        }}
+        className="h-12 w-12 object-contain transition-transform group-hover:scale-105"
+        loading="eager"
+        decoding="async"
+      />
+      <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
+    </Link>
+  ), [user, role]);
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
-          {/* Logo */}
-          <Link to={getLogoRedirect()} className="flex items-center group">
-            <img
-              src={logoSrc}
-              alt="Zynovexa"
-              onError={(e) => {
-                e.currentTarget.src = "/favicon.ico";
-              }}
-              className="h-12 w-12 object-contain transition-transform group-hover:scale-105"
-            />
-            <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
-          </Link>
+          {/* Logo - memoized to prevent reload flicker */}
+          {logoElement}
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-6">

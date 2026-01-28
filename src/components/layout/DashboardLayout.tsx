@@ -68,10 +68,10 @@ const navItems: NavItem[] = [
     roles: ["enterprise", "admin"],
   },
   {
-    label: "Explore Problems",
+    label: "Browse Problems",
     href: "/dashboard/browse",
     icon: <Rocket className="h-4 w-4" />,
-    roles: ["innovator", "investor"],
+    roles: ["innovator"],
   },
   {
     label: "Investments",

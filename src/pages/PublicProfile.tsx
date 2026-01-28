@@ -500,7 +500,7 @@ const PublicProfile = () => {
                       description={innovation.tagline}
                       category={innovation.category}
                       date={innovation.created_at}
-                      link={`/innovations`}
+                      link={`/dashboard/innovations/${innovation.id}`}
                       imageUrl={innovation.cover_image_url}
                       stats={
                         <>
