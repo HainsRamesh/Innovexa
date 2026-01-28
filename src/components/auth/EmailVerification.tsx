@@ -6,6 +6,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthErrorMessage } from "@/lib/authErrors";
 import { cn } from "@/lib/utils";
+import {
+  DEV_AUTH_BYPASS_ENABLED,
+  DEV_AUTH_BYPASS_TEST_EMAIL,
+  DEV_AUTH_BYPASS_TEST_OTP,
+  isDevBypassVerified,
+  setDevBypassVerified,
+} from "@/lib/devAuthBypass";
 
 interface EmailVerificationProps {
   email: string;
@@ -13,10 +20,8 @@ interface EmailVerificationProps {
   onBack: () => void;
 }
 
-// DEV bypass configuration
-const DEV_AUTH_BYPASS = import.meta.env.VITE_DEV_AUTH_BYPASS === "true";
-const DEV_TEST_EMAIL = "test@zynovexa.com";
-const DEV_TEST_OTP = "88888888";
+// DEV bypass configuration (NEVER active in production builds)
+const DEV_AUTH_BYPASS = DEV_AUTH_BYPASS_ENABLED;
 
 export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationProps>(({
   email,
@@ -32,12 +37,12 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
   const { toast } = useToast();
 
   // Display email (use test email in dev bypass mode)
-  const displayEmail = DEV_AUTH_BYPASS ? DEV_TEST_EMAIL : email;
+  const displayEmail = DEV_AUTH_BYPASS ? DEV_AUTH_BYPASS_TEST_EMAIL : email;
 
   // Auto-fill OTP in DEV mode
   useEffect(() => {
     if (DEV_AUTH_BYPASS && otp === "") {
-      setOtp(DEV_TEST_OTP);
+      setOtp(DEV_AUTH_BYPASS_TEST_OTP);
     }
   }, [otp]);
 
@@ -60,8 +65,12 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     
     try {
       // DEV BYPASS: Skip real verification
-      if (DEV_AUTH_BYPASS && otp === DEV_TEST_OTP) {
-        console.log("[EmailVerification] DEV BYPASS: Skipping real OTP verification");
+      if (DEV_AUTH_BYPASS && otp === DEV_AUTH_BYPASS_TEST_OTP) {
+        setDevBypassVerified(true);
+        console.log("[EmailVerification][DEV] BYPASS verify", {
+          displayEmail,
+          dev_email_verified: isDevBypassVerified(),
+        });
         setIsSuccess(true);
         toast({
           title: "DEV MODE: Email verified! ✓",
@@ -129,7 +138,9 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     
     // DEV BYPASS: Just reset the OTP
     if (DEV_AUTH_BYPASS) {
-      setOtp(DEV_TEST_OTP);
+      setError("");
+      // Clear first so the autofill effect re-runs (also clears previous UI errors)
+      setOtp("");
       toast({
         title: "DEV MODE: Code reset",
         description: "OTP auto-filled with test code.",
@@ -189,8 +200,8 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     return (
       <div ref={ref} className="space-y-6 text-center py-6 animate-in fade-in-0 duration-300">
         <div className="flex justify-center">
-          <div className="h-16 w-16 rounded-full bg-green-500/10 flex items-center justify-center animate-in zoom-in-50 duration-300">
-            <CheckCircle className="h-8 w-8 text-green-500" />
+          <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center animate-in zoom-in-50 duration-300">
+            <CheckCircle className="h-8 w-8 text-primary" />
           </div>
         </div>
         <div>
@@ -210,12 +221,12 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     <div ref={ref} className="space-y-6 text-center py-6">
       {/* DEV MODE BANNER */}
       {DEV_AUTH_BYPASS && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mx-2 animate-pulse">
-          <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mx-2">
+          <div className="flex items-center justify-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
             <span className="font-semibold text-sm">DEV MODE: OTP bypass enabled</span>
           </div>
-          <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Auto-filled with test code. Click Verify to continue.
           </p>
         </div>
