@@ -125,22 +125,23 @@ const Auth = () => {
     setErrors({});
     
     try {
+      // Create user with password - no email redirect to force OTP verification
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
+          emailRedirectTo: undefined, // Disable magic link, force OTP
           data: {
             full_name: fullName,
-            pending_role: selectedRole, // Store role in metadata for later
+            pending_role: selectedRole,
           },
         },
       });
 
       if (error) {
-        console.error("Sign up error:", error);
+        console.error("[Auth] Sign up error:", error);
         const message = getAuthErrorMessage(error);
         
-        // Set inline error for specific cases
         if (message.toLowerCase().includes("email")) {
           setErrors({ email: message });
         } else if (message.toLowerCase().includes("password")) {
@@ -157,44 +158,44 @@ const Auth = () => {
         return;
       }
 
-      // Store signup data for role creation after verification
+      // Store signup data for role creation after OTP verification
       if (data.user) {
+        console.log("[Auth] User created, storing pending signup data:", data.user.id);
         setPendingSignupData({
           userId: data.user.id,
           role: selectedRole,
         });
       }
 
-      // Check if email confirmation is required
+      // Email confirmation required - show OTP verification UI
       if (data.user && !data.session) {
-        // Email confirmation required - request OTP to be sent
+        console.log("[Auth] Email confirmation required, showing OTP verification");
         setPendingEmail(email);
-        
-        // Resend as OTP type to ensure user gets the code
-        await supabase.auth.resend({
-          type: "signup",
-          email,
-        });
-        
         setView("verify");
         toast({
           title: "Check your email",
           description: "We've sent you a 6-digit verification code.",
         });
       } else if (data.session) {
-        // Auto-confirmed - create role immediately
+        // Auto-confirmed (shouldn't happen with our config, but handle it)
+        console.log("[Auth] Auto-confirmed signup, creating role");
         if (data.user) {
           await supabase
             .from("user_roles")
             .insert({ user_id: data.user.id, role: selectedRole });
         }
+        
         toast({
           title: "Welcome to ZYNOVEXA! 🎉",
           description: "Your account has been created successfully.",
         });
+        
+        const redirectPath = getRedirectPath(selectedRole);
+        setIsNavigating(true);
+        navigate(redirectPath);
       }
     } catch (error: any) {
-      console.error("Unexpected sign up error:", error);
+      console.error("[Auth] Unexpected sign up error:", error);
       const message = getAuthErrorMessage(error);
       setErrors({ email: message });
       toast({

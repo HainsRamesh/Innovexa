@@ -44,14 +44,28 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     setError("");
     
     try {
-      const { error: verifyError } = await supabase.auth.verifyOtp({
+      console.log("[EmailVerification] Verifying OTP for:", email);
+      
+      // Try signup type first, then email type as fallback
+      let result = await supabase.auth.verifyOtp({
         email,
         token: otp,
         type: "signup",
       });
 
-      if (verifyError) {
-        const message = getAuthErrorMessage(verifyError);
+      // If signup type fails, try email type (for resent codes)
+      if (result.error && result.error.message?.includes("invalid")) {
+        console.log("[EmailVerification] Trying email type verification");
+        result = await supabase.auth.verifyOtp({
+          email,
+          token: otp,
+          type: "email",
+        });
+      }
+
+      if (result.error) {
+        const message = getAuthErrorMessage(result.error);
+        console.error("[EmailVerification] Verification failed:", result.error);
         setError(message);
         toast({
           title: "Verification failed",
@@ -60,15 +74,17 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         });
         setOtp("");
       } else {
+        console.log("[EmailVerification] OTP verified successfully, session:", !!result.data.session);
         setIsSuccess(true);
         toast({
           title: "Email verified! ✓",
-          description: "Your account is now active. Redirecting to sign in...",
+          description: "Your account is now active. Redirecting...",
         });
-        // Brief delay to show success state
-        setTimeout(onVerified, 1500);
+        // Brief delay to show success state, then call onVerified
+        setTimeout(onVerified, 1000);
       }
     } catch (err: any) {
+      console.error("[EmailVerification] Unexpected error:", err);
       const message = getAuthErrorMessage(err);
       setError(message);
       toast({
@@ -88,15 +104,16 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     setError("");
     
     try {
+      console.log("[EmailVerification] Resending OTP to:", email);
+      
+      // Use resend with signup type to get OTP code
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: {
-          emailRedirectTo: undefined, // Force OTP instead of link
-        },
       });
 
       if (resendError) {
+        console.error("[EmailVerification] Resend failed:", resendError);
         const message = getAuthErrorMessage(resendError);
         toast({
           title: "Failed to resend",
@@ -104,6 +121,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
           variant: "destructive",
         });
       } else {
+        console.log("[EmailVerification] OTP resent successfully");
         toast({
           title: "Code sent!",
           description: "Check your email for the new 6-digit verification code.",
@@ -112,6 +130,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         setOtp("");
       }
     } catch (err: any) {
+      console.error("[EmailVerification] Resend error:", err);
       toast({
         title: "Error",
         description: getAuthErrorMessage(err),
