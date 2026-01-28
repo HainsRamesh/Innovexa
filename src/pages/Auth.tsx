@@ -14,7 +14,6 @@ import { EmailVerification, ForgotPassword } from "@/components/auth";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { getAuthErrorMessage, validateEmail, validatePassword, validateName } from "@/lib/authErrors";
-import { DEV_AUTH_BYPASS_ENABLED, setDevBypassVerified } from "@/lib/devAuthBypass";
 
 type AuthView = "signIn" | "signUp" | "verify" | "forgotPassword";
 
@@ -215,34 +214,37 @@ const Auth = () => {
     setIsLoading(true);
     setErrors({});
     
+    console.log("[Auth] Login attempt for email:", email);
+    
     try {
+      // STRICT: Only use signInWithPassword - no fallbacks
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
+      console.log("[Auth] Supabase signInWithPassword response:", {
+        hasSession: !!data?.session,
+        hasUser: !!data?.user,
+        userId: data?.user?.id ?? null,
+        error: error?.message ?? null,
+      });
+      
       if (error) {
-        console.error("Sign in error:", error);
+        console.error("[Auth] Sign in error:", error.message);
         const message = getAuthErrorMessage(error);
         
         // Check if email not verified
         if (error.message?.toLowerCase().includes("email not confirmed")) {
           setPendingEmail(email);
           setView("verify");
-
-          if (DEV_AUTH_BYPASS_ENABLED) {
-            console.log("[Auth][DEV] Email not confirmed; bypass enabled → showing verification screen", {
-              email,
-            });
-          } else {
-            toast({
-              title: "Email not verified",
-              description: "Please verify your email to continue.",
-              variant: "destructive",
-            });
-            // Resend verification OTP
-            await supabase.auth.resend({ type: "signup", email });
-          }
+          toast({
+            title: "Email not verified",
+            description: "Please verify your email to continue.",
+            variant: "destructive",
+          });
+          // Resend verification OTP
+          await supabase.auth.resend({ type: "signup", email });
         } else {
           // Set inline error for credentials issues
           setErrors({ 
@@ -259,58 +261,92 @@ const Auth = () => {
         return;
       }
 
-      // Success - fetch the role and redirect immediately
-      if (data.session && data.user) {
-        console.log("[Auth] Login successful for user:", data.user.id);
-        
-        // Fetch role directly to avoid waiting for context update
-        let { data: roleData, error: roleError } = await supabase
-          .from("user_roles")
-          .select("role")
-          .eq("user_id", data.user.id)
-          .maybeSingle();
+      // CRITICAL: Block if no user returned
+      if (!data.user || !data.session) {
+        console.error("[Auth] BLOCKED: Supabase returned null user or session");
+        setErrors({ password: "Authentication failed. Please try again." });
+        toast({
+          title: "Authentication failed",
+          description: "Unable to verify your credentials.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-        if (roleError) {
-          console.error("[Auth] Error fetching role:", roleError);
-        }
+      // Verify the authenticated user using getUser() as single source of truth
+      const { data: verifiedUser, error: verifyError } = await supabase.auth.getUser();
+      
+      console.log("[Auth] Verified user from getUser():", {
+        userId: verifiedUser?.user?.id ?? null,
+        email: verifiedUser?.user?.email ?? null,
+        emailConfirmedAt: verifiedUser?.user?.email_confirmed_at ?? null,
+        error: verifyError?.message ?? null,
+      });
+      
+      if (verifyError || !verifiedUser.user) {
+        console.error("[Auth] BLOCKED: getUser() verification failed");
+        await supabase.auth.signOut();
+        setErrors({ password: "Session verification failed. Please try again." });
+        return;
+      }
 
-        let userRole = roleData?.role as AppRole | null;
-        console.log("[Auth] User role from DB:", userRole);
+      console.log("[Auth] Login successful for user:", verifiedUser.user.id);
+      
+      // Fetch role directly to avoid waiting for context update
+      let { data: roleData, error: roleError } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", verifiedUser.user.id)
+        .maybeSingle();
+
+      if (roleError) {
+        console.error("[Auth] Error fetching role:", roleError);
+      }
+
+      let userRole = roleData?.role as AppRole | null;
+      console.log("[Auth] User role from DB:", userRole);
+      
+      // If no role found, check user metadata for pending_role and create it
+      if (!userRole) {
+        const pendingRole = verifiedUser.user.user_metadata?.pending_role as AppRole | undefined;
+        console.log("[Auth] No role in DB, checking metadata pending_role:", pendingRole);
         
-        // If no role found, check user metadata for pending_role and create it
-        if (!userRole) {
-          const pendingRole = data.user.user_metadata?.pending_role as AppRole | undefined;
-          console.log("[Auth] No role in DB, checking metadata pending_role:", pendingRole);
+        if (pendingRole) {
+          // Create the missing role
+          const { error: insertError } = await supabase
+            .from("user_roles")
+            .insert({ user_id: verifiedUser.user.id, role: pendingRole });
           
-          if (pendingRole) {
-            // Create the missing role
-            const { error: insertError } = await supabase
-              .from("user_roles")
-              .insert({ user_id: data.user.id, role: pendingRole });
-            
-            if (insertError) {
-              console.error("[Auth] Failed to create role:", insertError);
-            } else {
-              userRole = pendingRole;
-              console.log("[Auth] Created role from metadata:", userRole);
-            }
+          if (insertError) {
+            console.error("[Auth] Failed to create role:", insertError);
+          } else {
+            userRole = pendingRole;
+            console.log("[Auth] Created role from metadata:", userRole);
           }
         }
-        
-        toast({
-          title: "Welcome back!",
-          description: "You've signed in successfully.",
-        });
-
-        // Determine redirect path (use role or default to /innovations)
-        const redirectPath = getRedirectPath(userRole);
-        console.log("[Auth] Redirecting to:", redirectPath);
-        
-        setIsNavigating(true);
-        navigate(redirectPath);
       }
+      
+      // Log final session state
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log("[Auth] Final session state:", {
+        hasSession: !!sessionData.session,
+        userId: sessionData.session?.user?.id ?? null,
+        role: userRole,
+      });
+      
+      toast({
+        title: "Welcome back!",
+        description: "You've signed in successfully.",
+      });
+
+      // Determine redirect path (use role or default to /innovations)
+      const redirectPath = getRedirectPath(userRole);
+      console.log("[Auth] Redirecting to:", redirectPath);
+      
+      setIsNavigating(true);
+      navigate(redirectPath);
     } catch (error: any) {
-      console.error("Unexpected sign in error:", error);
+      console.error("[Auth] Unexpected sign in error:", error);
       const message = getAuthErrorMessage(error);
       setErrors({ password: message });
       toast({
@@ -333,31 +369,29 @@ const Auth = () => {
   };
 
   const handleVerified = async () => {
-    // DEV BYPASS: allow continuing without a real backend verification/session.
-    // This is guarded by import.meta.env.DEV in DEV_AUTH_BYPASS_ENABLED.
-    if (DEV_AUTH_BYPASS_ENABLED) {
-      setDevBypassVerified(true);
-
-      const { data: sessionData } = await supabase.auth.getSession();
-      const { data: userData } = await supabase.auth.getUser();
-
-      console.log("[Auth][DEV] OTP bypass verified", {
-        user_id: userData.user?.id ?? null,
-        email_confirmed_at: (userData.user as any)?.email_confirmed_at ?? null,
-        has_session: !!sessionData.session,
-        dev_email_verified: true,
-        redirect: pendingSignupData?.role ?? selectedRole,
-      });
-
+    console.log("[Auth] Email verification completed, checking session...");
+    
+    // Verify we have a real authenticated session
+    const { data: userData, error: userError } = await supabase.auth.getUser();
+    
+    console.log("[Auth] Post-verification getUser():", {
+      userId: userData?.user?.id ?? null,
+      email: userData?.user?.email ?? null,
+      emailConfirmedAt: userData?.user?.email_confirmed_at ?? null,
+      error: userError?.message ?? null,
+    });
+    
+    // CRITICAL: Block if no verified user
+    if (userError || !userData.user) {
+      console.error("[Auth] BLOCKED: No verified user after OTP verification");
       toast({
-        title: "DEV MODE: Verification bypassed",
-        description: "Skipping backend verification. Redirecting...",
+        title: "Verification failed",
+        description: "Please try signing in again.",
+        variant: "destructive",
       });
-
-      const roleForRedirect = pendingSignupData?.role ?? selectedRole;
-      const redirectPath = getRedirectPath(roleForRedirect);
-      setIsNavigating(true);
-      navigate(redirectPath);
+      setView("signIn");
+      setPendingEmail("");
+      setPendingSignupData(null);
       return;
     }
 
@@ -372,12 +406,19 @@ const Auth = () => {
           });
 
         if (roleError) {
-          console.error("Failed to set role after verification:", roleError);
+          console.error("[Auth] Failed to set role after verification:", roleError);
+        } else {
+          console.log("[Auth] Role created successfully:", pendingSignupData.role);
         }
 
         // After OTP verification, the user is automatically signed in by Supabase
         // Check if we have a session and redirect based on the role
         const { data: sessionData } = await supabase.auth.getSession();
+        
+        console.log("[Auth] Post-verification session:", {
+          hasSession: !!sessionData.session,
+          userId: sessionData.session?.user?.id ?? null,
+        });
         
         if (sessionData.session) {
           toast({
@@ -387,16 +428,18 @@ const Auth = () => {
           
           // Redirect based on the role we just created
           const redirectPath = getRedirectPath(pendingSignupData.role);
+          console.log("[Auth] Redirecting verified user to:", redirectPath);
           setIsNavigating(true);
           navigate(redirectPath);
           return;
         }
       } catch (err) {
-        console.error("Error creating role:", err);
+        console.error("[Auth] Error creating role:", err);
       }
     }
 
     // Fallback: If no session (shouldn't happen), ask user to sign in
+    console.log("[Auth] No session found, redirecting to sign in");
     toast({
       title: "Email verified! ✓",
       description: "Please sign in to continue.",
