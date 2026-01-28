@@ -606,8 +606,14 @@ export const ChatThread = ({
           // Skip if deleted for current user
           if (newMessage.deleted_for_user_ids?.includes(user.id)) return;
           
-          // Check if already exists
-          if (messages.some(m => m.id === newMessage.id)) return;
+          // Check if already exists - use functional update to access latest state
+          setMessages(prev => {
+            if (prev.some(m => m.id === newMessage.id)) {
+              return prev; // Already exists, don't add
+            }
+            // Will be added after we fetch attachments
+            return prev;
+          });
 
           // Fetch attachments for new message
           const { data: attachmentsData } = await supabase
@@ -630,7 +636,14 @@ export const ChatThread = ({
             );
           }
 
-          setMessages(prev => [...prev, { ...newMessage, attachments }]);
+          // Use functional update to avoid duplicates
+          setMessages(prev => {
+            // Final check before adding
+            if (prev.some(m => m.id === newMessage.id)) {
+              return prev;
+            }
+            return [...prev, { ...newMessage, attachments }];
+          });
 
           if (newMessage.sender_id !== user.id) {
             markMessagesAsRead(conversationId);
@@ -667,7 +680,7 @@ export const ChatThread = ({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, user?.id, markMessagesAsRead, messages]);
+  }, [conversationId, user?.id, markMessagesAsRead]);
 
   const fetchOtherUserProfile = async () => {
     const { data } = await supabase

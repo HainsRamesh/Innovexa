@@ -85,13 +85,13 @@ export const ProblemCard = ({
                 )}
               </Button>
             )}
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 -mt-1 -mr-2">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="z-50" sideOffset={5}>
                 <DropdownMenuItem asChild>
                   <Link to={`${basePath}/${problem.id}`}>
                     <Eye className="h-4 w-4 mr-2" />

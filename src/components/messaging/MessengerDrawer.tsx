@@ -120,10 +120,10 @@ export const MessengerDrawer = () => {
         </button>
       )}
 
-      {/* Messenger Drawer */}
+      {/* Messenger Drawer - High z-index to appear above all content */}
       <div
         className={cn(
-          "fixed bottom-0 right-0 z-50",
+          "fixed bottom-0 right-0 z-[100]",
           "w-full sm:w-[380px] h-[500px] sm:h-[550px]",
           "sm:bottom-6 sm:right-6",
           "bg-card border border-border",
@@ -197,7 +197,7 @@ export const MessengerDrawer = () => {
       {/* Backdrop - for both mobile and closing on overlay click */}
       {isDrawerOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none"
+          className="fixed inset-0 z-[90] bg-background/80 backdrop-blur-sm sm:bg-transparent sm:backdrop-blur-none"
           onClick={closeDrawer}
         />
       )}

@@ -21,6 +21,8 @@ export const useInnovationInterest = (innovationId: string, initialInterestCount
 
   useEffect(() => {
     const checkIfInterested = async () => {
+      // Check by session_id (which is consistent per browser)
+      // This means interest state is per-browser, not per-user
       const { data } = await supabase
         .from('innovation_interests')
         .select('id')

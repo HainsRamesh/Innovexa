@@ -26,21 +26,33 @@ export const NotificationItem = memo(({
   const timeAgo = formatRelativeTime(notification.created_at);
 
   const getNavigationPath = (): string | null => {
-    const { related_type, related_id, data } = notification;
+    const { related_type, related_id, data, type } = notification;
     
+    // Handle solution-related notifications
     if (related_type === 'solution' && related_id) {
       const problemId = (data as { problem_id?: string })?.problem_id;
       if (problemId) {
-        return `/dashboard/problems/${problemId}/solutions/${related_id}`;
+        return `/dashboard/problems/${problemId}`;
       }
+      return `/dashboard/solutions/${related_id}`;
     }
     
+    // Handle problem-related notifications  
     if (related_type === 'problem' && related_id) {
-      return `/dashboard/problems/${related_id}`;
+      return `/explore/${related_id}`;
     }
     
+    // Handle innovation-related notifications
     if (related_type === 'innovation' && related_id) {
-      return `/innovations/${related_id}`;
+      return `/dashboard/innovations/${related_id}`;
+    }
+
+    // Handle specific notification types that may not have related_type set
+    if (type === 'investor_interest' && related_id) {
+      const innovationId = (data as { innovation_id?: string })?.innovation_id;
+      const problemId = (data as { problem_id?: string })?.problem_id;
+      if (innovationId) return `/dashboard/innovations/${innovationId}`;
+      if (problemId) return `/explore/${problemId}`;
     }
 
     return null;
