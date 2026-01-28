@@ -1343,7 +1343,63 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      investments_summary: {
+        Row: {
+          comments: string | null
+          conditions: string | null
+          created_at: string | null
+          expected_roi: number | null
+          funding_amount: number | null
+          id: string | null
+          investor_id: string | null
+          problem_id: string | null
+          solution_id: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          comments?: never
+          conditions?: never
+          created_at?: string | null
+          expected_roi?: never
+          funding_amount?: never
+          id?: string | null
+          investor_id?: string | null
+          problem_id?: string | null
+          solution_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          comments?: never
+          conditions?: never
+          created_at?: string | null
+          expected_roi?: never
+          funding_amount?: never
+          id?: string | null
+          investor_id?: string | null
+          problem_id?: string | null
+          solution_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_problem_id_fkey"
+            columns: ["problem_id"]
+            isOneToOne: false
+            referencedRelation: "problems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investments_solution_id_fkey"
+            columns: ["solution_id"]
+            isOneToOne: false
+            referencedRelation: "solutions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       approve_solution: { Args: { _solution_id: string }; Returns: undefined }
