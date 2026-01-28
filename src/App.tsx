@@ -70,6 +70,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading, role, profile } = useAuth();
   const [showTimeout, setShowTimeout] = useState(false);
   const [roleTimeout, setRoleTimeout] = useState(false);
+  
+  // DEV BYPASS - ONLY works in development mode (import.meta.env.DEV === true)
+  // In production builds, DEV_AUTH_BYPASS_ENABLED is always false
   const devBypassVerified = DEV_AUTH_BYPASS_ENABLED && isDevBypassVerified();
 
   // Show timeout message after 10 seconds of loading
@@ -95,31 +98,33 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, role, isLoading]);
 
-  // DEV-only guard diagnostics
+  // DEV-only guard diagnostics (stripped in production builds)
   useEffect(() => {
-    if (!DEV_AUTH_BYPASS_ENABLED) return;
+    if (import.meta.env.DEV && DEV_AUTH_BYPASS_ENABLED) {
+      const decision = devBypassVerified
+        ? "allow_dev_bypass"
+        : isLoading
+          ? "loading"
+          : !user
+            ? "redirect_auth"
+            : !role && !roleTimeout
+              ? "waiting_role"
+              : "allow";
 
-    const decision = devBypassVerified
-      ? "allow_dev_bypass"
-      : isLoading
-        ? "loading"
-        : !user
-          ? "redirect_auth"
-          : !role && !roleTimeout
-            ? "waiting_role"
-            : "allow";
-
-    console.log("[ProtectedRoute][DEV]", {
-      user_id: user?.id ?? null,
-      email_confirmed_at: (user as any)?.email_confirmed_at ?? null,
-      role,
-      profile_id: profile?.id ?? null,
-      dev_email_verified: devBypassVerified,
-      decision,
-    });
+      console.log("[ProtectedRoute][DEV]", {
+        user_id: user?.id ?? null,
+        email_confirmed_at: (user as any)?.email_confirmed_at ?? null,
+        role,
+        profile_id: profile?.id ?? null,
+        dev_email_verified: devBypassVerified,
+        decision,
+      });
+    }
   }, [user, role, profile, isLoading, roleTimeout, devBypassVerified]);
 
   // DEV BYPASS: allow access to protected routes without a verified session.
+  // SECURITY: This check is dead code in production since DEV_AUTH_BYPASS_ENABLED
+  // evaluates to false when import.meta.env.DEV is false (production build).
   if (devBypassVerified) {
     return <>{children}</>;
   }
