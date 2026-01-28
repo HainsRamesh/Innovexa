@@ -1,37 +1,17 @@
 import { useState, useEffect, useCallback, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "./OTPInput";
-import { Loader2, Mail, CheckCircle, RefreshCw, ArrowLeft, AlertCircle, AlertTriangle } from "lucide-react";
+import { Loader2, Mail, CheckCircle, RefreshCw, ArrowLeft, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthErrorMessage } from "@/lib/authErrors";
 import { cn } from "@/lib/utils";
-import {
-  DEV_AUTH_BYPASS_ENABLED,
-  DEV_AUTH_BYPASS_TEST_EMAIL,
-  DEV_AUTH_BYPASS_TEST_OTP,
-  isDevBypassVerified,
-  setDevBypassVerified,
-} from "@/lib/devAuthBypass";
 
 interface EmailVerificationProps {
   email: string;
   onVerified: () => void;
   onBack: () => void;
 }
-
-/**
- * DEV bypass configuration.
- * 
- * SECURITY: This is only active when:
- * 1. import.meta.env.DEV === true (Vite development mode)
- * 2. VITE_DEV_AUTH_BYPASS === "true" explicitly set
- * 
- * In production builds, DEV_AUTH_BYPASS_ENABLED evaluates to false
- * because import.meta.env.DEV is false, making this dead code that
- * will be tree-shaken by the bundler.
- */
-const DEV_AUTH_BYPASS = DEV_AUTH_BYPASS_ENABLED;
 
 export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationProps>(({
   email,
@@ -41,20 +21,10 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(DEV_AUTH_BYPASS ? 0 : 60);
+  const [resendCooldown, setResendCooldown] = useState(60);
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
-
-  // Display email (use test email in dev bypass mode)
-  const displayEmail = DEV_AUTH_BYPASS ? DEV_AUTH_BYPASS_TEST_EMAIL : email;
-
-  // Auto-fill OTP in DEV mode
-  useEffect(() => {
-    if (DEV_AUTH_BYPASS && otp === "") {
-      setOtp(DEV_AUTH_BYPASS_TEST_OTP);
-    }
-  }, [otp]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -73,25 +43,9 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     setIsVerifying(true);
     setError("");
     
+    console.log("[EmailVerification] Verifying OTP for:", email);
+    
     try {
-      // DEV BYPASS: Skip real verification
-      if (DEV_AUTH_BYPASS && otp === DEV_AUTH_BYPASS_TEST_OTP) {
-        setDevBypassVerified(true);
-        console.log("[EmailVerification][DEV] BYPASS verify", {
-          displayEmail,
-          dev_email_verified: isDevBypassVerified(),
-        });
-        setIsSuccess(true);
-        toast({
-          title: "DEV MODE: Email verified! ✓",
-          description: "Bypassing real verification. Redirecting...",
-        });
-        setTimeout(onVerified, 1000);
-        return;
-      }
-
-      console.log("[EmailVerification] Verifying OTP for:", email);
-      
       // Try signup type first, then email type as fallback
       let result = await supabase.auth.verifyOtp({
         email,
@@ -109,6 +63,13 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         });
       }
 
+      console.log("[EmailVerification] verifyOtp response:", {
+        hasSession: !!result.data?.session,
+        hasUser: !!result.data?.user,
+        userId: result.data?.user?.id ?? null,
+        error: result.error?.message ?? null,
+      });
+
       if (result.error) {
         const message = getAuthErrorMessage(result.error);
         console.error("[EmailVerification] Verification failed:", result.error);
@@ -119,8 +80,14 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
           variant: "destructive",
         });
         setOtp("");
-      } else {
-        console.log("[EmailVerification] OTP verified successfully, session:", !!result.data.session);
+      } else if (result.data?.session && result.data?.user) {
+        // CRITICAL: Only proceed if we have a valid session and user
+        console.log("[EmailVerification] OTP verified successfully:", {
+          userId: result.data.user.id,
+          email: result.data.user.email,
+          emailConfirmedAt: result.data.user.email_confirmed_at,
+        });
+        
         setIsSuccess(true);
         toast({
           title: "Email verified! ✓",
@@ -128,6 +95,11 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         });
         // Brief delay to show success state, then call onVerified
         setTimeout(onVerified, 1000);
+      } else {
+        // No session returned - verification failed
+        console.error("[EmailVerification] BLOCKED: No session returned after OTP");
+        setError("Verification failed. Please try again.");
+        setOtp("");
       }
     } catch (err: any) {
       console.error("[EmailVerification] Unexpected error:", err);
@@ -146,24 +118,12 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
   const handleResend = useCallback(async () => {
     if (resendCooldown > 0) return;
     
-    // DEV BYPASS: Just reset the OTP
-    if (DEV_AUTH_BYPASS) {
-      setError("");
-      // Clear first so the autofill effect re-runs (also clears previous UI errors)
-      setOtp("");
-      toast({
-        title: "DEV MODE: Code reset",
-        description: "OTP auto-filled with test code.",
-      });
-      return;
-    }
-    
     setIsResending(true);
     setError("");
     
+    console.log("[EmailVerification] Resending OTP to:", email);
+    
     try {
-      console.log("[EmailVerification] Resending OTP to:", email);
-      
       // Use resend with signup type to get OTP code
       const { error: resendError } = await supabase.auth.resend({
         type: "signup",
@@ -199,9 +159,9 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     }
   }, [email, resendCooldown, toast]);
 
-  // Auto-submit when OTP is complete (disabled in dev mode to allow manual click)
+  // Auto-submit when OTP is complete
   useEffect(() => {
-    if (!DEV_AUTH_BYPASS && otp.length === 8 && !isVerifying && !isSuccess) {
+    if (otp.length === 8 && !isVerifying && !isSuccess) {
       handleVerify();
     }
   }, [otp, isVerifying, isSuccess, handleVerify]);
@@ -229,19 +189,6 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
 
   return (
     <div ref={ref} className="space-y-6 text-center py-6">
-      {/* DEV MODE BANNER */}
-      {DEV_AUTH_BYPASS && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mx-2">
-          <div className="flex items-center justify-center gap-2 text-destructive">
-            <AlertTriangle className="h-5 w-5" />
-            <span className="font-semibold text-sm">DEV MODE: OTP bypass enabled</span>
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            Auto-filled with test code. Click Verify to continue.
-          </p>
-        </div>
-      )}
-
       <div className="flex justify-center">
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
           <Mail className="h-8 w-8 text-primary" />
@@ -253,7 +200,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         <p className="text-muted-foreground">
           We've sent an 8-digit code to
         </p>
-        <p className="font-medium text-foreground break-all px-4">{displayEmail}</p>
+        <p className="font-medium text-foreground break-all px-4">{email}</p>
       </div>
 
       <div className="space-y-4 pt-2 px-2">

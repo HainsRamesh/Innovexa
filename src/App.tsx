@@ -10,7 +10,7 @@ import { GlobalOverlayProvider } from "@/contexts/GlobalOverlayContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MessengerDrawer } from "@/components/messaging";
-import { DEV_AUTH_BYPASS_ENABLED, isDevBypassVerified } from "@/lib/devAuthBypass";
+import { supabase } from "@/integrations/supabase/client";
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -66,14 +66,33 @@ import InvestorDashboardPage from "./pages/dashboard/InvestorDashboardPage";
 const queryClient = new QueryClient();
 
 // Protected Route Component - redirects to auth if not authenticated
+// STRICT: No dev bypass, only real Supabase authentication
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading, role, profile } = useAuth();
   const [showTimeout, setShowTimeout] = useState(false);
   const [roleTimeout, setRoleTimeout] = useState(false);
-  
-  // DEV BYPASS - ONLY works in development mode (import.meta.env.DEV === true)
-  // In production builds, DEV_AUTH_BYPASS_ENABLED is always false
-  const devBypassVerified = DEV_AUTH_BYPASS_ENABLED && isDevBypassVerified();
+  const [sessionVerified, setSessionVerified] = useState<boolean | null>(null);
+
+  // Verify session using supabase.auth.getUser() as single source of truth
+  useEffect(() => {
+    const verifySession = async () => {
+      console.log("[ProtectedRoute] Verifying session with getUser()...");
+      const { data, error } = await supabase.auth.getUser();
+      
+      console.log("[ProtectedRoute] Session verification result:", {
+        hasUser: !!data?.user,
+        userId: data?.user?.id ?? null,
+        email: data?.user?.email ?? null,
+        error: error?.message ?? null,
+      });
+      
+      setSessionVerified(!!data?.user && !error);
+    };
+    
+    if (!isLoading) {
+      verifySession();
+    }
+  }, [isLoading, user]);
 
   // Show timeout message after 10 seconds of loading
   useEffect(() => {
@@ -98,38 +117,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
   }, [user, role, isLoading]);
 
-  // DEV-only guard diagnostics (stripped in production builds)
+  // Log guard decisions
   useEffect(() => {
-    if (import.meta.env.DEV && DEV_AUTH_BYPASS_ENABLED) {
-      const decision = devBypassVerified
-        ? "allow_dev_bypass"
-        : isLoading
-          ? "loading"
+    const decision = isLoading
+      ? "loading"
+      : sessionVerified === null
+        ? "verifying_session"
+        : !sessionVerified
+          ? "redirect_auth_no_session"
           : !user
-            ? "redirect_auth"
+            ? "redirect_auth_no_user"
             : !role && !roleTimeout
               ? "waiting_role"
               : "allow";
 
-      console.log("[ProtectedRoute][DEV]", {
-        user_id: user?.id ?? null,
-        email_confirmed_at: (user as any)?.email_confirmed_at ?? null,
-        role,
-        profile_id: profile?.id ?? null,
-        dev_email_verified: devBypassVerified,
-        decision,
-      });
-    }
-  }, [user, role, profile, isLoading, roleTimeout, devBypassVerified]);
+    console.log("[ProtectedRoute] Guard decision:", {
+      user_id: user?.id ?? null,
+      role,
+      profile_id: profile?.id ?? null,
+      sessionVerified,
+      decision,
+    });
+  }, [user, role, profile, isLoading, roleTimeout, sessionVerified]);
 
-  // DEV BYPASS: allow access to protected routes without a verified session.
-  // SECURITY: This check is dead code in production since DEV_AUTH_BYPASS_ENABLED
-  // evaluates to false when import.meta.env.DEV is false (production build).
-  if (devBypassVerified) {
-    return <>{children}</>;
-  }
-
-  if (isLoading) {
+  if (isLoading || sessionVerified === null) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
@@ -148,7 +159,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  // CRITICAL: Block access if session verification failed or no user
+  if (!sessionVerified || !user) {
+    console.log("[ProtectedRoute] BLOCKED: Redirecting to /auth - no valid session");
     return <Navigate to="/auth" replace />;
   }
 
