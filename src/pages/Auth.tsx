@@ -279,7 +279,7 @@ const Auth = () => {
   };
 
   const handleVerified = async () => {
-    // Now that email is verified, create the user role
+    // Now that email is verified, create the user role and redirect
     if (pendingSignupData) {
       try {
         const { error: roleError } = await supabase
@@ -292,19 +292,36 @@ const Auth = () => {
         if (roleError) {
           console.error("Failed to set role after verification:", roleError);
         }
+
+        // After OTP verification, the user is automatically signed in by Supabase
+        // Check if we have a session and redirect based on the role
+        const { data: sessionData } = await supabase.auth.getSession();
+        
+        if (sessionData.session) {
+          toast({
+            title: "Welcome to ZYNOVEXA! 🎉",
+            description: "Your account has been verified successfully.",
+          });
+          
+          // Redirect based on the role we just created
+          const redirectPath = getRedirectPath(pendingSignupData.role);
+          setIsNavigating(true);
+          navigate(redirectPath);
+          return;
+        }
       } catch (err) {
         console.error("Error creating role:", err);
       }
     }
 
+    // Fallback: If no session (shouldn't happen), ask user to sign in
     toast({
       title: "Email verified! ✓",
-      description: "You can now sign in to your account.",
+      description: "Please sign in to continue.",
     });
     setView("signIn");
     setPendingEmail("");
     setPendingSignupData(null);
-    // Clear form for fresh sign in
     setPassword("");
   };
 
