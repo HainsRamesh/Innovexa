@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { useDashboardMetrics } from '@/hooks/useDashboardMetrics';
 import { InnovatorMetricsPanel } from '@/components/dashboard/InnovatorMetricsPanel';
 import { EnterpriseMetricsPanel } from '@/components/dashboard/EnterpriseMetricsPanel';
@@ -18,6 +18,7 @@ import { RoleAwareProgressChart } from '@/components/dashboard/RoleAwareProgress
 import { useRoleProgressData } from '@/hooks/useRoleProgressData';
 import { DashboardFilters } from '@/components/dashboard/DashboardFilters';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
+import { Button } from '@/components/ui/button';
 import { Problem, Innovation, Investment } from '@/types';
 import { toast } from 'sonner';
 
@@ -48,11 +49,22 @@ const DashboardOverview = () => {
   const [categoryMomentum, setCategoryMomentum] = useState<{ category: string; momentum: number }[]>([]);
   const [categoryPerformance, setCategoryPerformance] = useState<CategoryData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showTimeout, setShowTimeout] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{ open: boolean; id: string; type: 'innovation' | 'problem' }>({
     open: false,
     id: '',
     type: 'innovation',
   });
+
+  // Timeout for loading state
+  useEffect(() => {
+    if (isLoading || metricsLoading) {
+      const timer = setTimeout(() => setShowTimeout(true), 15000);
+      return () => clearTimeout(timer);
+    }
+    setShowTimeout(false);
+  }, [isLoading, metricsLoading]);
 
   useEffect(() => {
     if (user && role) {
@@ -62,6 +74,7 @@ const DashboardOverview = () => {
 
   const fetchRoleData = async () => {
     setIsLoading(true);
+    setError(null);
     try {
       if (role === 'innovator' || role === 'admin') {
         await fetchInnovatorData();
@@ -70,8 +83,15 @@ const DashboardOverview = () => {
       } else if (role === 'investor') {
         await fetchInvestorData();
       }
-    } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+    } catch (err: any) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err.message || 'Failed to load dashboard data');
+      
+      // Handle auth errors
+      if (err.status === 401 || err.status === 403) {
+        toast.error('Session expired. Please sign in again.');
+        navigate('/auth');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -311,10 +331,36 @@ const DashboardOverview = () => {
     }
   };
 
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <AlertCircle className="h-12 w-12 text-destructive" />
+        <div className="text-center space-y-2">
+          <p className="text-muted-foreground">{error}</p>
+          <Button onClick={fetchRoleData} variant="outline" size="sm" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Loading state with timeout
   if (metricsLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center py-24">
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        {showTimeout && (
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">Taking longer than expected...</p>
+            <Button onClick={fetchRoleData} variant="outline" size="sm" className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Retry
+            </Button>
+          </div>
+        )}
       </div>
     );
   }

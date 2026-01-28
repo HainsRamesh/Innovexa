@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -63,20 +64,50 @@ import InvestorDashboardPage from "./pages/dashboard/InvestorDashboardPage";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component - redirects to landing if not authenticated
+// Protected Route Component - redirects to auth if not authenticated
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, role } = useAuth();
+  const [showTimeout, setShowTimeout] = useState(false);
+
+  // Show timeout message after 10 seconds of loading
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => setShowTimeout(true), 10000);
+      return () => clearTimeout(timer);
+    }
+    setShowTimeout(false);
+  }, [isLoading]);
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+        {showTimeout && (
+          <div className="text-center space-y-2">
+            <p className="text-muted-foreground">Taking longer than expected...</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="text-primary hover:underline text-sm"
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Wait for role to be loaded for dashboard routes
+  if (!role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return <>{children}</>;

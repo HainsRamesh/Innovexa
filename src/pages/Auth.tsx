@@ -75,12 +75,14 @@ const Auth = () => {
     }
   }, [searchParams]);
 
+  // If user is already authenticated and has a role (e.g., page refresh), redirect immediately
   useEffect(() => {
-    if (user && role) {
+    if (user && role && !isNavigating) {
+      console.log("[Auth] Already authenticated, redirecting to:", getRedirectPath(role));
       setIsNavigating(true);
       navigate(getRedirectPath(role));
     }
-  }, [user, role, navigate, getRedirectPath]);
+  }, [user, role, navigate, getRedirectPath, isNavigating]);
 
   const validateSignUpForm = useCallback(() => {
     const newErrors: Record<string, string> = {};
@@ -248,12 +250,35 @@ const Auth = () => {
         return;
       }
 
-      // Success - the auth state change will handle redirect
-      if (data.session) {
+      // Success - fetch the role and redirect immediately
+      if (data.session && data.user) {
+        console.log("[Auth] Login successful for user:", data.user.id);
+        
+        // Fetch role directly to avoid waiting for context update
+        const { data: roleData, error: roleError } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .maybeSingle();
+
+        if (roleError) {
+          console.error("[Auth] Error fetching role:", roleError);
+        }
+
+        const userRole = roleData?.role as AppRole | null;
+        console.log("[Auth] User role:", userRole);
+        
         toast({
           title: "Welcome back!",
           description: "You've signed in successfully.",
         });
+
+        // Determine redirect path
+        const redirectPath = getRedirectPath(userRole);
+        console.log("[Auth] Redirecting to:", redirectPath);
+        
+        setIsNavigating(true);
+        navigate(redirectPath);
       }
     } catch (error: any) {
       console.error("Unexpected sign in error:", error);
