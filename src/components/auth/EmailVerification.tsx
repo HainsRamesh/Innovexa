@@ -35,8 +35,8 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
   }, [resendCooldown]);
 
   const handleVerify = useCallback(async () => {
-    if (otp.length !== 6) {
-      setError("Please enter all 6 digits");
+    if (otp.length !== 8) {
+      setError("Please enter all 8 digits");
       return;
     }
 
@@ -124,7 +124,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         console.log("[EmailVerification] OTP resent successfully");
         toast({
           title: "Code sent!",
-          description: "Check your email for the new 6-digit verification code.",
+          description: "Check your email for the new 8-digit verification code.",
         });
         setResendCooldown(60);
         setOtp("");
@@ -143,7 +143,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
 
   // Auto-submit when OTP is complete
   useEffect(() => {
-    if (otp.length === 6 && !isVerifying && !isSuccess) {
+    if (otp.length === 8 && !isVerifying && !isSuccess) {
       handleVerify();
     }
   }, [otp, isVerifying, isSuccess, handleVerify]);
@@ -180,13 +180,14 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
       <div className="space-y-1">
         <h2 className="text-2xl font-bold">Verify your email</h2>
         <p className="text-muted-foreground">
-          We've sent a 6-digit code to
+          We've sent an 8-digit code to
         </p>
         <p className="font-medium text-foreground break-all px-4">{email}</p>
       </div>
 
       <div className="space-y-4 pt-2 px-2">
         <OTPInput
+          length={8}
           value={otp}
           onChange={(val) => {
             setOtp(val);
@@ -208,7 +209,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
 
         <Button
           onClick={handleVerify}
-          disabled={otp.length !== 6 || isVerifying}
+          disabled={otp.length !== 8 || isVerifying}
           variant="hero"
           className="w-full"
           size="lg"

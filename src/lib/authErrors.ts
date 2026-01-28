@@ -21,8 +21,10 @@ export const AUTH_ERROR_MESSAGES: Record<string, string> = {
   
   // OTP errors
   "Token has expired or is invalid": "This verification code has expired. Please request a new one.",
-  "Invalid OTP": "The code you entered is incorrect. Please try again.",
+  "Invalid OTP": "The code you entered is incorrect. Please check and try again.",
   "otp_expired": "This verification code has expired. Please request a new one.",
+  "otp_invalid": "The code you entered is incorrect. Please check and try again.",
+  "invalid_token": "The code you entered is incorrect. Please check and try again.",
   "Email link is invalid or has expired": "This verification link has expired. Please request a new one.",
   
   // Password reset errors

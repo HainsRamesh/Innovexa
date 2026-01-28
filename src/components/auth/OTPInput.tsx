@@ -12,13 +12,15 @@ interface OTPInputProps {
   autoFocus?: boolean;
 }
 
+const DEFAULT_OTP_LENGTH = 8;
+
 export interface OTPInputRef {
   focus: () => void;
   clear: () => void;
 }
 
 export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(({
-  length = 6,
+  length = DEFAULT_OTP_LENGTH,
   value,
   onChange,
   disabled = false,
@@ -106,8 +108,8 @@ export const OTPInput = forwardRef<OTPInputRef, OTPInputProps>(({
           onFocus={(e) => e.target.select()}
           disabled={disabled}
           className={cn(
-            "w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-semibold",
-            "focus:ring-2 focus:ring-primary focus:border-primary",
+            "w-9 h-11 sm:w-10 sm:h-12 text-center text-base sm:text-lg font-semibold",
+            "focus:ring-2 focus:ring-primary focus:border-primary rounded-md",
             "transition-all duration-200",
             error && "border-destructive focus:ring-destructive",
             disabled && "opacity-50 cursor-not-allowed"
