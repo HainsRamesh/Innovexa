@@ -1448,6 +1448,10 @@ export type Database = {
         Args: { _innovation_id: string }
         Returns: undefined
       }
+      is_problem_owner_for_investment: {
+        Args: { _investment_id: string }
+        Returns: boolean
+      }
       is_user_blocked: {
         Args: { _other_user_id: string; _user_id: string }
         Returns: boolean
