@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { AppRole, Profile } from '@/types';
+import { clearDevBypassVerified } from '@/lib/devAuthBypass';
 
 interface AuthContextType {
   user: User | null;
@@ -153,6 +154,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Clear any dev bypass flags on sign out
+    clearDevBypassVerified();
+    
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

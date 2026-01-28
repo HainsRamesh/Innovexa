@@ -1,26 +1,39 @@
 project_id = "iehuqvjappjdgmfjzkoa"
 
+# ============================================================
+# PRODUCTION SECURITY: Edge Function Configuration
+# ============================================================
+# All edge functions now require JWT verification by default.
+# This prevents unauthorized access to backend functions.
+# 
+# SECURITY: verify_jwt = true means the function will reject
+# requests without a valid Supabase JWT in the Authorization header.
+# ============================================================
+
 [functions.generate-taglines]
-verify_jwt = false
+verify_jwt = true
 
 [functions.rewrite-description]
-verify_jwt = false
+verify_jwt = true
 
 [functions.moderate-image]
-verify_jwt = false
+verify_jwt = true
 
 [functions.check-innovation-redundancy]
-verify_jwt = false
+verify_jwt = true
 
 [functions.upsert-innovation-embedding]
-verify_jwt = false
+verify_jwt = true
 
 [functions.backfill-innovation-embeddings]
-verify_jwt = false
+# Admin-only function - should be called with service role key
+verify_jwt = true
 
 [functions.delete-account]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-problem-innovation-matches]
-verify_jwt = false
+verify_jwt = true
 
+[functions.upsert-problem-embedding]
+verify_jwt = true

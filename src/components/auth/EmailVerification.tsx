@@ -20,7 +20,17 @@ interface EmailVerificationProps {
   onBack: () => void;
 }
 
-// DEV bypass configuration (NEVER active in production builds)
+/**
+ * DEV bypass configuration.
+ * 
+ * SECURITY: This is only active when:
+ * 1. import.meta.env.DEV === true (Vite development mode)
+ * 2. VITE_DEV_AUTH_BYPASS === "true" explicitly set
+ * 
+ * In production builds, DEV_AUTH_BYPASS_ENABLED evaluates to false
+ * because import.meta.env.DEV is false, making this dead code that
+ * will be tree-shaken by the bundler.
+ */
 const DEV_AUTH_BYPASS = DEV_AUTH_BYPASS_ENABLED;
 
 export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationProps>(({
