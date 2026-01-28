@@ -68,6 +68,7 @@ const queryClient = new QueryClient();
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, isLoading, role } = useAuth();
   const [showTimeout, setShowTimeout] = useState(false);
+  const [roleTimeout, setRoleTimeout] = useState(false);
 
   // Show timeout message after 10 seconds of loading
   useEffect(() => {
@@ -77,6 +78,20 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     }
     setShowTimeout(false);
   }, [isLoading]);
+
+  // Role timeout - if role doesn't load in 3 seconds, proceed anyway
+  useEffect(() => {
+    if (user && !role && !isLoading) {
+      const timer = setTimeout(() => {
+        console.warn("[ProtectedRoute] Role not found after timeout, proceeding without role");
+        setRoleTimeout(true);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    if (role) {
+      setRoleTimeout(false);
+    }
+  }, [user, role, isLoading]);
 
   if (isLoading) {
     return (
@@ -101,11 +116,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Wait for role to be loaded for dashboard routes
-  if (!role) {
+  // Wait for role to be loaded, but with timeout fallback
+  if (!role && !roleTimeout) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
         <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+        <p className="text-muted-foreground text-sm">Loading your profile...</p>
       </div>
     );
   }

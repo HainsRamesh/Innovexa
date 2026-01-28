@@ -55,8 +55,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const fetchRole = async (userId: string) => {
-    const { data: roleData } = await supabase
+  const fetchRole = async (userId: string, userMetadata?: Record<string, any>) => {
+    const { data: roleData, error } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId)
@@ -64,6 +64,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (roleData) {
       setRole(roleData.role as AppRole);
+      return;
+    }
+    
+    // If no role found in DB, try to create from pending_role in metadata
+    if (!roleData && userMetadata?.pending_role) {
+      console.log("[AuthContext] No role found, creating from metadata:", userMetadata.pending_role);
+      const { error: insertError } = await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: userMetadata.pending_role });
+      
+      if (!insertError) {
+        setRole(userMetadata.pending_role as AppRole);
+      } else {
+        console.error("[AuthContext] Failed to create role:", insertError);
+      }
     }
   };
 
@@ -75,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (session?.user) {
         setTimeout(() => {
           fetchProfile(session.user.id);
-          fetchRole(session.user.id);
+          fetchRole(session.user.id, session.user.user_metadata);
         }, 0);
       } else {
         setProfile(null);
@@ -89,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (session?.user) {
         fetchProfile(session.user.id);
-        fetchRole(session.user.id);
+        fetchRole(session.user.id, session.user.user_metadata);
       }
       setIsLoading(false);
     });
