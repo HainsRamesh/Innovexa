@@ -10,6 +10,7 @@ import { GlobalOverlayProvider } from "@/contexts/GlobalOverlayContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { MessengerDrawer } from "@/components/messaging";
+import { DEV_AUTH_BYPASS_ENABLED, isDevBypassVerified } from "@/lib/devAuthBypass";
 // Pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
@@ -66,9 +67,10 @@ const queryClient = new QueryClient();
 
 // Protected Route Component - redirects to auth if not authenticated
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading, role } = useAuth();
+  const { user, isLoading, role, profile } = useAuth();
   const [showTimeout, setShowTimeout] = useState(false);
   const [roleTimeout, setRoleTimeout] = useState(false);
+  const devBypassVerified = DEV_AUTH_BYPASS_ENABLED && isDevBypassVerified();
 
   // Show timeout message after 10 seconds of loading
   useEffect(() => {
@@ -92,6 +94,35 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
       setRoleTimeout(false);
     }
   }, [user, role, isLoading]);
+
+  // DEV-only guard diagnostics
+  useEffect(() => {
+    if (!DEV_AUTH_BYPASS_ENABLED) return;
+
+    const decision = devBypassVerified
+      ? "allow_dev_bypass"
+      : isLoading
+        ? "loading"
+        : !user
+          ? "redirect_auth"
+          : !role && !roleTimeout
+            ? "waiting_role"
+            : "allow";
+
+    console.log("[ProtectedRoute][DEV]", {
+      user_id: user?.id ?? null,
+      email_confirmed_at: (user as any)?.email_confirmed_at ?? null,
+      role,
+      profile_id: profile?.id ?? null,
+      dev_email_verified: devBypassVerified,
+      decision,
+    });
+  }, [user, role, profile, isLoading, roleTimeout, devBypassVerified]);
+
+  // DEV BYPASS: allow access to protected routes without a verified session.
+  if (devBypassVerified) {
+    return <>{children}</>;
+  }
 
   if (isLoading) {
     return (

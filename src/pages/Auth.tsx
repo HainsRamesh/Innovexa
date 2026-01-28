@@ -14,6 +14,7 @@ import { EmailVerification, ForgotPassword } from "@/components/auth";
 import { FormField } from "@/components/auth/FormField";
 import { PasswordStrengthIndicator } from "@/components/auth/PasswordStrengthIndicator";
 import { getAuthErrorMessage, validateEmail, validatePassword, validateName } from "@/lib/authErrors";
+import { DEV_AUTH_BYPASS_ENABLED, setDevBypassVerified } from "@/lib/devAuthBypass";
 
 type AuthView = "signIn" | "signUp" | "verify" | "forgotPassword";
 
@@ -228,13 +229,20 @@ const Auth = () => {
         if (error.message?.toLowerCase().includes("email not confirmed")) {
           setPendingEmail(email);
           setView("verify");
-          toast({
-            title: "Email not verified",
-            description: "Please verify your email to continue.",
-            variant: "destructive",
-          });
-          // Resend verification OTP
-          await supabase.auth.resend({ type: "signup", email });
+
+          if (DEV_AUTH_BYPASS_ENABLED) {
+            console.log("[Auth][DEV] Email not confirmed; bypass enabled → showing verification screen", {
+              email,
+            });
+          } else {
+            toast({
+              title: "Email not verified",
+              description: "Please verify your email to continue.",
+              variant: "destructive",
+            });
+            // Resend verification OTP
+            await supabase.auth.resend({ type: "signup", email });
+          }
         } else {
           // Set inline error for credentials issues
           setErrors({ 
@@ -325,6 +333,34 @@ const Auth = () => {
   };
 
   const handleVerified = async () => {
+    // DEV BYPASS: allow continuing without a real backend verification/session.
+    // This is guarded by import.meta.env.DEV in DEV_AUTH_BYPASS_ENABLED.
+    if (DEV_AUTH_BYPASS_ENABLED) {
+      setDevBypassVerified(true);
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const { data: userData } = await supabase.auth.getUser();
+
+      console.log("[Auth][DEV] OTP bypass verified", {
+        user_id: userData.user?.id ?? null,
+        email_confirmed_at: (userData.user as any)?.email_confirmed_at ?? null,
+        has_session: !!sessionData.session,
+        dev_email_verified: true,
+        redirect: pendingSignupData?.role ?? selectedRole,
+      });
+
+      toast({
+        title: "DEV MODE: Verification bypassed",
+        description: "Skipping backend verification. Redirecting...",
+      });
+
+      const roleForRedirect = pendingSignupData?.role ?? selectedRole;
+      const redirectPath = getRedirectPath(roleForRedirect);
+      setIsNavigating(true);
+      navigate(redirectPath);
+      return;
+    }
+
     // Now that email is verified, create the user role and redirect
     if (pendingSignupData) {
       try {
