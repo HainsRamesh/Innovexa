@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, forwardRef } from "react";
 import { Button } from "@/components/ui/button";
 import { OTPInput } from "./OTPInput";
-import { Loader2, Mail, CheckCircle, RefreshCw, ArrowLeft, AlertCircle } from "lucide-react";
+import { Loader2, Mail, CheckCircle, RefreshCw, ArrowLeft, AlertCircle, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getAuthErrorMessage } from "@/lib/authErrors";
@@ -13,6 +13,11 @@ interface EmailVerificationProps {
   onBack: () => void;
 }
 
+// DEV bypass configuration
+const DEV_AUTH_BYPASS = import.meta.env.VITE_DEV_AUTH_BYPASS === "true";
+const DEV_TEST_EMAIL = "test@zynovexa.com";
+const DEV_TEST_OTP = "88888888";
+
 export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationProps>(({
   email,
   onVerified,
@@ -21,10 +26,20 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
   const [otp, setOtp] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(60);
+  const [resendCooldown, setResendCooldown] = useState(DEV_AUTH_BYPASS ? 0 : 60);
   const [error, setError] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
   const { toast } = useToast();
+
+  // Display email (use test email in dev bypass mode)
+  const displayEmail = DEV_AUTH_BYPASS ? DEV_TEST_EMAIL : email;
+
+  // Auto-fill OTP in DEV mode
+  useEffect(() => {
+    if (DEV_AUTH_BYPASS && otp === "") {
+      setOtp(DEV_TEST_OTP);
+    }
+  }, [otp]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -44,6 +59,18 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     setError("");
     
     try {
+      // DEV BYPASS: Skip real verification
+      if (DEV_AUTH_BYPASS && otp === DEV_TEST_OTP) {
+        console.log("[EmailVerification] DEV BYPASS: Skipping real OTP verification");
+        setIsSuccess(true);
+        toast({
+          title: "DEV MODE: Email verified! ✓",
+          description: "Bypassing real verification. Redirecting...",
+        });
+        setTimeout(onVerified, 1000);
+        return;
+      }
+
       console.log("[EmailVerification] Verifying OTP for:", email);
       
       // Try signup type first, then email type as fallback
@@ -100,6 +127,16 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
   const handleResend = useCallback(async () => {
     if (resendCooldown > 0) return;
     
+    // DEV BYPASS: Just reset the OTP
+    if (DEV_AUTH_BYPASS) {
+      setOtp(DEV_TEST_OTP);
+      toast({
+        title: "DEV MODE: Code reset",
+        description: "OTP auto-filled with test code.",
+      });
+      return;
+    }
+    
     setIsResending(true);
     setError("");
     
@@ -141,9 +178,9 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
     }
   }, [email, resendCooldown, toast]);
 
-  // Auto-submit when OTP is complete
+  // Auto-submit when OTP is complete (disabled in dev mode to allow manual click)
   useEffect(() => {
-    if (otp.length === 8 && !isVerifying && !isSuccess) {
+    if (!DEV_AUTH_BYPASS && otp.length === 8 && !isVerifying && !isSuccess) {
       handleVerify();
     }
   }, [otp, isVerifying, isSuccess, handleVerify]);
@@ -171,6 +208,19 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
 
   return (
     <div ref={ref} className="space-y-6 text-center py-6">
+      {/* DEV MODE BANNER */}
+      {DEV_AUTH_BYPASS && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-3 mx-2 animate-pulse">
+          <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="h-5 w-5" />
+            <span className="font-semibold text-sm">DEV MODE: OTP bypass enabled</span>
+          </div>
+          <p className="text-xs text-amber-600/80 dark:text-amber-400/80 mt-1">
+            Auto-filled with test code. Click Verify to continue.
+          </p>
+        </div>
+      )}
+
       <div className="flex justify-center">
         <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
           <Mail className="h-8 w-8 text-primary" />
@@ -182,7 +232,7 @@ export const EmailVerification = forwardRef<HTMLDivElement, EmailVerificationPro
         <p className="text-muted-foreground">
           We've sent an 8-digit code to
         </p>
-        <p className="font-medium text-foreground break-all px-4">{email}</p>
+        <p className="font-medium text-foreground break-all px-4">{displayEmail}</p>
       </div>
 
       <div className="space-y-4 pt-2 px-2">
