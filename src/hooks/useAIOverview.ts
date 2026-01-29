@@ -25,6 +25,7 @@ interface UseAIOverviewReturn {
   play: () => Promise<void>;
   pause: () => void;
   replay: () => Promise<void>;
+  skip: () => void;
   setVolume: (volume: number) => void;
   overviewText: string | null;
   keyPoints: string[];
@@ -228,6 +229,18 @@ export function useAIOverview({
     }
   }, [generateOverview, speakText, speechSupported]);
 
+  const skip = useCallback(() => {
+    if (speechSupported) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // Silent failure
+      }
+    }
+    setIsPlaying(false);
+    setIsSpeaking(false);
+  }, [speechSupported]);
+
   const setVolume = useCallback((newVolume: number) => {
     setVolumeState(newVolume);
     if (utteranceRef.current) {
@@ -243,6 +256,7 @@ export function useAIOverview({
     play,
     pause,
     replay,
+    skip,
     setVolume,
     overviewText: narratorData?.script || null,
     keyPoints: narratorData?.key_points || [],

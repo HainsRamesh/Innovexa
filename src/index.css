@@ -4,6 +4,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Robot presenter animations */
+@keyframes robotTalk {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-1px); }
+}
+
+@keyframes robotBreathe {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.02); }
+}
+
 @layer base {
   :root {
     /* INNOVEXA Design System - Dark Mode First */
