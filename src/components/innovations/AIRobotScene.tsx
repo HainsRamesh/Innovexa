@@ -1,68 +1,15 @@
-import { Suspense, useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, useAnimations, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import * as THREE from 'three';
 
-// TODO: Replace with actual robot GLB model URL
-// The model should have 'Idle' and 'Talk' animations
-const ROBOT_MODEL_URL = 'https://vazxmixjsiawhamofees.supabase.co/storage/v1/object/public/models/robot/robot.glb';
+// TODO: To use a custom robot GLB model with Idle/Talk animations:
+// 1. Upload the GLB file to storage
+// 2. Import useGLTF, useAnimations from @react-three/drei
+// 3. Replace PlaceholderRobot with a RobotModel component that loads the GLB
 
 interface RobotModelProps {
   isTalking: boolean;
-}
-
-function RobotModel({ isTalking }: RobotModelProps) {
-  const group = useRef<THREE.Group>(null);
-  const { scene, animations } = useGLTF(ROBOT_MODEL_URL);
-  const { actions, names } = useAnimations(animations, group);
-  const [currentAnimation, setCurrentAnimation] = useState<string>('Idle');
-
-  // Find animation names (case-insensitive search)
-  const findAnimation = (searchTerm: string): string | null => {
-    const found = names.find(name => 
-      name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    return found || null;
-  };
-
-  const idleAnimation = findAnimation('idle') || names[0];
-  const talkAnimation = findAnimation('talk') || findAnimation('speak') || findAnimation('wave') || names[1] || names[0];
-
-  useEffect(() => {
-    const targetAnimation = isTalking ? talkAnimation : idleAnimation;
-    
-    if (targetAnimation && actions[targetAnimation]) {
-      // Fade out current animation
-      if (currentAnimation && actions[currentAnimation]) {
-        actions[currentAnimation].fadeOut(0.3);
-      }
-      
-      // Fade in new animation
-      actions[targetAnimation].reset().fadeIn(0.3).play();
-      setCurrentAnimation(targetAnimation);
-    }
-  }, [isTalking, actions, idleAnimation, talkAnimation, currentAnimation]);
-
-  // Initial animation setup
-  useEffect(() => {
-    if (idleAnimation && actions[idleAnimation]) {
-      actions[idleAnimation].play();
-      setCurrentAnimation(idleAnimation);
-    }
-  }, [actions, idleAnimation]);
-
-  // Gentle hover animation
-  useFrame((state) => {
-    if (group.current) {
-      group.current.position.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
-    }
-  });
-
-  return (
-    <group ref={group} position={[0, -1, 0]} scale={1.5}>
-      <primitive object={scene} />
-    </group>
-  );
 }
 
 // Fallback placeholder robot when model fails to load
@@ -137,8 +84,6 @@ interface AIRobotSceneProps {
 }
 
 export function AIRobotScene({ isTalking }: AIRobotSceneProps) {
-  const [usePlaceholder, setUsePlaceholder] = useState(false);
-
   return (
     <div className="w-full h-[200px] rounded-lg overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800">
       <Canvas
@@ -149,16 +94,7 @@ export function AIRobotScene({ isTalking }: AIRobotSceneProps) {
         <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
         <pointLight position={[-5, 5, -5]} intensity={0.5} color="#60a5fa" />
         
-        <Suspense fallback={<PlaceholderRobot isTalking={isTalking} />}>
-          {usePlaceholder ? (
-            <PlaceholderRobot isTalking={isTalking} />
-          ) : (
-            <ErrorBoundaryRobot 
-              isTalking={isTalking} 
-              onError={() => setUsePlaceholder(true)} 
-            />
-          )}
-        </Suspense>
+        <PlaceholderRobot isTalking={isTalking} />
         
         <ContactShadows 
           position={[0, -1.5, 0]} 
@@ -176,32 +112,4 @@ export function AIRobotScene({ isTalking }: AIRobotSceneProps) {
       </Canvas>
     </div>
   );
-}
-
-// Error boundary wrapper for the robot model
-function ErrorBoundaryRobot({ 
-  isTalking, 
-  onError 
-}: { 
-  isTalking: boolean; 
-  onError: () => void;
-}) {
-  useEffect(() => {
-    // Preload the model and catch errors
-    try {
-      useGLTF.preload(ROBOT_MODEL_URL);
-    } catch (e) {
-      console.warn('Failed to preload robot model, using placeholder');
-      onError();
-    }
-  }, [onError]);
-
-  return <RobotModel isTalking={isTalking} />;
-}
-
-// Preload the model
-try {
-  useGLTF.preload(ROBOT_MODEL_URL);
-} catch (e) {
-  console.warn('Robot model preload failed');
 }
