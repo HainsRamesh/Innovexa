@@ -16,6 +16,7 @@ type RedundancyRequest = {
   description?: string;
   without_product?: string;
   with_product?: string;
+  exclude_id?: string; // When editing, exclude this innovation from duplicate detection
 };
 
 type MatchRow = {
@@ -176,6 +177,7 @@ Deno.serve(async (req) => {
       description,
       without_product,
       with_product,
+      exclude_id,
     } = body;
     
     const allowedCategories = new Set([
@@ -281,10 +283,15 @@ Deno.serve(async (req) => {
 
     // Phase 1: category-scoped search
     const matchCount = 10;
+    
+    // If editing an existing innovation, exclude it from duplicate detection
+    const excludeIds = exclude_id ? [exclude_id] : [];
+    
     const categoryMatchesRes = await supabase.rpc("match_innovations_published", {
       query_embedding: embedding,
       match_count: matchCount,
       optional_category: category,
+      exclude_ids: excludeIds,
     });
 
     if (categoryMatchesRes.error) {
@@ -296,7 +303,7 @@ Deno.serve(async (req) => {
     }
 
     const combined: MatchRow[] = [];
-    const seen = new Set<string>();
+    const seen = new Set<string>(excludeIds);
 
     const addMatches = (rows: MatchRow[] | null | undefined) => {
       for (const row of rows ?? []) {
