@@ -19,6 +19,7 @@ interface NarratorResponse {
   key_points: string[];
   emotion: "confident" | "friendly" | "serious";
   gestures: Array<{ t: number; action: string }>;
+  robot_theme: "healthcare" | "finance" | "education" | "climate" | "ai" | "security" | "general";
 }
 
 const categoryLabels: Record<string, string> = {
@@ -59,6 +60,20 @@ serve(async (req) => {
 
     const categoryLabel = categoryLabels[category] || category || "Innovation";
 
+    // Map category to robot theme
+    const categoryToTheme: Record<string, string> = {
+      ai: "ai",
+      healthtech: "healthcare",
+      fintech: "finance",
+      climatetech: "climate",
+      edtech: "education",
+      saas: "general",
+      hardware: "security",
+      web3: "finance",
+      other: "general",
+    };
+    const defaultTheme = categoryToTheme[category] || "general";
+
     // Robot Narrator prompt - structured JSON output
     const systemPrompt = `You are ZYNOVEXA's Robot Narrator - a professional, confident, and friendly AI presenter.
 
@@ -83,10 +98,15 @@ Return ONLY valid JSON with these exact keys:
     {"t": 7, "action": "open_palm_present"},
     {"t": 14, "action": "point"},
     {"t": 24, "action": "thumbs_up"}
-  ]
+  ],
+  "robot_theme": "${defaultTheme}"
 }
 
-Gesture actions available: nod, open_palm_present, point, thumbs_up, wave, gesture_left, gesture_right
+Robot themes: healthcare, finance, education, climate, ai, security, general
+- Choose based on the innovation's domain. Default: "${defaultTheme}" based on category.
+- Override if the description clearly fits a different theme.
+
+Gesture actions: nod, open_palm_present, point, thumbs_up, wave, gesture_left, gesture_right
 Emotion options: confident, friendly, serious
 
 The "t" in gestures represents seconds from start. Space gestures naturally throughout the script.`;
@@ -155,6 +175,7 @@ Return ONLY the JSON object, no markdown or extra text.`;
       
       // Ensure defaults
       narratorData.emotion = narratorData.emotion || "confident";
+      narratorData.robot_theme = narratorData.robot_theme || (defaultTheme as NarratorResponse["robot_theme"]);
       narratorData.gestures = narratorData.gestures || [
         { t: 2, action: "nod" },
         { t: 7, action: "open_palm_present" },
@@ -168,6 +189,7 @@ Return ONLY the JSON object, no markdown or extra text.`;
         script: content,
         key_points: [tagline],
         emotion: "confident",
+        robot_theme: defaultTheme as NarratorResponse["robot_theme"],
         gestures: [
           { t: 2, action: "nod" },
           { t: 7, action: "open_palm_present" },

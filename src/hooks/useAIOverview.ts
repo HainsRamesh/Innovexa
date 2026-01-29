@@ -14,6 +14,7 @@ interface NarratorData {
   key_points: string[];
   emotion: 'confident' | 'friendly' | 'serious';
   gestures: Array<{ t: number; action: string }>;
+  robot_theme: 'healthcare' | 'finance' | 'education' | 'climate' | 'ai' | 'security' | 'general';
 }
 
 interface UseAIOverviewReturn {
@@ -29,6 +30,7 @@ interface UseAIOverviewReturn {
   keyPoints: string[];
   emotion: string;
   gestures: Array<{ t: number; action: string }>;
+  robotTheme: string;
   hasGenerated: boolean;
   speechSupported: boolean;
 }
@@ -95,6 +97,7 @@ export function useAIOverview({
           key_points: data.key_points || [],
           emotion: data.emotion || 'confident',
           gestures: data.gestures || [],
+          robot_theme: data.robot_theme || 'general',
         };
         cachedDataRef.current = result;
         setNarratorData(result);
@@ -245,6 +248,7 @@ export function useAIOverview({
     keyPoints: narratorData?.key_points || [],
     emotion: narratorData?.emotion || 'confident',
     gestures: narratorData?.gestures || [],
+    robotTheme: narratorData?.robot_theme || 'general',
     hasGenerated,
     speechSupported,
   };
