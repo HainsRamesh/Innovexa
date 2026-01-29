@@ -7,6 +7,7 @@ import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
 import { VideoThumbnailPlayer } from './VideoThumbnailPlayer';
 import { InnovationCommentsSection } from './InnovationCommentsSection';
 import { InnovationAnalyticsCard } from './InnovationAnalyticsCard';
+import { AIOverviewSection } from './AIOverviewSection';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 import { useInnovationBookmark } from '@/hooks/useInnovationBookmark';
 import { useMessageClickTracker } from '@/hooks/useMessageClickTracker';
@@ -113,6 +114,14 @@ export const InnovationDetailModal = ({
                 onPlay={trackDemoPlay}
               />
             )}
+
+            {/* AI Overview Section */}
+            <AIOverviewSection
+              title={innovation.title}
+              tagline={innovation.tagline}
+              category={innovation.category}
+              description={innovation.description}
+            />
 
             {/* Description */}
             <div className="space-y-2">

@@ -1,4 +1,4 @@
-project_id = "iehuqvjappjdgmfjzkoa"
+project_id = "rnbpkpirnmhjehutqlzn"
 
 # ============================================================
 # PRODUCTION SECURITY: Edge Function Configuration
@@ -36,4 +36,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.upsert-problem-embedding]
+verify_jwt = true
+
+[functions.generate-innovation-overview]
 verify_jwt = true
