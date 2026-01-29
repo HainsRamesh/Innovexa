@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useAIOverview } from '@/hooks/useAIOverview';
 import { RobotPresenter3D } from './RobotPresenter3D';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Loader2, Sparkles, CheckCircle2, SkipForward } from 'lucide-react';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Sparkles, CheckCircle2, SkipForward } from 'lucide-react';
 
 interface AIOverviewSectionProps {
   title: string;
@@ -82,16 +82,13 @@ export function AIOverviewSection({
           </div>
         )}
 
-        {/* Loading state */}
+        {/* Loading state - Robot visible in idle mode, no loader UI */}
         {isLoading && (
           <div className="flex items-center gap-4 py-2">
             <RobotPresenter3D isSpeaking={false} theme={robotTheme} />
-            <div className="flex items-center gap-2">
-              <Loader2 className="h-4 w-4 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">
-                Preparing narrator script...
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Generating briefing...
+            </p>
           </div>
         )}
 
