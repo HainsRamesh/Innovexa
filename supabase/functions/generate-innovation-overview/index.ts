@@ -26,7 +26,6 @@ const categoryLabels: Record<string, string> = {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -34,10 +33,9 @@ serve(async (req) => {
   try {
     const { title, tagline, category, description }: OverviewRequest = await req.json();
 
-    // Validate input
     if (!title || !tagline || !description) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: title, tagline, description" }),
+        JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -46,33 +44,46 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) {
       console.error("LOVABLE_API_KEY is not configured");
       return new Response(
-        JSON.stringify({ error: "AI service not configured" }),
+        JSON.stringify({ error: "Service unavailable" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const categoryLabel = categoryLabels[category] || category || "Innovation";
 
-    const systemPrompt = `You create concise, spoken-style overviews for innovations. Your overviews must:
-- Be natural and conversational when read aloud (60-90 words, ~20-30 seconds)
-- Use simple, clear language without jargon or filler
-- Highlight the core value proposition and real-world impact
-- Sound professional and credible
-- Be a single flowing paragraph with no formatting
-- Start with what the innovation does, not meta-references
-- NEVER say "this video", "in this overview", or reference the UI
-- NEVER use buzzwords like "revolutionary", "game-changing", or "cutting-edge"`;
+    // Executive briefing prompt - clear, structured, high-value
+    const systemPrompt = `You are an executive briefing specialist. Create concise, high-impact innovation summaries.
 
-    const userPrompt = `Create a spoken overview for this innovation:
+Your briefings must:
+- Be exactly 50-70 words (20-25 seconds when spoken)
+- Answer these questions in order:
+  1. What is this? (one sentence)
+  2. What problem does it solve? (one sentence)
+  3. Who benefits? (brief mention)
+  4. What's the key impact? (one sentence)
+- Use clear, executive-friendly language
+- Be a single flowing paragraph
+- Sound natural when read aloud
 
-Title: ${title}
-Tagline: ${tagline}
-Category: ${categoryLabel}
-Description: ${description}
+NEVER:
+- Say "this video", "this overview", or reference any UI
+- Use buzzwords like "revolutionary", "game-changing", "cutting-edge", "innovative"
+- Include filler words or marketing fluff
+- Repeat information from the tagline verbatim
+- Start with "This is" or "Here is"
 
-Generate a 60-90 word spoken overview that would take about 20-30 seconds to read aloud. Make it engaging and highlight what makes this innovation special.`;
+START directly with the innovation name or what it does.`;
 
-    console.log("Generating overview for:", title);
+    const userPrompt = `Create an executive briefing for:
+
+TITLE: ${title}
+TAGLINE: ${tagline}
+CATEGORY: ${categoryLabel}
+DESCRIPTION: ${description}
+
+Generate a 50-70 word spoken briefing. Be direct, clear, and insightful.`;
+
+    console.log("Generating executive briefing for:", title);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -86,8 +97,8 @@ Generate a 60-90 word spoken overview that would take about 20-30 seconds to rea
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 200,
-        temperature: 0.7,
+        max_tokens: 150,
+        temperature: 0.6,
       }),
     });
 
@@ -95,22 +106,10 @@ Generate a 60-90 word spoken overview that would take about 20-30 seconds to rea
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
       
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again later." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
+      // Return generic error - client handles gracefully
       return new Response(
-        JSON.stringify({ error: "Failed to generate overview" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Generation unavailable" }),
+        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
@@ -118,23 +117,23 @@ Generate a 60-90 word spoken overview that would take about 20-30 seconds to rea
     const overview = data.choices?.[0]?.message?.content?.trim();
 
     if (!overview) {
-      console.error("No overview generated:", data);
+      console.error("Empty response from AI");
       return new Response(
-        JSON.stringify({ error: "No overview generated" }),
+        JSON.stringify({ error: "Empty response" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Generated overview:", overview.substring(0, 100) + "...");
+    console.log("Generated briefing:", overview.substring(0, 80) + "...");
 
     return new Response(
       JSON.stringify({ overview }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Error generating overview:", error);
+    console.error("Briefing generation error:", error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: "Generation failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
