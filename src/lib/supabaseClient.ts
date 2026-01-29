@@ -1,10 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
-// Prefer the modern publishable key; fall back to legacy anon key if present.
-const SUPABASE_PUBLIC_KEY = (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY) as string;
+// Use env vars with fallback to known project values (these are public/publishable)
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://rnbpkpirnmhjehutqlzn.supabase.co";
+const SUPABASE_PUBLIC_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuYnBrcGlybm1oamVodXRxbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjM0NTAsImV4cCI6MjA4MTkzOTQ1MH0.GqlE6OaYv2D5p-1wYe-6upic8T1djqyct5UQcvxu26Q";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
   auth: {
