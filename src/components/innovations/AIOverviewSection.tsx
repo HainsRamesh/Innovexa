@@ -1,14 +1,14 @@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useAIOverview } from '@/hooks/useAIOverview';
-import { Play, Pause, RotateCcw, Volume2, VolumeX, Loader2, Mic } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Play, Pause, RotateCcw, Volume2, VolumeX, Loader2, Sparkles, CheckCircle2 } from 'lucide-react';
 
 interface AIOverviewSectionProps {
   title: string;
   tagline: string;
   category: string;
   description: string;
+  transcript?: string;
 }
 
 export function AIOverviewSection({
@@ -16,6 +16,7 @@ export function AIOverviewSection({
   tagline,
   category,
   description,
+  transcript,
 }: AIOverviewSectionProps) {
   const {
     isLoading,
@@ -27,9 +28,10 @@ export function AIOverviewSection({
     replay,
     setVolume,
     overviewText,
+    keyPoints,
     hasGenerated,
     speechSupported,
-  } = useAIOverview({ title, tagline, category, description });
+  } = useAIOverview({ title, tagline, category, description, transcript });
 
   const handlePlayPause = () => {
     if (isPlaying) {
@@ -49,18 +51,18 @@ export function AIOverviewSection({
 
   return (
     <div className="space-y-3">
-      {/* Header - minimal and professional */}
+      {/* Header */}
       <div className="flex items-center gap-2">
-        <Mic className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-medium text-foreground">AI Briefing</h3>
+        <Sparkles className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-medium text-foreground">AI Narrator</h3>
       </div>
       
       <div className="rounded-lg border border-border bg-muted/30 p-4">
-        {/* Initial state - before generation */}
+        {/* Initial state */}
         {!hasGenerated && !isLoading && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Get a 20-second executive summary
+              Get a 20-second executive briefing
             </p>
             <Button
               variant="outline"
@@ -79,15 +81,15 @@ export function AIOverviewSection({
           <div className="flex items-center gap-3 py-2">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">
-              Preparing briefing...
+              Preparing narrator script...
             </p>
           </div>
         )}
 
-        {/* Generated state - show transcript and controls */}
+        {/* Generated state */}
         {hasGenerated && !isLoading && (
           <div className="space-y-4">
-            {/* Transcript with speaking indicator */}
+            {/* Speaking indicator + Script */}
             {overviewText && (
               <div className="space-y-2">
                 {isSpeaking && (
@@ -104,8 +106,25 @@ export function AIOverviewSection({
                 </p>
               </div>
             )}
+
+            {/* Key Points */}
+            {keyPoints.length > 0 && (
+              <div className="space-y-1.5 pt-2 border-t border-border/50">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Key Points
+                </p>
+                <ul className="space-y-1">
+                  {keyPoints.map((point, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-sm text-foreground/80">
+                      <CheckCircle2 className="h-3.5 w-3.5 text-primary mt-0.5 flex-shrink-0" />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             
-            {/* Controls - compact and clean */}
+            {/* Controls */}
             <div className="flex items-center justify-between pt-2 border-t border-border/50">
               <div className="flex items-center gap-1.5">
                 {speechSupported && (
@@ -172,22 +191,14 @@ export function AIOverviewSection({
         )}
       </div>
 
-      {/* TODO: Future 3D Humanoid Integration
+      {/* TODO: Future 3D Robot Integration
        * 
-       * To add a realistic humanoid presenter with idle/talk animations:
-       * 
-       * 1. Source a professional GLB model with "Idle" and "Talk" animation clips
-       * 2. Create a PresenterScene component using React Three Fiber:
-       *    - Use useGLTF to load the model
-       *    - Use useAnimations to control animation states
-       *    - Switch from "Idle" to "Talk" when isSpeaking is true
-       * 3. Only render when a verified model URL is available
-       * 4. Keep the text-based briefing as primary content
-       * 
-       * Required dependencies (already installed):
-       * - @react-three/fiber
-       * - @react-three/drei
-       * - three
+       * When a realistic humanoid robot model is available:
+       * 1. Load GLB with useGLTF from @react-three/drei
+       * 2. Use useAnimations to control Idle/Talk animation states
+       * 3. Sync gesture timings from narratorData.gestures with animation triggers
+       * 4. Map gestures: nod, open_palm_present, point, thumbs_up, wave
+       * 5. Use narratorData.emotion to influence facial expressions if supported
        */}
     </div>
   );
