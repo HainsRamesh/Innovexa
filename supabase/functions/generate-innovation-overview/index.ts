@@ -53,14 +53,15 @@ serve(async (req) => {
 
     const categoryLabel = categoryLabels[category] || category || "Innovation";
 
-    const systemPrompt = `You are an enthusiastic AI assistant that creates concise, engaging spoken overviews for innovations. Your overviews should:
-- Be conversational and natural-sounding when read aloud
-- Take approximately 20-30 seconds to speak (roughly 60-90 words)
-- Highlight the key value proposition and impact
-- Sound professional but approachable
-- NOT include any markdown, bullet points, or formatting
-- Be a single flowing paragraph
-- Start with an engaging hook about the innovation`;
+    const systemPrompt = `You create concise, spoken-style overviews for innovations. Your overviews must:
+- Be natural and conversational when read aloud (60-90 words, ~20-30 seconds)
+- Use simple, clear language without jargon or filler
+- Highlight the core value proposition and real-world impact
+- Sound professional and credible
+- Be a single flowing paragraph with no formatting
+- Start with what the innovation does, not meta-references
+- NEVER say "this video", "in this overview", or reference the UI
+- NEVER use buzzwords like "revolutionary", "game-changing", or "cutting-edge"`;
 
     const userPrompt = `Create a spoken overview for this innovation:
 
