@@ -1,41 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { useAIOverview } from '@/hooks/useAIOverview';
+import { RobotPresenter3D } from './RobotPresenter3D';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, Loader2, Sparkles, CheckCircle2, SkipForward } from 'lucide-react';
-
-/**
- * TODO: 3D Robot Presenter Integration (CRITICAL REQUIREMENTS)
- * 
- * When implementing the robot narrator, follow these strict guidelines:
- * 
- * ROBOT REQUIREMENTS:
- * - Type: Professional humanoid AI presenter
- * - Style: Realistic or semi-realistic 3D (enterprise-grade)
- * - Appearance: Upper torso only (head + shoulders)
- * - Face: Minimal, neutral, calm (NO cartoon eyes, NO mascot face, NO emojis)
- * - Colors: Dark metallic / neutral tones (grey, black, subtle blue accents)
- * - Emotion: Calm, confident, neutral
- * - Animation: Subtle idle motion + light head movement while speaking
- * 
- * ABSOLUTELY DO NOT USE:
- * - Icons, mascots, emojis, flat illustrations
- * - Cartoon robots, default AI avatars
- * - Placeholder silhouettes or CSS-based fakes
- * 
- * IMPLEMENTATION STEPS:
- * 1. Acquire a proper GLB model matching the above specs
- * 2. Load GLB with useGLTF from @react-three/drei
- * 3. Use useAnimations to control Idle/Talk animation states
- * 4. Sync gesture timings from narratorData.gestures with animation triggers
- * 5. Map gestures: nod, open_palm_present, point, thumbs_up, wave
- * 6. Use narratorData.emotion to influence animations
- * 7. Apply narratorData.robotTheme for visual variations if supported
- * 
- * PLACEMENT:
- * - Robot appears ONLY when user clicks "Play Briefing" and narration is active
- * - Robot should be small (approx 80-100px) and not block video/content
- * - After narration ends, robot fades/minimizes
- */
 
 interface AIOverviewSectionProps {
   title: string;
@@ -64,10 +31,7 @@ export function AIOverviewSection({
     setVolume,
     overviewText,
     keyPoints,
-    // TODO: Use these when GLB robot is integrated
-    // robotTheme,
-    // emotion,
-    // gestures,
+    robotTheme,
     hasGenerated,
     speechSupported,
   } = useAIOverview({ title, tagline, category, description, transcript });
@@ -88,6 +52,9 @@ export function AIOverviewSection({
     setVolume(volume > 0 ? 0 : 0.8);
   };
 
+  // Show robot when narration has been generated (visible during and after playback)
+  const showRobot = hasGenerated || isLoading;
+
   return (
     <div className="space-y-3">
       {/* Header */}
@@ -100,11 +67,6 @@ export function AIOverviewSection({
         {/* Initial state - before generation */}
         {!hasGenerated && !isLoading && (
           <div className="flex items-center justify-between">
-            {/* 
-              TODO: When GLB robot is available, add a small idle preview here
-              that activates on hover or stays minimal until Play is clicked.
-              For now, no visual placeholder per the strict requirements.
-            */}
             <p className="text-sm text-muted-foreground">
               Get a 20-second executive briefing
             </p>
@@ -122,64 +84,45 @@ export function AIOverviewSection({
 
         {/* Loading state */}
         {isLoading && (
-          <div className="flex items-center gap-3 py-2">
-            {/* 
-              TODO: When GLB robot is available, show robot with loading animation here.
-              Robot should have a subtle "thinking" or "preparing" pose.
-            */}
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">
-              Preparing narrator script...
-            </p>
+          <div className="flex items-center gap-4 py-2">
+            <RobotPresenter3D isSpeaking={false} theme={robotTheme} />
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              <p className="text-sm text-muted-foreground">
+                Preparing narrator script...
+              </p>
+            </div>
           </div>
         )}
 
         {/* Generated state - narration ready or playing */}
         {hasGenerated && !isLoading && (
           <div className="space-y-4">
-            {/* 
-              TODO: GLB Robot Presenter Area
+            {/* Robot + Script content */}
+            <div className="flex gap-4">
+              {/* 3D Robot Presenter */}
+              <div className="flex-shrink-0">
+                <RobotPresenter3D isSpeaking={isSpeaking} theme={robotTheme} />
+              </div>
               
-              When GLB is available, render here:
-              - Canvas with <Suspense> wrapper
-              - Robot model with isSpeaking controlling Talk vs Idle animation
-              - Size: ~80-100px, positioned left of the script text
-              - Fade out or minimize when narration ends (!isSpeaking && !isPlaying)
-              
-              Example structure:
-              {isSpeaking && (
-                <div className="w-20 h-20 flex-shrink-0">
-                  <Canvas>
-                    <Suspense fallback={null}>
-                      <RobotPresenter 
-                        isSpeaking={isSpeaking}
-                        emotion={emotion}
-                        gestures={gestures}
-                        theme={robotTheme}
-                      />
-                    </Suspense>
-                  </Canvas>
+              {/* Speaking indicator + Script */}
+              {overviewText && (
+                <div className="flex-1 space-y-2">
+                  {isSpeaking && (
+                    <div className="flex items-center gap-2 text-xs text-primary font-medium">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                      </span>
+                      Speaking...
+                    </div>
+                  )}
+                  <p className="text-sm text-foreground/90 leading-relaxed">
+                    {overviewText}
+                  </p>
                 </div>
               )}
-            */}
-            
-            {/* Speaking indicator + Script */}
-            {overviewText && (
-              <div className="space-y-2">
-                {isSpeaking && (
-                  <div className="flex items-center gap-2 text-xs text-primary font-medium">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                    </span>
-                    Speaking...
-                  </div>
-                )}
-                <p className="text-sm text-foreground/90 leading-relaxed">
-                  {overviewText}
-                </p>
-              </div>
-            )}
+            </div>
 
             {/* Key Points */}
             {keyPoints.length > 0 && (
