@@ -29,7 +29,6 @@ export function VideoRobotPresenter({
   const [volume, setVolumeState] = useState(0.8);
   const [scriptText, setScriptText] = useState<string | null>(null);
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
@@ -88,9 +87,7 @@ export function VideoRobotPresenter({
       };
       utterance.onerror = (event) => {
         console.error('[VideoRobotPresenter] TTS error:', event.error);
-        if (event.error !== 'canceled') {
-          setError(`Audio playback failed`);
-        }
+        // Don't show error to user, just log and proceed
         setPlaybackState('ready');
       };
       utterance.onpause = () => setPlaybackState('paused');
@@ -106,7 +103,6 @@ export function VideoRobotPresenter({
 
   const handlePlay = useCallback(async () => {
     console.log('[VideoRobotPresenter] Play clicked');
-    setError(null);
     
     // Resume if paused
     if (playbackState === 'paused' && speechSupported) {
@@ -125,7 +121,7 @@ export function VideoRobotPresenter({
       return;
     }
 
-    // Generate new script (silent loading - no UI indicator per requirements)
+    // Generate new script - silent loading
     setIsLoading(true);
     console.log('[VideoRobotPresenter] Generating script...');
 
@@ -134,13 +130,26 @@ export function VideoRobotPresenter({
         body: { title, tagline, category, description, transcript, videoUrl },
       });
 
-      console.log('[VideoRobotPresenter] Response:', data);
+      console.log('[VideoRobotPresenter] Response:', data, 'Error:', fnError);
 
-      if (fnError) {
-        console.error('[VideoRobotPresenter] Error:', fnError);
-        setError(`Failed to generate overview`);
-        setIsLoading(false);
-        return;
+      // Handle edge function errors gracefully - try fallback generation
+      if (fnError || !data?.script) {
+        console.warn('[VideoRobotPresenter] Edge function failed, using client-side fallback');
+        
+        // Generate a simple fallback overview from available data
+        const fallbackScript = generateFallbackScript(title, tagline, description, category);
+        if (fallbackScript) {
+          cachedScriptRef.current = fallbackScript;
+          setScriptText(fallbackScript);
+          setKeyPoints([tagline || 'Innovative solution'].filter(Boolean));
+          setPlaybackState('ready');
+          setIsLoading(false);
+          
+          if (speechSupported) {
+            speakText(fallbackScript);
+          }
+          return;
+        }
       }
 
       if (data?.script) {
@@ -155,15 +164,68 @@ export function VideoRobotPresenter({
           speakText(data.script);
         }
       } else {
-        setError('No overview generated');
+        // Last resort: use minimal fallback
+        const minimalScript = `This is ${title || 'an innovation'}. ${tagline || ''} ${description ? description.substring(0, 150) : ''}`.trim();
+        cachedScriptRef.current = minimalScript;
+        setScriptText(minimalScript);
+        setPlaybackState('ready');
         setIsLoading(false);
+        
+        if (speechSupported) {
+          speakText(minimalScript);
+        }
       }
     } catch (err) {
-      console.error('[VideoRobotPresenter] Error:', err);
-      setError(`Generation failed`);
+      console.error('[VideoRobotPresenter] Error caught:', err);
+      
+      // Never show error to user - use fallback instead
+      const fallbackScript = generateFallbackScript(title, tagline, description, category);
+      if (fallbackScript) {
+        cachedScriptRef.current = fallbackScript;
+        setScriptText(fallbackScript);
+        setKeyPoints([tagline || 'Innovative solution'].filter(Boolean));
+        setPlaybackState('ready');
+        
+        if (speechSupported) {
+          speakText(fallbackScript);
+        }
+      } else {
+        // Minimal fallback if nothing else works
+        const minimalScript = `Introducing ${title || 'this innovation'}.`;
+        cachedScriptRef.current = minimalScript;
+        setScriptText(minimalScript);
+        setPlaybackState('ready');
+      }
       setIsLoading(false);
     }
   }, [playbackState, speechSupported, speakText, title, tagline, category, description, transcript, videoUrl]);
+
+  // Generate a fallback script from available innovation data
+  const generateFallbackScript = (title: string, tagline: string, description: string, category: string): string | null => {
+    if (!title && !tagline && !description) {
+      return null;
+    }
+    
+    const categoryLabels: Record<string, string> = {
+      ai: "artificial intelligence",
+      healthtech: "health technology",
+      fintech: "financial technology",
+      climatetech: "climate technology",
+      edtech: "education technology",
+      saas: "software",
+      hardware: "hardware",
+      web3: "blockchain",
+      other: "technology",
+    };
+    
+    const categoryLabel = categoryLabels[category] || "technology";
+    const intro = title ? `Introducing ${title}.` : "";
+    const tagPart = tagline ? ` ${tagline}.` : "";
+    const descPart = description ? ` ${description.substring(0, 200).trim()}${description.length > 200 ? '...' : ''}` : "";
+    const categoryPart = category ? ` This ${categoryLabel} solution aims to make a meaningful impact.` : "";
+    
+    return `${intro}${tagPart}${descPart}${categoryPart}`.trim();
+  };
 
   const handlePause = useCallback(() => {
     if (speechSupported) {
@@ -251,12 +313,7 @@ export function VideoRobotPresenter({
             </div>
           )}
 
-          {/* Error display */}
-          {error && (
-            <div className="text-sm text-destructive bg-destructive/10 rounded p-2">
-              {error}
-            </div>
-          )}
+          {/* Removed error display - errors are logged only */}
 
           {/* Idle state - play button */}
           {!hasContent && !isLoading && (
