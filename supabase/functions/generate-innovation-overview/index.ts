@@ -11,6 +11,14 @@ interface OverviewRequest {
   tagline: string;
   category: string;
   description: string;
+  transcript?: string;
+}
+
+interface NarratorResponse {
+  script: string;
+  key_points: string[];
+  emotion: "confident" | "friendly" | "serious";
+  gestures: Array<{ t: number; action: string }>;
 }
 
 const categoryLabels: Record<string, string> = {
@@ -31,7 +39,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, tagline, category, description }: OverviewRequest = await req.json();
+    const { title, tagline, category, description, transcript }: OverviewRequest = await req.json();
 
     if (!title || !tagline || !description) {
       return new Response(
@@ -51,39 +59,49 @@ serve(async (req) => {
 
     const categoryLabel = categoryLabels[category] || category || "Innovation";
 
-    // Executive briefing prompt - clear, structured, high-value
-    const systemPrompt = `You are an executive briefing specialist. Create concise, high-impact innovation summaries.
+    // Robot Narrator prompt - structured JSON output
+    const systemPrompt = `You are ZYNOVEXA's Robot Narrator - a professional, confident, and friendly AI presenter.
 
-Your briefings must:
-- Be exactly 50-70 words (20-25 seconds when spoken)
-- Answer these questions in order:
-  1. What is this? (one sentence)
-  2. What problem does it solve? (one sentence)
-  3. Who benefits? (brief mention)
-  4. What's the key impact? (one sentence)
-- Use clear, executive-friendly language
-- Be a single flowing paragraph
-- Sound natural when read aloud
+Your task is to create a spoken overview (20-30 seconds when read aloud) for an innovation demo.
 
-NEVER:
-- Say "this video", "this overview", or reference any UI
-- Use buzzwords like "revolutionary", "game-changing", "cutting-edge", "innovative"
-- Include filler words or marketing fluff
-- Repeat information from the tagline verbatim
-- Start with "This is" or "Here is"
+RULES:
+- Duration: 50-70 words (20-30 seconds spoken)
+- Tone: professional, confident, friendly
+- Use simple spoken language. No jargon. No marketing fluff.
+- Do NOT say "this video", "click here", or reference any UI elements
+- Do NOT invent facts. Only use the provided content.
+- Answer clearly: What is this? What problem does it solve? Who benefits? What's the key impact?
 
-START directly with the innovation name or what it does.`;
+OUTPUT FORMAT:
+Return ONLY valid JSON with these exact keys:
+{
+  "script": "The spoken overview text...",
+  "key_points": ["Point 1", "Point 2", "Point 3"],
+  "emotion": "confident",
+  "gestures": [
+    {"t": 2, "action": "nod"},
+    {"t": 7, "action": "open_palm_present"},
+    {"t": 14, "action": "point"},
+    {"t": 24, "action": "thumbs_up"}
+  ]
+}
 
-    const userPrompt = `Create an executive briefing for:
+Gesture actions available: nod, open_palm_present, point, thumbs_up, wave, gesture_left, gesture_right
+Emotion options: confident, friendly, serious
 
-TITLE: ${title}
-TAGLINE: ${tagline}
-CATEGORY: ${categoryLabel}
-DESCRIPTION: ${description}
+The "t" in gestures represents seconds from start. Space gestures naturally throughout the script.`;
 
-Generate a 50-70 word spoken briefing. Be direct, clear, and insightful.`;
+    const userPrompt = `Create the Robot Narrator overview for:
 
-    console.log("Generating executive briefing for:", title);
+Title: ${title}
+Tagline: ${tagline}
+Category: ${categoryLabel}
+Description: ${description}
+Transcript: ${transcript || "(not provided)"}
+
+Return ONLY the JSON object, no markdown or extra text.`;
+
+    console.log("Generating robot narrator script for:", title);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -97,7 +115,7 @@ Generate a 50-70 word spoken briefing. Be direct, clear, and insightful.`;
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        max_tokens: 150,
+        max_tokens: 500,
         temperature: 0.6,
       }),
     });
@@ -105,8 +123,6 @@ Generate a 50-70 word spoken briefing. Be direct, clear, and insightful.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error("AI gateway error:", response.status, errorText);
-      
-      // Return generic error - client handles gracefully
       return new Response(
         JSON.stringify({ error: "Generation unavailable" }),
         { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -114,9 +130,9 @@ Generate a 50-70 word spoken briefing. Be direct, clear, and insightful.`;
     }
 
     const data = await response.json();
-    const overview = data.choices?.[0]?.message?.content?.trim();
+    let content = data.choices?.[0]?.message?.content?.trim();
 
-    if (!overview) {
+    if (!content) {
       console.error("Empty response from AI");
       return new Response(
         JSON.stringify({ error: "Empty response" }),
@@ -124,14 +140,51 @@ Generate a 50-70 word spoken briefing. Be direct, clear, and insightful.`;
       );
     }
 
-    console.log("Generated briefing:", overview.substring(0, 80) + "...");
+    // Clean up potential markdown code blocks
+    content = content.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+
+    // Parse and validate the JSON response
+    let narratorData: NarratorResponse;
+    try {
+      narratorData = JSON.parse(content);
+      
+      // Validate required fields
+      if (!narratorData.script || !Array.isArray(narratorData.key_points)) {
+        throw new Error("Missing required fields in response");
+      }
+      
+      // Ensure defaults
+      narratorData.emotion = narratorData.emotion || "confident";
+      narratorData.gestures = narratorData.gestures || [
+        { t: 2, action: "nod" },
+        { t: 7, action: "open_palm_present" },
+        { t: 14, action: "point" },
+        { t: 24, action: "thumbs_up" },
+      ];
+    } catch (parseError) {
+      console.error("Failed to parse AI response as JSON:", parseError, "Content:", content);
+      // Fallback: treat content as plain script
+      narratorData = {
+        script: content,
+        key_points: [tagline],
+        emotion: "confident",
+        gestures: [
+          { t: 2, action: "nod" },
+          { t: 7, action: "open_palm_present" },
+          { t: 14, action: "point" },
+          { t: 24, action: "thumbs_up" },
+        ],
+      };
+    }
+
+    console.log("Generated narrator script:", narratorData.script.substring(0, 80) + "...");
 
     return new Response(
-      JSON.stringify({ overview }),
+      JSON.stringify(narratorData),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Briefing generation error:", error);
+    console.error("Narrator generation error:", error);
     return new Response(
       JSON.stringify({ error: "Generation failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

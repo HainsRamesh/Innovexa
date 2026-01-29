@@ -6,6 +6,14 @@ interface UseAIOverviewProps {
   tagline: string;
   category: string;
   description: string;
+  transcript?: string;
+}
+
+interface NarratorData {
+  script: string;
+  key_points: string[];
+  emotion: 'confident' | 'friendly' | 'serious';
+  gestures: Array<{ t: number; action: string }>;
 }
 
 interface UseAIOverviewReturn {
@@ -18,36 +26,34 @@ interface UseAIOverviewReturn {
   replay: () => Promise<void>;
   setVolume: (volume: number) => void;
   overviewText: string | null;
+  keyPoints: string[];
+  emotion: string;
+  gestures: Array<{ t: number; action: string }>;
   hasGenerated: boolean;
   speechSupported: boolean;
 }
 
 /**
  * Hook to manage AI overview generation and text-to-speech playback.
- * 
- * Key behaviors:
- * - Only generates content when play() is called (not on mount)
- * - Falls back to text-only if speech synthesis is unavailable
- * - Uses silent error handling to avoid user-facing errors
- * - Caches generated content to avoid regeneration
+ * Returns structured narrator data including script, key points, emotion, and gestures.
  */
 export function useAIOverview({
   title,
   tagline,
   category,
   description,
+  transcript,
 }: UseAIOverviewProps): UseAIOverviewReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [volume, setVolumeState] = useState(0.8);
-  const [overviewText, setOverviewText] = useState<string | null>(null);
+  const [narratorData, setNarratorData] = useState<NarratorData | null>(null);
   const [hasGenerated, setHasGenerated] = useState(false);
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const cachedOverviewRef = useRef<string | null>(null);
+  const cachedDataRef = useRef<NarratorData | null>(null);
   
-  // Check if speech synthesis is supported
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
   // Cleanup speech synthesis on unmount
@@ -64,20 +70,18 @@ export function useAIOverview({
   }, [speechSupported]);
 
   /**
-   * Generate AI overview text from the edge function.
-   * Uses defensive error handling - returns null on any failure.
+   * Generate AI narrator data from the edge function.
    */
-  const generateOverview = useCallback(async (): Promise<string | null> => {
-    // Return cached overview if available
-    if (cachedOverviewRef.current) {
-      return cachedOverviewRef.current;
+  const generateOverview = useCallback(async (): Promise<NarratorData | null> => {
+    if (cachedDataRef.current) {
+      return cachedDataRef.current;
     }
 
     setIsLoading(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('generate-innovation-overview', {
-        body: { title, tagline, category, description },
+        body: { title, tagline, category, description, transcript },
       });
 
       if (error) {
@@ -85,42 +89,42 @@ export function useAIOverview({
         return null;
       }
 
-      if (data?.overview) {
-        cachedOverviewRef.current = data.overview;
-        setOverviewText(data.overview);
+      if (data?.script) {
+        const result: NarratorData = {
+          script: data.script,
+          key_points: data.key_points || [],
+          emotion: data.emotion || 'confident',
+          gestures: data.gestures || [],
+        };
+        cachedDataRef.current = result;
+        setNarratorData(result);
         setHasGenerated(true);
-        return data.overview;
+        return result;
       }
 
       return null;
     } catch (err) {
-      // Silent failure - log but don't show to user
       console.warn('AI overview generation error:', err);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [title, tagline, category, description]);
+  }, [title, tagline, category, description, transcript]);
 
   /**
    * Speak the given text using Web Speech API.
-   * Handles all errors silently - falls back to text-only display.
    */
   const speakText = useCallback((text: string) => {
-    if (!speechSupported) {
-      return;
-    }
+    if (!speechSupported) return;
 
     try {
-      // Cancel any ongoing speech
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.volume = volume;
-      utterance.rate = 0.95; // Slightly slower for clarity
+      utterance.rate = 0.95;
       utterance.pitch = 1;
 
-      // Try to find a natural-sounding English voice
       const voices = window.speechSynthesis.getVoices();
       const preferredVoice = voices.find(
         (v) =>
@@ -143,7 +147,6 @@ export function useAIOverview({
       };
 
       utterance.onerror = (event) => {
-        // Silent handling - just reset state
         if (event.error !== 'canceled') {
           console.warn('Speech synthesis error:', event.error);
         }
@@ -151,30 +154,19 @@ export function useAIOverview({
         setIsSpeaking(false);
       };
 
-      utterance.onpause = () => {
-        setIsSpeaking(false);
-      };
-
-      utterance.onresume = () => {
-        setIsSpeaking(true);
-      };
+      utterance.onpause = () => setIsSpeaking(false);
+      utterance.onresume = () => setIsSpeaking(true);
 
       utteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     } catch (err) {
-      // Silent failure
       console.warn('Speech synthesis failed:', err);
       setIsPlaying(false);
       setIsSpeaking(false);
     }
   }, [volume, speechSupported]);
 
-  /**
-   * Play the AI overview - generates if needed, then speaks.
-   * If speech is not supported, just generates and displays text.
-   */
   const play = useCallback(async () => {
-    // If speech is paused, resume it
     if (speechSupported && window.speechSynthesis.paused) {
       try {
         window.speechSynthesis.resume();
@@ -182,29 +174,23 @@ export function useAIOverview({
         setIsSpeaking(true);
         return;
       } catch {
-        // If resume fails, continue to regenerate/replay
+        // Continue to regenerate/replay
       }
     }
 
-    // Generate overview if not cached
-    let text = cachedOverviewRef.current;
-    if (!text) {
-      text = await generateOverview();
+    let data = cachedDataRef.current;
+    if (!data) {
+      data = await generateOverview();
     }
 
-    // If we have text and speech is supported, speak it
-    if (text && speechSupported) {
-      speakText(text);
-    } else if (text) {
-      // Text-only fallback - just show the text
-      setOverviewText(text);
+    if (data?.script && speechSupported) {
+      speakText(data.script);
+    } else if (data?.script) {
+      setNarratorData(data);
       setHasGenerated(true);
     }
   }, [generateOverview, speakText, speechSupported]);
 
-  /**
-   * Pause speech playback.
-   */
   const pause = useCallback(() => {
     if (speechSupported) {
       try {
@@ -217,9 +203,6 @@ export function useAIOverview({
     }
   }, [speechSupported]);
 
-  /**
-   * Replay the AI overview from the beginning.
-   */
   const replay = useCallback(async () => {
     if (speechSupported) {
       try {
@@ -231,21 +214,17 @@ export function useAIOverview({
     setIsPlaying(false);
     setIsSpeaking(false);
 
-    const text = cachedOverviewRef.current;
-    if (text && speechSupported) {
-      speakText(text);
-    } else if (!text) {
-      // If no cached text, generate and play
-      const newText = await generateOverview();
-      if (newText && speechSupported) {
-        speakText(newText);
+    const data = cachedDataRef.current;
+    if (data?.script && speechSupported) {
+      speakText(data.script);
+    } else if (!data) {
+      const newData = await generateOverview();
+      if (newData?.script && speechSupported) {
+        speakText(newData.script);
       }
     }
   }, [generateOverview, speakText, speechSupported]);
 
-  /**
-   * Set the speech volume.
-   */
   const setVolume = useCallback((newVolume: number) => {
     setVolumeState(newVolume);
     if (utteranceRef.current) {
@@ -262,7 +241,10 @@ export function useAIOverview({
     pause,
     replay,
     setVolume,
-    overviewText,
+    overviewText: narratorData?.script || null,
+    keyPoints: narratorData?.key_points || [],
+    emotion: narratorData?.emotion || 'confident',
+    gestures: narratorData?.gestures || [],
     hasGenerated,
     speechSupported,
   };
