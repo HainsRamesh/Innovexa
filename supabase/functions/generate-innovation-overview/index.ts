@@ -12,27 +12,96 @@ interface OverviewRequest {
   category: string;
   description: string;
   transcript?: string;
+  videoUrl?: string;
 }
 
 interface NarratorResponse {
   script: string;
   key_points: string[];
   emotion: "confident" | "friendly" | "serious";
-  gestures: Array<{ t: number; action: string }>;
   robot_theme: "healthcare" | "finance" | "education" | "climate" | "ai" | "security" | "general";
 }
 
-const categoryLabels: Record<string, string> = {
-  ai: "Artificial Intelligence",
-  healthtech: "Health Tech",
-  fintech: "Financial Technology",
-  climatetech: "Climate Tech",
-  edtech: "Education Technology",
-  saas: "Software as a Service",
-  hardware: "Hardware and IoT",
-  web3: "Web3 and Blockchain",
-  other: "Innovation",
-};
+// Extract video ID from YouTube URL
+function extractYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  
+  const patterns = [
+    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
+    /^([a-zA-Z0-9_-]{11})$/, // Direct video ID
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  
+  return null;
+}
+
+// Fetch YouTube transcript using a public API
+async function fetchYouTubeTranscript(videoId: string): Promise<string | null> {
+  try {
+    console.log("Fetching transcript for video:", videoId);
+    
+    // Try using YouTube's timedtext API (works for videos with captions)
+    const captionUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&fmt=json3`;
+    
+    const response = await fetch(captionUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.events) {
+        const transcript = data.events
+          .filter((e: any) => e.segs)
+          .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (transcript.length > 50) {
+          console.log("Transcript fetched successfully, length:", transcript.length);
+          return transcript;
+        }
+      }
+    }
+    
+    // Fallback: Try to get auto-generated captions
+    const autoUrl = `https://www.youtube.com/api/timedtext?v=${videoId}&lang=en&name=English+(auto-generated)&fmt=json3`;
+    const autoResponse = await fetch(autoUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+    
+    if (autoResponse.ok) {
+      const autoData = await autoResponse.json();
+      if (autoData.events) {
+        const autoTranscript = autoData.events
+          .filter((e: any) => e.segs)
+          .map((e: any) => e.segs.map((s: any) => s.utf8).join(''))
+          .join(' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        if (autoTranscript.length > 50) {
+          console.log("Auto transcript fetched, length:", autoTranscript.length);
+          return autoTranscript;
+        }
+      }
+    }
+    
+    console.log("No transcript available for video:", videoId);
+    return null;
+  } catch (error) {
+    console.error("Error fetching transcript:", error);
+    return null;
+  }
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,7 +109,7 @@ serve(async (req) => {
   }
 
   try {
-    const { title, tagline, category, description, transcript }: OverviewRequest = await req.json();
+    const { title, tagline, category, description, transcript, videoUrl }: OverviewRequest = await req.json();
 
     if (!title || !tagline || !description) {
       return new Response(
@@ -58,6 +127,30 @@ serve(async (req) => {
       );
     }
 
+    // Try to fetch YouTube transcript if video URL is provided
+    let videoTranscript = transcript;
+    if (videoUrl && !transcript) {
+      const videoId = extractYouTubeVideoId(videoUrl);
+      if (videoId) {
+        const fetchedTranscript = await fetchYouTubeTranscript(videoId);
+        if (fetchedTranscript) {
+          videoTranscript = fetchedTranscript;
+        }
+      }
+    }
+
+    const categoryLabels: Record<string, string> = {
+      ai: "Artificial Intelligence",
+      healthtech: "Health Tech",
+      fintech: "Financial Technology",
+      climatetech: "Climate Tech",
+      edtech: "Education Technology",
+      saas: "Software as a Service",
+      hardware: "Hardware and IoT",
+      web3: "Web3 and Blockchain",
+      other: "Innovation",
+    };
+
     const categoryLabel = categoryLabels[category] || category || "Innovation";
 
     // Map category to robot theme
@@ -74,54 +167,72 @@ serve(async (req) => {
     };
     const defaultTheme = categoryToTheme[category] || "general";
 
-    // Robot Narrator prompt - structured JSON output
-    const systemPrompt = `You are ZYNOVEXA's Robot Narrator - a professional, confident, and friendly AI presenter.
+    // Different prompt based on whether we have a transcript
+    const hasTranscript = videoTranscript && videoTranscript.length > 50;
+    
+    const systemPrompt = hasTranscript 
+      ? `You are a Robot Video Explainer. Your ONLY job is to summarize the YouTube video transcript.
 
-Your task is to create a spoken overview (20-30 seconds when read aloud) for an innovation demo.
+CRITICAL RULES:
+- ONLY use information from the transcript. Do NOT invent any facts.
+- Duration: 50-70 words (20-30 seconds when spoken)
+- Tone: professional, clear, friendly
+- Explain what the video shows/demonstrates
+- Do NOT say "this video", "welcome", or reference any UI elements
+- Do NOT add marketing fluff or claims not in the transcript
+
+OUTPUT FORMAT:
+Return ONLY valid JSON:
+{
+  "script": "The spoken summary of the video transcript...",
+  "key_points": ["Point 1 from transcript", "Point 2 from transcript", "Point 3 from transcript"],
+  "emotion": "confident",
+  "robot_theme": "${defaultTheme}"
+}
+
+Emotions: confident, friendly, serious
+Themes: healthcare, finance, education, climate, ai, security, general`
+      : `You are a Robot Presenter for innovations. Create a brief spoken overview.
 
 RULES:
 - Duration: 50-70 words (20-30 seconds spoken)
 - Tone: professional, confident, friendly
-- Use simple spoken language. No jargon. No marketing fluff.
+- Only use the provided information. Do NOT invent facts.
+- Answer: What is this? What problem does it solve? Who benefits?
 - Do NOT say "this video", "click here", or reference any UI elements
-- Do NOT invent facts. Only use the provided content.
-- Answer clearly: What is this? What problem does it solve? Who benefits? What's the key impact?
 
 OUTPUT FORMAT:
-Return ONLY valid JSON with these exact keys:
+Return ONLY valid JSON:
 {
-  "script": "The spoken overview text...",
+  "script": "The spoken overview...",
   "key_points": ["Point 1", "Point 2", "Point 3"],
   "emotion": "confident",
-  "gestures": [
-    {"t": 2, "action": "nod"},
-    {"t": 7, "action": "open_palm_present"},
-    {"t": 14, "action": "point"},
-    {"t": 24, "action": "thumbs_up"}
-  ],
   "robot_theme": "${defaultTheme}"
 }
 
-Robot themes: healthcare, finance, education, climate, ai, security, general
-- Choose based on the innovation's domain. Default: "${defaultTheme}" based on category.
-- Override if the description clearly fits a different theme.
+Emotions: confident, friendly, serious
+Themes: healthcare, finance, education, climate, ai, security, general`;
 
-Gesture actions: nod, open_palm_present, point, thumbs_up, wave, gesture_left, gesture_right
-Emotion options: confident, friendly, serious
+    const userPrompt = hasTranscript
+      ? `Summarize this YouTube video transcript in 20-30 seconds of spoken text.
 
-The "t" in gestures represents seconds from start. Space gestures naturally throughout the script.`;
+Video Title: ${title}
+Category: ${categoryLabel}
 
-    const userPrompt = `Create the Robot Narrator overview for:
+TRANSCRIPT:
+${videoTranscript ? videoTranscript.substring(0, 3000) : ''}
+
+Return ONLY the JSON object.`
+      : `Create an overview for:
 
 Title: ${title}
 Tagline: ${tagline}
 Category: ${categoryLabel}
 Description: ${description}
-Transcript: ${transcript || "(not provided)"}
 
-Return ONLY the JSON object, no markdown or extra text.`;
+Return ONLY the JSON object.`;
 
-    console.log("Generating robot narrator script for:", title);
+    console.log("Generating robot overview for:", title, "hasTranscript:", hasTranscript);
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -136,7 +247,7 @@ Return ONLY the JSON object, no markdown or extra text.`;
           { role: "user", content: userPrompt },
         ],
         max_tokens: 500,
-        temperature: 0.6,
+        temperature: 0.5,
       }),
     });
 
@@ -176,12 +287,6 @@ Return ONLY the JSON object, no markdown or extra text.`;
       // Ensure defaults
       narratorData.emotion = narratorData.emotion || "confident";
       narratorData.robot_theme = narratorData.robot_theme || (defaultTheme as NarratorResponse["robot_theme"]);
-      narratorData.gestures = narratorData.gestures || [
-        { t: 2, action: "nod" },
-        { t: 7, action: "open_palm_present" },
-        { t: 14, action: "point" },
-        { t: 24, action: "thumbs_up" },
-      ];
     } catch (parseError) {
       console.error("Failed to parse AI response as JSON:", parseError, "Content:", content);
       // Fallback: treat content as plain script
@@ -190,23 +295,20 @@ Return ONLY the JSON object, no markdown or extra text.`;
         key_points: [tagline],
         emotion: "confident",
         robot_theme: defaultTheme as NarratorResponse["robot_theme"],
-        gestures: [
-          { t: 2, action: "nod" },
-          { t: 7, action: "open_palm_present" },
-          { t: 14, action: "point" },
-          { t: 24, action: "thumbs_up" },
-        ],
       };
     }
 
-    console.log("Generated narrator script:", narratorData.script.substring(0, 80) + "...");
+    console.log("Generated script:", narratorData.script.substring(0, 80) + "...");
 
     return new Response(
-      JSON.stringify(narratorData),
+      JSON.stringify({
+        ...narratorData,
+        transcript_used: hasTranscript,
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("Narrator generation error:", error);
+    console.error("Generation error:", error);
     return new Response(
       JSON.stringify({ error: "Generation failed" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
