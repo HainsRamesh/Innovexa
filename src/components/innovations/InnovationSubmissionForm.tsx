@@ -827,17 +827,27 @@ const moderateAsset = async (
             parsedErrorBody,
           });
 
-          const blockResponse = redundancyResult?.block === true || redundancyStatus === 409;
+           const rawMatches = (redundancyResult?.matches || []) as RedundancyMatch[];
+           const currentInnovationId = mode === "edit" ? initialData?.id : undefined;
+           const matches = currentInnovationId
+             ? rawMatches.filter((m) => m?.id && m.id !== currentInnovationId)
+             : rawMatches;
 
-          if (blockResponse) {
-            const matches = (redundancyResult?.matches || []) as RedundancyMatch[];
-            setBlockData({
-              reason: redundancyResult?.reason || "This submission appears to be a duplicate",
-              matches,
-            });
-            setIsSubmitting(false);
-            return;
-          }
+           const isBlockStatus = redundancyResult?.block === true || redundancyStatus === 409;
+
+           // If the backend incorrectly returns the innovation being edited as a duplicate of itself,
+           // ignore that self-match and continue.
+           const isSelfMatchOnly =
+             Boolean(currentInnovationId) && rawMatches.length > 0 && matches.length === 0;
+
+           if (isBlockStatus && !isSelfMatchOnly) {
+             setBlockData({
+               reason: redundancyResult?.reason || "This submission appears to be a duplicate",
+               matches,
+             });
+             setIsSubmitting(false);
+             return;
+           }
 
           if (redundancyError && !redundancyResult) {
             toast.warning("Could not check similarity. Continuing to publish.");
