@@ -801,6 +801,8 @@ const moderateAsset = async (
                 description: innovationData.description,
                 without_product: innovationData.without_product,
                 with_product: innovationData.with_product,
+                // When editing, exclude the current innovation from duplicate detection
+                exclude_id: mode === "edit" ? initialData?.id : undefined,
               },
               headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey },
             },
