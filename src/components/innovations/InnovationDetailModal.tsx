@@ -7,7 +7,7 @@ import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
 import { VideoThumbnailPlayer } from './VideoThumbnailPlayer';
 import { InnovationCommentsSection } from './InnovationCommentsSection';
 import { InnovationAnalyticsCard } from './InnovationAnalyticsCard';
-import { RobotNarrator } from './RobotNarrator';
+import { VideoRobotPresenter } from './VideoRobotPresenter';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 import { useInnovationBookmark } from '@/hooks/useInnovationBookmark';
 import { useMessageClickTracker } from '@/hooks/useMessageClickTracker';
@@ -115,8 +115,8 @@ export const InnovationDetailModal = ({
               />
             )}
 
-            {/* Robot Narrator - Custom component, NOT Lovable AI Agent */}
-            <RobotNarrator
+            {/* Video Robot Presenter - Custom component */}
+            <VideoRobotPresenter
               title={innovation.title}
               tagline={innovation.tagline}
               category={innovation.category}
