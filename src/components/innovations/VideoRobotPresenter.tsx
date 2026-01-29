@@ -13,7 +13,7 @@ interface VideoRobotPresenterProps {
   transcript?: string;
 }
 
-type PlaybackState = 'idle' | 'ready' | 'playing' | 'paused';
+type PlaybackState = 'idle' | 'generating' | 'ready' | 'playing' | 'paused';
 
 export function VideoRobotPresenter({
   title,
@@ -26,6 +26,7 @@ export function VideoRobotPresenter({
   const [volume, setVolumeState] = useState(0.8);
   const [scriptText, setScriptText] = useState<string | null>(null);
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const cachedScriptRef = useRef<string | null>(null);
@@ -46,7 +47,13 @@ export function VideoRobotPresenter({
   }, [speechSupported]);
 
   const speakText = useCallback((text: string) => {
-    if (!speechSupported) return;
+    console.log('[VideoRobotPresenter] speakText called, speechSupported:', speechSupported);
+    
+    if (!speechSupported) {
+      console.log('[VideoRobotPresenter] TTS not supported, skipping audio');
+      setPlaybackState('ready');
+      return;
+    }
 
     try {
       window.speechSynthesis.cancel();
@@ -57,6 +64,8 @@ export function VideoRobotPresenter({
       utterance.pitch = 1;
 
       const voices = window.speechSynthesis.getVoices();
+      console.log('[VideoRobotPresenter] Available voices:', voices.length);
+      
       const preferredVoice = voices.find(
         (v) =>
           v.lang.startsWith('en') &&
@@ -65,13 +74,21 @@ export function VideoRobotPresenter({
       
       if (preferredVoice) {
         utterance.voice = preferredVoice;
+        console.log('[VideoRobotPresenter] Using voice:', preferredVoice.name);
       }
 
-      utterance.onstart = () => setPlaybackState('playing');
-      utterance.onend = () => setPlaybackState('ready');
+      utterance.onstart = () => {
+        console.log('[VideoRobotPresenter] TTS started');
+        setPlaybackState('playing');
+      };
+      utterance.onend = () => {
+        console.log('[VideoRobotPresenter] TTS ended');
+        setPlaybackState('ready');
+      };
       utterance.onerror = (event) => {
+        console.error('[VideoRobotPresenter] TTS error:', event.error);
         if (event.error !== 'canceled') {
-          console.warn('Speech synthesis error:', event.error);
+          setError(`TTS error: ${event.error}`);
         }
         setPlaybackState('ready');
       };
@@ -81,59 +98,83 @@ export function VideoRobotPresenter({
       utteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     } catch (err) {
-      console.warn('Speech synthesis failed:', err);
+      console.error('[VideoRobotPresenter] TTS failed:', err);
+      setError('TTS playback failed');
       setPlaybackState('ready');
     }
   }, [volume, speechSupported]);
 
   const handlePlay = useCallback(async () => {
+    console.log('[VideoRobotPresenter] handlePlay clicked');
+    setError(null);
+    
     // Resume if paused
     if (playbackState === 'paused' && speechSupported) {
+      console.log('[VideoRobotPresenter] Resuming paused speech');
       try {
         window.speechSynthesis.resume();
         setPlaybackState('playing');
         return;
-      } catch {
-        // Continue to generate/replay
+      } catch (err) {
+        console.error('[VideoRobotPresenter] Resume failed:', err);
       }
     }
 
     // If we already have a cached script, just play it
     if (cachedScriptRef.current) {
-      if (speechSupported) {
-        speakText(cachedScriptRef.current);
-      }
+      console.log('[VideoRobotPresenter] Using cached script');
+      speakText(cachedScriptRef.current);
       return;
     }
 
-    // Generate script silently (robot stays visible in idle state)
+    // Generate new script
+    console.log('[VideoRobotPresenter] Starting script generation...');
+    setPlaybackState('generating');
+
     try {
-      const { data, error } = await supabase.functions.invoke('generate-innovation-overview', {
+      console.log('[VideoRobotPresenter] Calling edge function with:', { title, tagline, category });
+      
+      const { data, error: fnError } = await supabase.functions.invoke('generate-innovation-overview', {
         body: { title, tagline, category, description, transcript },
       });
 
-      if (error) {
-        console.warn('Script generation failed:', error.message);
+      console.log('[VideoRobotPresenter] Edge function response:', { data, error: fnError });
+
+      if (fnError) {
+        console.error('[VideoRobotPresenter] Edge function error:', fnError);
+        setError(`Generation failed: ${fnError.message}`);
+        setPlaybackState('idle');
         return;
       }
 
       if (data?.script) {
+        console.log('[VideoRobotPresenter] Script generated successfully, length:', data.script.length);
         cachedScriptRef.current = data.script;
         setScriptText(data.script);
         setKeyPoints(data.key_points || []);
+        setPlaybackState('ready');
         
+        // Attempt TTS playback
         if (speechSupported) {
+          console.log('[VideoRobotPresenter] Starting TTS playback');
           speakText(data.script);
         } else {
-          setPlaybackState('ready');
+          console.log('[VideoRobotPresenter] TTS not available, showing text only');
         }
+      } else {
+        console.error('[VideoRobotPresenter] No script in response:', data);
+        setError('No script generated');
+        setPlaybackState('idle');
       }
     } catch (err) {
-      console.warn('Script generation error:', err);
+      console.error('[VideoRobotPresenter] Script generation error:', err);
+      setError(`Generation error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setPlaybackState('idle');
     }
   }, [playbackState, speechSupported, speakText, title, tagline, category, description, transcript]);
 
   const handlePause = useCallback(() => {
+    console.log('[VideoRobotPresenter] handlePause');
     if (speechSupported) {
       try {
         window.speechSynthesis.pause();
@@ -145,6 +186,7 @@ export function VideoRobotPresenter({
   }, [speechSupported]);
 
   const handleReplay = useCallback(() => {
+    console.log('[VideoRobotPresenter] handleReplay');
     if (speechSupported) {
       try {
         window.speechSynthesis.cancel();
@@ -159,6 +201,7 @@ export function VideoRobotPresenter({
   }, [speechSupported, speakText]);
 
   const handleSkip = useCallback(() => {
+    console.log('[VideoRobotPresenter] handleSkip');
     if (speechSupported) {
       try {
         window.speechSynthesis.cancel();
@@ -180,8 +223,9 @@ export function VideoRobotPresenter({
     setVolumeState(volume > 0 ? 0 : 0.8);
   };
 
+  const isGenerating = playbackState === 'generating';
   const isSpeaking = playbackState === 'playing';
-  const hasStarted = playbackState !== 'idle';
+  const hasStarted = playbackState !== 'idle' && playbackState !== 'generating';
 
   return (
     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
@@ -200,7 +244,15 @@ export function VideoRobotPresenter({
 
         {/* Content area */}
         <div className="flex-1 space-y-3">
-          {!hasStarted ? (
+          {/* Error display */}
+          {error && (
+            <div className="text-sm text-destructive bg-destructive/10 rounded p-2">
+              {error}
+            </div>
+          )}
+
+          {/* Idle state - show play button */}
+          {playbackState === 'idle' && (
             <div className="flex flex-col justify-center h-full">
               <p className="text-sm text-muted-foreground mb-3">
                 Get a quick AI-powered overview of this innovation
@@ -215,7 +267,19 @@ export function VideoRobotPresenter({
                 {speechSupported ? 'Play Robot Overview' : 'View Overview'}
               </Button>
             </div>
-          ) : (
+          )}
+
+          {/* Generating state */}
+          {isGenerating && (
+            <div className="flex flex-col justify-center h-full">
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Generating overview...
+              </p>
+            </div>
+          )}
+
+          {/* Content display after generation */}
+          {hasStarted && (
             <>
               {/* Speaking indicator */}
               {isSpeaking && (
@@ -256,7 +320,7 @@ export function VideoRobotPresenter({
         </div>
       </div>
 
-      {/* Playback Controls - Only show after started */}
+      {/* Playback Controls - Only show after content is ready */}
       {hasStarted && speechSupported && (
         <div className="flex items-center justify-between pt-2 border-t border-border/50">
           <div className="flex items-center gap-1.5">
