@@ -293,7 +293,7 @@ const Profile = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium">{profile?.full_name || 'User'}</p>
-                  <p className="text-sm text-muted-foreground">{profile?.email}</p>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
                   <Button
                     type="button"
                     variant="outline"

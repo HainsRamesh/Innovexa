@@ -215,7 +215,7 @@ export const AccountSettings = () => {
             </div>
             <div className="flex-1">
               <p className="font-semibold text-lg">{profile?.full_name || 'User'}</p>
-              <p className="text-sm text-muted-foreground mb-2">{profile?.email}</p>
+              <p className="text-sm text-muted-foreground mb-2">{user?.email}</p>
               {role && (
                 <Badge variant={getRoleBadgeVariant(role)} className="capitalize">
                   {role}
@@ -243,7 +243,7 @@ export const AccountSettings = () => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
-            <Input id="email" value={profile?.email || ''} disabled className="bg-muted/50" />
+            <Input id="email" value={user?.email || ''} disabled className="bg-muted/50" />
             <p className="text-xs text-muted-foreground">Email cannot be changed</p>
           </div>
           <div className="space-y-2">
