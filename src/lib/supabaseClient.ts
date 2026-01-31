@@ -1,11 +1,26 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
-// Use env vars with fallback to known project values (these are public/publishable)
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "https://rnbpkpirnmhjehutqlzn.supabase.co";
-const SUPABASE_PUBLIC_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJuYnBrcGlybm1oamVodXRxbHpuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYzNjM0NTAsImV4cCI6MjA4MTkzOTQ1MH0.GqlE6OaYv2D5p-1wYe-6upic8T1djqyct5UQcvxu26Q";
+// Required env vars – fail immediately if missing or mismatched
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLIC_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+const EXPECTED_PROJECT_REF = "iehuqvjappjdgmfjzkoa";
+
+if (!SUPABASE_URL || !SUPABASE_PUBLIC_KEY) {
+  throw new Error(
+    "Missing Supabase env vars. Ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (or VITE_SUPABASE_PUBLISHABLE_KEY) are set."
+  );
+}
+
+// Ensure the URL contains the expected project ref
+if (!SUPABASE_URL.includes(EXPECTED_PROJECT_REF)) {
+  throw new Error(
+    `VITE_SUPABASE_URL does not match expected project "${EXPECTED_PROJECT_REF}". Current value: "${SUPABASE_URL}"`
+  );
+}
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLIC_KEY, {
   auth: {
