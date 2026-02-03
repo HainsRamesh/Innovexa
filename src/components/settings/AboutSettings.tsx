@@ -25,7 +25,7 @@ export const AboutSettings = () => {
               <Rocket className="h-10 w-10 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl">Zynovexa</CardTitle>
+          <CardTitle className="text-2xl">ZyNoveXa</CardTitle>
           <CardDescription>Connecting Innovations with Opportunities</CardDescription>
         </CardHeader>
         <CardContent className="text-center">
@@ -33,7 +33,7 @@ export const AboutSettings = () => {
             <Badge variant="secondary">Version {appVersion}</Badge>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {buildDate} Zynovexa. All rights reserved.
+            © {buildDate} ZyNoveXa. All rights reserved.
           </p>
         </CardContent>
       </Card>
@@ -52,7 +52,7 @@ export const AboutSettings = () => {
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground leading-relaxed">
-            Zynovexa is dedicated to bridging the gap between innovative ideas and the resources 
+            ZyNoveXa is dedicated to bridging the gap between innovative ideas and the resources 
             they need to flourish. We connect innovators, enterprises, and investors to solve 
             real-world problems through collaboration and cutting-edge solutions.
           </p>
@@ -146,7 +146,7 @@ export const AboutSettings = () => {
 
       {/* Credits */}
       <div className="text-center text-sm text-muted-foreground py-4">
-        <p>Made with ❤️ by the Zynovexa Team</p>
+        <p>Made with ❤️ by the ZyNoveXa Team</p>
       </div>
     </div>
   );

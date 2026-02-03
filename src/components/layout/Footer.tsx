@@ -118,7 +118,7 @@ export function Footer() {
                   className="h-10 w-10 object-contain"
                   aria-hidden="true"
                 />
-                <span className="text-xl font-bold text-white tracking-tight">Zynovexa</span>
+                <span className="text-xl font-bold text-white tracking-tight">ZyNoveXa</span>
               </span>
             </FooterLink>
             <p className="text-gray-400 text-sm leading-relaxed mb-6 mt-4">
@@ -168,7 +168,7 @@ export function Footer() {
         <div className="mt-12 pt-8 border-t border-white/10">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <p className="text-gray-500 text-sm">
-              © {currentYear} Zynovexa. All rights reserved.
+              © {currentYear} ZyNoveXa. All rights reserved.
             </p>
             <p className="text-gray-600 text-xs">
               Built for innovators, by innovators.

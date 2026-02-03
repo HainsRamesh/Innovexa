@@ -160,7 +160,7 @@ export default function Roadmap() {
                 Have a Feature Idea?
               </h3>
               <p className="text-muted-foreground mb-4">
-                We'd love to hear your suggestions for improving Zynovexa.
+                We'd love to hear your suggestions for improving ZyNoveXa.
               </p>
             </CardContent>
           </Card>

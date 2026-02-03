@@ -62,7 +62,7 @@ export default function FeatureRequests() {
             Feature Requests
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Have an idea to make Zynovexa better? We'd love to hear from you!
+            Have an idea to make ZyNoveXa better? We'd love to hear from you!
           </p>
         </div>
       </section>
@@ -76,7 +76,7 @@ export default function FeatureRequests() {
               <CardHeader>
                 <CardTitle>Submit a Feature Request</CardTitle>
                 <CardDescription>
-                  Tell us what you'd like to see in Zynovexa
+                  Tell us what you'd like to see in ZyNoveXa
                 </CardDescription>
               </CardHeader>
               <CardContent>

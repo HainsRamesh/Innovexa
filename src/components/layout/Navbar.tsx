@@ -114,7 +114,7 @@ export const Navbar = () => {
         loading="eager"
         decoding="async"
       />
-      <span className="text-xl font-bold tracking-tight">Zynovexa</span>
+      <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
     </Link>
   ), [user, role]);
 

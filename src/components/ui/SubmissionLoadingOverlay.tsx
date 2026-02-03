@@ -139,7 +139,7 @@ export function SubmissionLoadingOverlay({
         <div className="text-center mb-6">
           <div className="flex items-center justify-center gap-2">
             <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-8 w-8 object-contain" />
-            <h2 className="text-2xl font-bold text-white tracking-tight">Zynovexa</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight">ZYNOVEXA</h2>
           </div>
         </div>
 

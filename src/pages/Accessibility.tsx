@@ -73,7 +73,7 @@ export default function Accessibility() {
             Accessibility
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Zynovexa is committed to making our platform accessible to everyone, regardless of ability or technology.
+            ZyNoveXa is committed to making our platform accessible to everyone, regardless of ability or technology.
           </p>
         </div>
       </section>
@@ -87,7 +87,7 @@ export default function Accessibility() {
                 Our Commitment
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                We strive to ensure that Zynovexa is accessible to people with disabilities. We are continually 
+                We strive to ensure that ZyNoveXa is accessible to people with disabilities. We are continually 
                 improving the user experience for everyone and applying the relevant accessibility standards.
               </p>
               <p className="text-muted-foreground leading-relaxed">
@@ -142,7 +142,7 @@ export default function Accessibility() {
                 Accessibility Feedback
               </h2>
               <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-                We welcome your feedback on the accessibility of Zynovexa. Please let us know if you 
+                We welcome your feedback on the accessibility of ZyNoveXa. Please let us know if you 
                 encounter accessibility barriers or have suggestions for improvement.
               </p>
               <Link to="/contact">
