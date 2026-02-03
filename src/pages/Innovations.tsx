@@ -9,12 +9,10 @@ import { Input } from "@/components/ui/input";
 import { InnovationCategoryRow } from "@/components/innovations/InnovationCategoryRow";
 import { InnovationDetailModal } from "@/components/innovations/InnovationDetailModal";
 import { MyInnovationsSection } from "@/components/innovations/MyInnovationsSection";
-import { LiveRobotAvatar } from "@/components/robot";
 import { Innovation, InnovationCategory } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
-import { Plus, Search, Loader2, Bot } from "lucide-react";
+import { Plus, Search, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 const categories: InnovationCategory[] = [
   "ai",
@@ -46,7 +44,6 @@ export default function Innovations() {
   const [modalOpen, setModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [robotOpen, setRobotOpen] = useState(false);
 
   const isInnovator = role === "innovator";
 
@@ -266,34 +263,6 @@ export default function Innovations() {
 
       {/* Detail Modal */}
       <InnovationDetailModal innovation={selectedInnovation} open={modalOpen} onOpenChange={setModalOpen} />
-
-      {/* Robot Avatar FAB and Sheet */}
-      <Sheet open={robotOpen} onOpenChange={setRobotOpen}>
-        <SheetTrigger asChild>
-          <Button
-            size="lg"
-            className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-2xl hover:shadow-xl transition-all z-50 bg-primary hover:bg-primary/90 animate-pulse"
-            style={{
-              boxShadow: '0 0 30px hsl(var(--primary) / 0.6), 0 4px 20px rgba(0,0,0,0.3)'
-            }}
-          >
-            <Bot className="h-7 w-7" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 rounded-full border-2 border-background animate-ping" />
-            <span className="absolute -top-1 -right-1 h-4 w-4 bg-emerald-500 rounded-full border-2 border-background" />
-          </Button>
-        </SheetTrigger>
-        <SheetContent side="right" className="w-[360px] sm:w-[400px] p-0">
-          <SheetHeader className="p-4 border-b border-border">
-            <SheetTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              ZyNoveXa AI Assistant
-            </SheetTitle>
-          </SheetHeader>
-          <div className="p-4">
-            <LiveRobotAvatar />
-          </div>
-        </SheetContent>
-      </Sheet>
 
       <Footer />
     </div>
