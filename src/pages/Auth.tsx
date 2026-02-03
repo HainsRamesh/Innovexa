@@ -186,7 +186,7 @@ const Auth = () => {
         }
         
         toast({
-          title: "Welcome to ZYNOVEXA! 🎉",
+          title: "Welcome to Zynovexa! 🎉",
           description: "Your account has been created successfully.",
         });
         
@@ -422,7 +422,7 @@ const Auth = () => {
         
         if (sessionData.session) {
           toast({
-            title: "Welcome to ZYNOVEXA! 🎉",
+            title: "Welcome to Zynovexa! 🎉",
             description: "Your account has been verified successfully.",
           });
           
@@ -664,7 +664,7 @@ const Auth = () => {
               <div className="h-12 w-12 rounded-xl bg-gradient-primary flex items-center justify-center shadow-lg glow-primary">
                 <Lightbulb className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-2xl font-bold">ZYNOVEXA</span>
+              <span className="text-2xl font-bold">Zynovexa</span>
             </Link>
           </div>
 

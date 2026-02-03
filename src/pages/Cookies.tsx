@@ -64,7 +64,7 @@ const Cookies = () => {
             </div>
             
             <p className="text-lg text-muted-foreground max-w-3xl">
-              This Cookie Policy explains how ZyNoveXa uses cookies and similar technologies 
+              This Cookie Policy explains how Zynovexa uses cookies and similar technologies 
               to recognize you when you visit our platform.
             </p>
           </div>

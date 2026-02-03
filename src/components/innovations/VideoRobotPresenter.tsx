@@ -2,7 +2,6 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { RobotPresenter3D } from './RobotPresenter3D';
-import { supabase } from '@/integrations/supabase/client';
 import { 
   Select,
   SelectContent,
@@ -14,24 +13,20 @@ import { ROBOT_LANGUAGES, getFeatureScript } from '@/lib/robotLanguages';
 import { 
   Play, 
   Pause, 
-  RotateCcw, 
   Volume2, 
   VolumeX, 
-  SkipForward,
   Globe,
   Sparkles,
   Lightbulb,
   Rocket,
-  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface VideoRobotPresenterProps {
-  title: string;
-  tagline: string;
-  category: string;
-  description: string;
+  title?: string;
+  tagline?: string;
+  category?: string;
+  description?: string;
   transcript?: string;
   videoUrl?: string;
 }
@@ -39,25 +34,14 @@ interface VideoRobotPresenterProps {
 type PlaybackState = 'idle' | 'ready' | 'playing' | 'paused';
 
 const FEATURE_OPTIONS = [
-  { id: 'zynovexa-overview', label: 'ZyNoveXa Overview', icon: Sparkles },
+  { id: 'zynovexa-overview', label: 'Zynovexa Overview', icon: Sparkles },
   { id: 'finops-automation', label: 'FinOps Automation', icon: Rocket },
   { id: 'innovation-matching', label: 'Innovation Matching', icon: Lightbulb },
 ];
 
-export function VideoRobotPresenter({
-  title,
-  tagline,
-  category,
-  description,
-  transcript,
-  videoUrl,
-}: VideoRobotPresenterProps) {
+export function VideoRobotPresenter({}: VideoRobotPresenterProps) {
   const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
   const [volume, setVolumeState] = useState(0.8);
-  const [scriptText, setScriptText] = useState<string | null>(null);
-  const [keyPoints, setKeyPoints] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'innovation' | 'features'>('innovation');
   
   // Multilingual feature state
   const [selectedLanguage, setSelectedLanguage] = useState(ROBOT_LANGUAGES[0]);
@@ -65,7 +49,6 @@ export function VideoRobotPresenter({
   const [fallbackMessage, setFallbackMessage] = useState<string | null>(null);
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const cachedScriptRef = useRef<string | null>(null);
   
   const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
 
@@ -167,100 +150,6 @@ export function VideoRobotPresenter({
     }
   }, [volume, speechSupported, findVoiceForLanguage, selectedLanguage.name]);
 
-  const handlePlayInnovation = useCallback(async () => {
-    console.log('[VideoRobotPresenter] Play innovation clicked');
-    
-    // Resume if paused
-    if (playbackState === 'paused' && speechSupported) {
-      try {
-        window.speechSynthesis.resume();
-        setPlaybackState('playing');
-        return;
-      } catch (err) {
-        console.error('[VideoRobotPresenter] Resume failed:', err);
-      }
-    }
-
-    // If we have a cached script, just play it
-    if (cachedScriptRef.current) {
-      speakText(cachedScriptRef.current);
-      return;
-    }
-
-    // Generate new script - silent loading
-    setIsLoading(true);
-    console.log('[VideoRobotPresenter] Generating script...');
-
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke('generate-innovation-overview', {
-        body: { title, tagline, category, description, transcript, videoUrl },
-      });
-
-      console.log('[VideoRobotPresenter] Response:', data, 'Error:', fnError);
-
-      // Handle edge function errors gracefully - try fallback generation
-      if (fnError || !data?.script) {
-        console.warn('[VideoRobotPresenter] Edge function failed, using client-side fallback');
-        
-        const fallbackScript = generateFallbackScript(title, tagline, description, category);
-        if (fallbackScript) {
-          cachedScriptRef.current = fallbackScript;
-          setScriptText(fallbackScript);
-          setKeyPoints([tagline || 'Innovative solution'].filter(Boolean));
-          setPlaybackState('ready');
-          setIsLoading(false);
-          
-          if (speechSupported) {
-            speakText(fallbackScript);
-          }
-          return;
-        }
-      }
-
-      if (data?.script) {
-        cachedScriptRef.current = data.script;
-        setScriptText(data.script);
-        setKeyPoints(data.key_points || []);
-        setPlaybackState('ready');
-        setIsLoading(false);
-        
-        if (speechSupported) {
-          speakText(data.script);
-        }
-      } else {
-        const minimalScript = `This is ${title || 'an innovation'}. ${tagline || ''} ${description ? description.substring(0, 150) : ''}`.trim();
-        cachedScriptRef.current = minimalScript;
-        setScriptText(minimalScript);
-        setPlaybackState('ready');
-        setIsLoading(false);
-        
-        if (speechSupported) {
-          speakText(minimalScript);
-        }
-      }
-    } catch (err) {
-      console.error('[VideoRobotPresenter] Error caught:', err);
-      
-      const fallbackScript = generateFallbackScript(title, tagline, description, category);
-      if (fallbackScript) {
-        cachedScriptRef.current = fallbackScript;
-        setScriptText(fallbackScript);
-        setKeyPoints([tagline || 'Innovative solution'].filter(Boolean));
-        setPlaybackState('ready');
-        
-        if (speechSupported) {
-          speakText(fallbackScript);
-        }
-      } else {
-        const minimalScript = `Introducing ${title || 'this innovation'}.`;
-        cachedScriptRef.current = minimalScript;
-        setScriptText(minimalScript);
-        setPlaybackState('ready');
-      }
-      setIsLoading(false);
-    }
-  }, [playbackState, speechSupported, speakText, title, tagline, category, description, transcript, videoUrl]);
-
   // Handle playing feature explanations
   const handlePlayFeature = useCallback(() => {
     if (playbackState === 'playing') {
@@ -279,70 +168,6 @@ export function VideoRobotPresenter({
     speakText(script, selectedLanguage.code);
   }, [playbackState, speechSupported, selectedFeature, selectedLanguage.code, speakText]);
 
-  const generateFallbackScript = (title: string, tagline: string, description: string, category: string): string | null => {
-    if (!title && !tagline && !description) {
-      return null;
-    }
-    
-    const categoryLabels: Record<string, string> = {
-      ai: "artificial intelligence",
-      healthtech: "health technology",
-      fintech: "financial technology",
-      climatetech: "climate technology",
-      edtech: "education technology",
-      saas: "software",
-      hardware: "hardware",
-      web3: "blockchain",
-      other: "technology",
-    };
-    
-    const categoryLabel = categoryLabels[category] || "technology";
-    const intro = title ? `Introducing ${title}.` : "";
-    const tagPart = tagline ? ` ${tagline}.` : "";
-    const descPart = description ? ` ${description.substring(0, 200).trim()}${description.length > 200 ? '...' : ''}` : "";
-    const categoryPart = category ? ` This ${categoryLabel} solution aims to make a meaningful impact.` : "";
-    
-    return `${intro}${tagPart}${descPart}${categoryPart}`.trim();
-  };
-
-  const handlePause = useCallback(() => {
-    if (speechSupported) {
-      try {
-        window.speechSynthesis.pause();
-      } catch {
-        // Silent
-      }
-      setPlaybackState('paused');
-    }
-  }, [speechSupported]);
-
-  const handleReplay = useCallback(() => {
-    if (speechSupported) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // Silent
-      }
-    }
-    
-    if (activeTab === 'innovation' && cachedScriptRef.current && speechSupported) {
-      speakText(cachedScriptRef.current);
-    } else if (activeTab === 'features') {
-      handlePlayFeature();
-    }
-  }, [speechSupported, speakText, activeTab, handlePlayFeature]);
-
-  const handleSkip = useCallback(() => {
-    if (speechSupported) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // Silent
-      }
-    }
-    setPlaybackState('ready');
-  }, [speechSupported]);
-
   const handleVolumeChange = (values: number[]) => {
     setVolumeState(values[0]);
     if (utteranceRef.current) {
@@ -355,319 +180,155 @@ export function VideoRobotPresenter({
   };
 
   const isSpeaking = playbackState === 'playing';
-  const hasContent = scriptText !== null;
 
   return (
     <div className="rounded-lg border border-border bg-gradient-to-br from-muted/40 to-muted/20 p-4 space-y-4">
-      {/* Tabs for Innovation vs Features */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'innovation' | 'features')} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="innovation" className="gap-2">
-            <Play className="h-3.5 w-3.5" />
-            Innovation Overview
-          </TabsTrigger>
-          <TabsTrigger value="features" className="gap-2">
-            <Bot className="h-3.5 w-3.5" />
-            ZyNoveXa Features
-          </TabsTrigger>
-        </TabsList>
+      {/* Header */}
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <Sparkles className="h-4 w-4 text-primary" />
+        Zynovexa Features
+      </div>
 
-        {/* Innovation Overview Tab */}
-        <TabsContent value="innovation" className="mt-4 space-y-4">
-          <div className="flex gap-4 items-start">
-            {/* 3D Robot with speaking glow effect */}
-            <div 
-              className={cn(
-                "flex-shrink-0 relative transition-all duration-300",
-                isSpeaking && "animate-pulse"
-              )}
+      <div className="flex gap-4 items-start">
+        {/* 3D Robot */}
+        <div 
+          className={cn(
+            "flex-shrink-0 relative transition-all duration-300",
+            isSpeaking && "animate-pulse"
+          )}
+        >
+          {isSpeaking && (
+            <div className="absolute inset-0 -m-1 rounded-lg bg-primary/20 animate-ping" />
+          )}
+          <div className={cn(
+            "relative rounded-lg overflow-hidden transition-shadow duration-300",
+            isSpeaking && "ring-2 ring-primary/50 shadow-lg shadow-primary/20"
+          )}>
+            <RobotPresenter3D isSpeaking={isSpeaking} />
+          </div>
+        </div>
+
+        {/* Feature Controls */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* Language Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5" />
+              Language
+            </label>
+            <Select
+              value={selectedLanguage.code}
+              onValueChange={(code) => {
+                const lang = ROBOT_LANGUAGES.find(l => l.code === code);
+                if (lang) setSelectedLanguage(lang);
+              }}
             >
-              {isSpeaking && (
-                <div className="absolute inset-0 -m-1 rounded-lg bg-primary/20 animate-ping" />
-              )}
-              <div className={cn(
-                "relative rounded-lg overflow-hidden transition-shadow duration-300",
-                isSpeaking && "ring-2 ring-primary/50 shadow-lg shadow-primary/20"
-              )}>
-                <RobotPresenter3D isSpeaking={isSpeaking} />
-              </div>
-            </div>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {ROBOT_LANGUAGES.map(lang => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    <span className="flex items-center gap-2">
+                      <span>{lang.nativeName}</span>
+                      <span className="text-muted-foreground text-xs">({lang.name})</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {fallbackMessage && (
+              <p className="text-xs text-amber-500">{fallbackMessage}</p>
+            )}
+          </div>
 
-            {/* Content area */}
-            <div className="flex-1 min-w-0 space-y-3">
-              {isSpeaking && (
-                <div className="flex items-center gap-2 text-xs text-primary font-medium">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                  </span>
-                  Robot is speaking...
-                </div>
-              )}
-
-              {!hasContent && !isLoading && (
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">
-                    Let the robot explain this innovation in 20-30 seconds
-                  </p>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handlePlayInnovation}
-                    className="gap-2"
+          {/* Feature Selection */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+              <Lightbulb className="h-3.5 w-3.5" />
+              Explain Feature
+            </label>
+            <div className="grid grid-cols-1 gap-2">
+              {FEATURE_OPTIONS.map(option => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.id}
+                    onClick={() => setSelectedFeature(option.id)}
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
+                      "border",
+                      selectedFeature === option.id
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-muted/30 border-transparent hover:bg-muted/50 text-foreground"
+                    )}
                   >
-                    <Play className="h-4 w-4" />
-                    Play Robot Overview
-                  </Button>
-                </div>
-              )}
-
-              {isLoading && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <div className="h-4 w-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                  <span>Robot is preparing...</span>
-                </div>
-              )}
-
-              {hasContent && (
-                <p className="text-sm text-foreground/90 leading-relaxed">
-                  {scriptText}
-                </p>
-              )}
-
-              {keyPoints.length > 0 && (
-                <div className="space-y-1.5 pt-2 border-t border-border/50">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    Key Points
-                  </p>
-                  <ul className="space-y-1">
-                    {keyPoints.map((point, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-foreground/80">
-                        <span className="text-primary mt-0.5">•</span>
-                        <span>{point}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                    <Icon className="h-4 w-4" />
+                    {option.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Playback Controls */}
-          {hasContent && speechSupported && (
-            <div className="flex items-center justify-between pt-2 border-t border-border/50">
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={isSpeaking ? handlePause : handlePlayInnovation}
-                  className="h-8 px-3 gap-1.5"
-                >
-                  {isSpeaking ? (
-                    <>
-                      <Pause className="h-3.5 w-3.5" />
-                      <span className="text-xs">Pause</span>
-                    </>
-                  ) : (
-                    <>
-                      <Play className="h-3.5 w-3.5" />
-                      <span className="text-xs">Play</span>
-                    </>
-                  )}
-                </Button>
-                
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleReplay}
-                  className="h-8 w-8"
-                  title="Replay"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </Button>
-
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleSkip}
-                  className="h-8 w-8"
-                  title="Skip"
-                >
-                  <SkipForward className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-              
-              {/* Volume Controls */}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={toggleMute}
-                  className="h-8 w-8"
-                  title={volume === 0 ? 'Unmute' : 'Mute'}
-                >
-                  {volume === 0 ? (
-                    <VolumeX className="h-3.5 w-3.5" />
-                  ) : (
-                    <Volume2 className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <Slider
-                  value={[volume]}
-                  onValueChange={handleVolumeChange}
-                  max={1}
-                  step={0.1}
-                  className="w-20"
-                />
-              </div>
+          {/* Speaking indicator */}
+          {isSpeaking && (
+            <div className="flex items-center gap-2 text-xs text-primary font-medium">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              Robot is speaking...
             </div>
           )}
-        </TabsContent>
 
-        {/* ZyNoveXa Features Tab */}
-        <TabsContent value="features" className="mt-4 space-y-4">
-          <div className="flex gap-4 items-start">
-            {/* 3D Robot */}
-            <div 
-              className={cn(
-                "flex-shrink-0 relative transition-all duration-300",
-                isSpeaking && "animate-pulse"
-              )}
-            >
-              {isSpeaking && (
-                <div className="absolute inset-0 -m-1 rounded-lg bg-primary/20 animate-ping" />
-              )}
-              <div className={cn(
-                "relative rounded-lg overflow-hidden transition-shadow duration-300",
-                isSpeaking && "ring-2 ring-primary/50 shadow-lg shadow-primary/20"
-              )}>
-                <RobotPresenter3D isSpeaking={isSpeaking} />
-              </div>
-            </div>
+          {/* Action Button */}
+          <Button
+            onClick={handlePlayFeature}
+            variant={isSpeaking ? "destructive" : "default"}
+            className="w-full gap-2"
+          >
+            {isSpeaking ? (
+              <>
+                <Pause className="h-4 w-4" />
+                Stop
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4" />
+                Explain Feature
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
 
-            {/* Feature Controls */}
-            <div className="flex-1 min-w-0 space-y-4">
-              {/* Language Selection */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5" />
-                  Language
-                </label>
-                <Select
-                  value={selectedLanguage.code}
-                  onValueChange={(code) => {
-                    const lang = ROBOT_LANGUAGES.find(l => l.code === code);
-                    if (lang) setSelectedLanguage(lang);
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ROBOT_LANGUAGES.map(lang => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        <span className="flex items-center gap-2">
-                          <span>{lang.nativeName}</span>
-                          <span className="text-muted-foreground text-xs">({lang.name})</span>
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                
-                {fallbackMessage && (
-                  <p className="text-xs text-amber-500">{fallbackMessage}</p>
-                )}
-              </div>
-
-              {/* Feature Selection */}
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Lightbulb className="h-3.5 w-3.5" />
-                  Explain Feature
-                </label>
-                <div className="grid grid-cols-1 gap-2">
-                  {FEATURE_OPTIONS.map(option => {
-                    const Icon = option.icon;
-                    return (
-                      <button
-                        key={option.id}
-                        onClick={() => setSelectedFeature(option.id)}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-all",
-                          "border",
-                          selectedFeature === option.id
-                            ? "bg-primary/10 border-primary text-primary"
-                            : "bg-muted/30 border-transparent hover:bg-muted/50 text-foreground"
-                        )}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {option.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Speaking indicator */}
-              {isSpeaking && (
-                <div className="flex items-center gap-2 text-xs text-primary font-medium">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-                  </span>
-                  Robot is speaking...
-                </div>
-              )}
-
-              {/* Action Button */}
-              <Button
-                onClick={handlePlayFeature}
-                variant={isSpeaking ? "destructive" : "default"}
-                className="w-full gap-2"
-              >
-                {isSpeaking ? (
-                  <>
-                    <Pause className="h-4 w-4" />
-                    Stop
-                  </>
-                ) : (
-                  <>
-                    <Play className="h-4 w-4" />
-                    Explain Feature
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-
-          {/* Volume Controls for Features tab */}
-          {speechSupported && (
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleMute}
-                className="h-8 w-8"
-                title={volume === 0 ? 'Unmute' : 'Mute'}
-              >
-                {volume === 0 ? (
-                  <VolumeX className="h-3.5 w-3.5" />
-                ) : (
-                  <Volume2 className="h-3.5 w-3.5" />
-                )}
-              </Button>
-              <Slider
-                value={[volume]}
-                onValueChange={handleVolumeChange}
-                max={1}
-                step={0.1}
-                className="w-20"
-              />
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      {/* Volume Controls */}
+      {speechSupported && (
+        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/50">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleMute}
+            className="h-8 w-8"
+            title={volume === 0 ? 'Unmute' : 'Mute'}
+          >
+            {volume === 0 ? (
+              <VolumeX className="h-3.5 w-3.5" />
+            ) : (
+              <Volume2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+          <Slider
+            value={[volume]}
+            onValueChange={handleVolumeChange}
+            max={1}
+            step={0.1}
+            className="w-20"
+          />
+        </div>
+      )}
     </div>
   );
 }

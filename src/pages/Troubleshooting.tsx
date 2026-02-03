@@ -14,7 +14,7 @@ const troubleshootingGuides = [
   {
     icon: Wifi,
     title: "Connection Issues",
-    description: "Having trouble connecting to ZyNoveXa?",
+    description: "Having trouble connecting to Zynovexa?",
     steps: [
       "Check your internet connection",
       "Clear your browser cache and cookies",

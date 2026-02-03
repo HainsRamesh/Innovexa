@@ -17,7 +17,7 @@ const helpTopics = [
   {
     icon: BookOpen,
     title: "Getting Started",
-    description: "Learn the basics of using ZyNoveXa platform",
+    description: "Learn the basics of using Zynovexa platform",
     link: "/faqs",
   },
   {
@@ -52,7 +52,7 @@ export default function HelpCenter() {
             How can we help you?
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
-            Find answers, get support, and learn how to make the most of ZyNoveXa.
+            Find answers, get support, and learn how to make the most of Zynovexa.
           </p>
           
           {/* Search Bar */}
