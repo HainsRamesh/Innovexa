@@ -30,7 +30,7 @@ interface LiveRobotAvatarProps {
 }
 
 const FEATURE_OPTIONS = [
-  { id: 'zynovexa-overview', label: 'ZyNoveXa Overview', icon: Sparkles },
+  { id: 'zynovexa-overview', label: 'Zynovexa Overview', icon: Sparkles },
   { id: 'finops-automation', label: 'FinOps Automation', icon: Rocket },
   { id: 'innovation-matching', label: 'Innovation Matching', icon: Lightbulb },
 ];
@@ -70,10 +70,10 @@ export function LiveRobotAvatar({ className, compact = false }: LiveRobotAvatarP
   const handleGreet = useCallback(() => {
     setMood('greeting');
     const greetings: Record<string, string> = {
-      'en-US': "Hello! I'm your ZyNoveXa assistant. How can I help you today?",
-      'hi-IN': "नमस्ते! मैं आपका ZyNoveXa सहायक हूं। मैं आज आपकी कैसे मदद कर सकता हूं?",
-      'ta-IN': "வணக்கம்! நான் உங்கள் ZyNoveXa உதவியாளர். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
-      'es-ES': "¡Hola! Soy tu asistente de ZyNoveXa. ¿Cómo puedo ayudarte hoy?",
+      'en-US': "Hello! I'm your Zynovexa assistant. How can I help you today?",
+      'hi-IN': "नमस्ते! मैं आपका Zynovexa सहायक हूं। मैं आज आपकी कैसे मदद कर सकता हूं?",
+      'ta-IN': "வணக்கம்! நான் உங்கள் Zynovexa உதவியாளர். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?",
+      'es-ES': "¡Hola! Soy tu asistente de Zynovexa. ¿Cómo puedo ayudarte hoy?",
     };
     const greeting = greetings[selectedLanguage.code] || greetings['en-US'];
     speak(greeting);

@@ -15,16 +15,16 @@ const faqCategories = [
     category: "Getting Started",
     faqs: [
       {
-        question: "What is ZyNoveXa?",
-        answer: "ZyNoveXa is an AI-powered platform that connects enterprises with global innovators to solve real-world challenges through intelligent matching and collaboration.",
+        question: "What is Zynovexa?",
+        answer: "Zynovexa is an AI-powered platform that connects enterprises with global innovators to solve real-world challenges through intelligent matching and collaboration.",
       },
       {
         question: "How do I create an account?",
         answer: "Click the 'Sign Up' button on the homepage, enter your email and create a password. You can then complete your profile and choose your role as an Innovator, Enterprise, or Investor.",
       },
       {
-        question: "Is ZyNoveXa free to use?",
-        answer: "ZyNoveXa offers both free and premium tiers. Basic features are available at no cost, while advanced features like AI-powered matching and priority support require a subscription.",
+        question: "Is Zynovexa free to use?",
+        answer: "Zynovexa offers both free and premium tiers. Basic features are available at no cost, while advanced features like AI-powered matching and priority support require a subscription.",
       },
     ],
   },
@@ -110,7 +110,7 @@ export default function FAQs() {
             Frequently Asked Questions
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
-            Find quick answers to common questions about ZyNoveXa.
+            Find quick answers to common questions about Zynovexa.
           </p>
 
           {/* Search */}

@@ -297,7 +297,7 @@ export const SecuritySettings = () => {
             </div>
             <div className="flex-1">
               <CardTitle className="text-lg">Download Your Data</CardTitle>
-              <CardDescription>Get a copy of your data from ZyNoveXa</CardDescription>
+              <CardDescription>Get a copy of your data from Zynovexa</CardDescription>
             </div>
             <Badge variant="outline">Coming Soon</Badge>
           </div>

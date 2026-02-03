@@ -14,7 +14,7 @@ const communityChannels = [
   {
     icon: MessageSquare,
     title: "Community Forum",
-    description: "Join discussions, ask questions, and share your experiences with other ZyNoveXa users.",
+    description: "Join discussions, ask questions, and share your experiences with other Zynovexa users.",
     link: "#",
     linkText: "Visit Forum",
     members: "5,200+",
@@ -143,7 +143,7 @@ export default function Community() {
                 <div>
                   <h3 className="font-semibold text-foreground mb-2">Stay On Topic</h3>
                   <p className="text-sm text-muted-foreground">
-                    Keep discussions relevant to innovation, technology, and the ZyNoveXa platform.
+                    Keep discussions relevant to innovation, technology, and the Zynovexa platform.
                   </p>
                 </div>
                 <div>

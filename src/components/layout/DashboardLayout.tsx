@@ -154,7 +154,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
             <Link to="/" className="flex items-center group">
               <img src="/zynovexa-logo.png" alt="Zynovexa" className="h-12 w-12 object-contain" />
-              <span className="text-lg font-bold text-sidebar-foreground">ZYNOVEXA</span>
+              <span className="text-lg font-bold text-sidebar-foreground">Zynovexa</span>
             </Link>
           </div>
 
