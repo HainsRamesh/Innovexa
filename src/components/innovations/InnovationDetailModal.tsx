@@ -7,7 +7,7 @@ import { InnovationGalleryCarousel } from './InnovationGalleryCarousel';
 import { VideoThumbnailPlayer } from './VideoThumbnailPlayer';
 import { InnovationCommentsSection } from './InnovationCommentsSection';
 import { InnovationAnalyticsCard } from './InnovationAnalyticsCard';
-import { VideoRobotPresenter } from './VideoRobotPresenter';
+import { InnovationRobotPresenter } from './InnovationRobotPresenter';
 import { useDemoPlayTracker } from '@/hooks/useDemoPlayTracker';
 import { useInnovationBookmark } from '@/hooks/useInnovationBookmark';
 import { useMessageClickTracker } from '@/hooks/useMessageClickTracker';
@@ -115,12 +115,13 @@ export const InnovationDetailModal = ({
               />
             )}
 
-            {/* Video Robot Presenter - Custom component */}
-            <VideoRobotPresenter
+            {/* AI Innovation Guide */}
+            <InnovationRobotPresenter
               title={innovation.title}
               tagline={innovation.tagline}
               category={innovation.category}
               description={innovation.description}
+              videoUrl={innovation.video_url || undefined}
             />
 
             {/* Description */}
