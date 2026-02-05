@@ -1,12 +1,6 @@
-import { useRef } from "react";
-import { Paperclip, Image, FileText, X } from "lucide-react";
+import { useRef, useState } from "react";
+import { Paperclip, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -46,17 +40,17 @@ export const AttachmentPicker = ({
   currentCount,
   disabled,
 }: AttachmentPickerProps) => {
-  const imageInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isOpening, setIsOpening] = useState(false);
 
-  const validateAndProcessFiles = (files: FileList | null, type: "image" | "file") => {
+  const validateAndProcessFiles = (files: FileList | null) => {
     if (!files) return;
 
     const remainingSlots = MAX_ATTACHMENTS - currentCount;
     if (remainingSlots <= 0) return;
 
     const validFiles: File[] = [];
-    const allowedTypes = type === "image" ? ALLOWED_IMAGE_TYPES : ALLOWED_DOCUMENT_TYPES;
+    const allowedTypes = [...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES];
 
     for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
       const file = files[i];
@@ -76,15 +70,21 @@ export const AttachmentPicker = ({
 
     if (validFiles.length > 0) {
       onFilesSelected(validFiles);
+      // Reset the value so selecting the same file again triggers change
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const handleImageSelect = () => {
-    imageInputRef.current?.click();
-  };
-
-  const handleFileSelect = () => {
-    fileInputRef.current?.click();
+  const handleOpen = () => {
+    if (disabled || currentCount >= MAX_ATTACHMENTS) return;
+    setIsOpening(true);
+    // Short delay lets the browser show the file dialog reliably on repeated clicks
+    setTimeout(() => {
+      fileInputRef.current?.click();
+      setIsOpening(false);
+    }, 10);
   };
 
   const remaining = MAX_ATTACHMENTS - currentCount;
@@ -93,49 +93,28 @@ export const AttachmentPicker = ({
     <>
       <input
         type="file"
-        ref={imageInputRef}
-        className="hidden"
-        accept={ALLOWED_IMAGE_TYPES.join(",")}
-        multiple
-        onChange={(e) => validateAndProcessFiles(e.target.files, "image")}
-      />
-      <input
-        type="file"
         ref={fileInputRef}
         className="hidden"
-        accept={ALLOWED_DOCUMENT_TYPES.join(",")}
+        accept={[...ALLOWED_IMAGE_TYPES, ...ALLOWED_DOCUMENT_TYPES].join(",")}
         multiple
-        onChange={(e) => validateAndProcessFiles(e.target.files, "file")}
+        onChange={(e) => validateAndProcessFiles(e.target.files)}
       />
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className={cn("h-8 w-8 text-muted-foreground hover:text-foreground")}
-            disabled={disabled || remaining <= 0}
-          >
-            <Paperclip className="h-5 w-5" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="top" align="start" className="w-48">
-          <DropdownMenuItem onClick={handleImageSelect} className="cursor-pointer">
-            <Image className="h-4 w-4 mr-2" />
-            Photo / Image
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={handleFileSelect} className="cursor-pointer">
-            <FileText className="h-4 w-4 mr-2" />
-            Document / File
-          </DropdownMenuItem>
-          {remaining < MAX_ATTACHMENTS && (
-            <div className="px-2 py-1.5 text-xs text-muted-foreground border-t">
-              {remaining} attachment{remaining !== 1 ? "s" : ""} remaining
-            </div>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={handleOpen}
+        className={cn("h-8 w-8 text-muted-foreground hover:text-foreground")}
+        disabled={disabled || remaining <= 0 || isOpening}
+        aria-label="Add attachment"
+      >
+        {isOpening ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Paperclip className="h-5 w-5" />
+        )}
+      </Button>
     </>
   );
 };

@@ -2,8 +2,20 @@ import { useState } from "react";
 import { Download, FileText, File, ExternalLink, X, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { formatFileSize, getFileIcon } from "./AttachmentPicker";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export interface MessageAttachmentData {
   id: string;
@@ -12,15 +24,18 @@ export interface MessageAttachmentData {
   mime_type: string;
   size: number;
   thumbnail_url?: string | null;
+  message_id?: string;
 }
 
 interface MessageAttachmentProps {
   attachment: MessageAttachmentData;
   isOwn: boolean;
+  onAttachmentDeleted?: (messageId: string, attachmentId: string) => void;
 }
 
-export const MessageAttachment = ({ attachment, isOwn }: MessageAttachmentProps) => {
+export const MessageAttachment = ({ attachment, isOwn, onAttachmentDeleted }: MessageAttachmentProps) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const isImage = attachment.mime_type.startsWith("image/");
 
   const handleDownload = async () => {
@@ -76,6 +91,28 @@ export const MessageAttachment = ({ attachment, isOwn }: MessageAttachmentProps)
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center">
             <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute bottom-2 right-2 h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDownload();
+            }}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+          <Button
+            size="icon"
+            variant="destructive"
+            className="absolute top-1.5 right-1.5 h-7 w-7 rounded-full shadow-lg z-10 bg-red-600 hover:bg-red-700 text-white"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isOwn && attachment.message_id) setConfirmOpen(true);
+            }}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Lightbox */}
@@ -118,6 +155,46 @@ export const MessageAttachment = ({ attachment, isOwn }: MessageAttachmentProps)
             </div>
           </DialogContent>
         </Dialog>
+
+        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete attachment?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will remove the attachment from the conversation. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={async () => {
+                  try {
+                    if (!attachment.message_id) return;
+                    const { error } = await supabase
+                      .from("message_attachments")
+                      .delete()
+                      .eq("id", attachment.id);
+                    if (error) throw error;
+                    onAttachmentDeleted?.(attachment.message_id, attachment.id);
+                    toast({ description: "Attachment deleted" });
+                  } catch (err) {
+                    console.error("Delete attachment failed:", err);
+                    toast({
+                      title: "Error",
+                      description: "Failed to delete attachment",
+                      variant: "destructive",
+                    });
+                  } finally {
+                    setConfirmOpen(false);
+                  }
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </>
     );
   }
@@ -126,10 +203,10 @@ export const MessageAttachment = ({ attachment, isOwn }: MessageAttachmentProps)
   return (
     <div
       className={cn(
-        "flex items-center gap-3 p-3 rounded-lg border max-w-[260px]",
+        "relative flex items-center gap-3 p-3 pr-10 rounded-lg border max-w-[260px] self-end",
         isOwn 
-          ? "bg-primary-foreground/10 border-primary-foreground/20" 
-          : "bg-muted/50 border-border"
+          ? "bg-primary/15 border-primary/30 text-primary-foreground" 
+          : "bg-card border-border text-foreground"
       )}
     >
       <div className="flex-shrink-0">
@@ -156,10 +233,68 @@ export const MessageAttachment = ({ attachment, isOwn }: MessageAttachmentProps)
           "h-8 w-8 flex-shrink-0",
           isOwn ? "text-primary-foreground hover:bg-primary-foreground/10" : ""
         )}
-        onClick={handleDownload}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDownload();
+        }}
+        aria-label="Download attachment"
       >
         <Download className="h-4 w-4" />
       </Button>
+      {isOwn && attachment.message_id && (
+        <Button
+          size="icon"
+          variant="destructive"
+          className="absolute top-1 right-1 h-6 w-6 rounded-full shadow-md z-30 bg-red-600 hover:bg-red-700 text-white"
+          onClick={(e) => {
+            e.stopPropagation();
+            setConfirmOpen(true);
+          }}
+          aria-label="Delete attachment"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete attachment?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove the attachment from the conversation. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                try {
+                  if (!attachment.message_id) return;
+                  const { error } = await supabase
+                    .from("message_attachments")
+                    .delete()
+                    .eq("id", attachment.id);
+                  if (error) throw error;
+                  onAttachmentDeleted?.(attachment.message_id, attachment.id);
+                  toast({ description: "Attachment deleted" });
+                } catch (err) {
+                  console.error("Delete attachment failed:", err);
+                  toast({
+                    title: "Error",
+                    description: "Failed to delete attachment",
+                    variant: "destructive",
+                  });
+                } finally {
+                  setConfirmOpen(false);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -167,15 +302,21 @@ export const MessageAttachment = ({ attachment, isOwn }: MessageAttachmentProps)
 interface MessageAttachmentsListProps {
   attachments: MessageAttachmentData[];
   isOwn: boolean;
+  onAttachmentDeleted?: (messageId: string, attachmentId: string) => void;
 }
 
-export const MessageAttachmentsList = ({ attachments, isOwn }: MessageAttachmentsListProps) => {
+export const MessageAttachmentsList = ({ attachments, isOwn, onAttachmentDeleted }: MessageAttachmentsListProps) => {
   if (!attachments || attachments.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 mt-1">
+    <div className={cn("flex flex-col gap-2 mt-1", isOwn ? "items-end" : "items-start")}>
       {attachments.map((attachment) => (
-        <MessageAttachment key={attachment.id} attachment={attachment} isOwn={isOwn} />
+        <MessageAttachment
+          key={attachment.id}
+          attachment={attachment}
+          isOwn={isOwn}
+          onAttachmentDeleted={onAttachmentDeleted}
+        />
       ))}
     </div>
   );

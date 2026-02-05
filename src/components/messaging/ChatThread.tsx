@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { EmojiPicker } from "./EmojiPicker";
+import { EmojiPickerPopover } from "./EmojiPickerPopover";
 import { AttachmentPicker, PendingAttachment } from "./AttachmentPicker";
 import { AttachmentPreview } from "./AttachmentPreview";
 import { MessageAttachmentsList, MessageAttachmentData } from "./MessageAttachment";
@@ -444,6 +444,17 @@ export const ChatThread = ({
     });
   };
 
+  const handleAttachmentDeleted = (messageId: string, attachmentId: string) => {
+    setMessages(prev => prev
+      .map(msg => msg.id === messageId
+        ? { ...msg, attachments: (msg.attachments || []).filter(att => att.id !== attachmentId) }
+        : msg
+      )
+      // If a message has no text and no attachments after deletion, drop it
+      .filter(msg => (msg.attachments && msg.attachments.length > 0) || (msg.text?.trim().length ?? 0) > 0)
+    );
+  };
+
   // Handle emoji selection
   const handleEmojiSelect = (emoji: string) => {
     const textarea = textareaRef.current;
@@ -871,18 +882,7 @@ export const ChatThread = ({
                     "max-w-[80%] flex gap-1",
                     isOwn ? "flex-row-reverse" : "flex-row"
                   )}>
-                    {/* Message Actions */}
-                    <MessageActions
-                      messageId={message.id}
-                      messageText={message.text}
-                      isOwnMessage={isOwn}
-                      canEdit={canEditMessage(message.created_at)}
-                      onEdit={() => setEditingMessageId(message.id)}
-                      onReply={handleReply}
-                      onDeleteForMe={() => handleDeleteForMe(message.id)}
-                      onDeleteForEveryone={() => handleDeleteForEveryone(message.id)}
-                      className={isOwn ? "mr-1" : "ml-1"}
-                    />
+                    {/* Message Actions removed per UX request */}
                     
                     <div className={cn("flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
                       {/* Quoted reply block */}
@@ -897,7 +897,11 @@ export const ChatThread = ({
                       
                       {/* Attachments */}
                       {hasAttachments && (
-                        <MessageAttachmentsList attachments={message.attachments!} isOwn={isOwn} />
+                        <MessageAttachmentsList
+                          attachments={message.attachments!}
+                          isOwn={isOwn}
+                          onAttachmentDeleted={handleAttachmentDeleted}
+                        />
                       )}
                       
                       {/* Text bubble or edit form */}
@@ -973,9 +977,10 @@ export const ChatThread = ({
             currentCount={pendingAttachments.length}
             disabled={isInitializing}
           />
-          <EmojiPicker
+          <EmojiPickerPopover
             onEmojiSelect={handleEmojiSelect}
             disabled={isInitializing}
+            focusTargetRef={textareaRef}
           />
           <Textarea
             ref={textareaRef}
