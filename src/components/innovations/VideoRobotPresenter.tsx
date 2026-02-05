@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { RobotPresenter3D } from './RobotPresenter3D';
 import { supabase } from '@/integrations/supabase/client';
 import { Play, Pause, RotateCcw, Volume2, VolumeX, SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useRobotOverviewAudio } from '@/hooks/useRobotOverviewAudio';
 
 interface VideoRobotPresenterProps {
   title: string;
@@ -15,8 +16,6 @@ interface VideoRobotPresenterProps {
   videoUrl?: string;
 }
 
-type PlaybackState = 'idle' | 'ready' | 'playing' | 'paused';
-
 export function VideoRobotPresenter({
   title,
   tagline,
@@ -25,99 +24,29 @@ export function VideoRobotPresenter({
   transcript,
   videoUrl,
 }: VideoRobotPresenterProps) {
-  const [playbackState, setPlaybackState] = useState<PlaybackState>('idle');
-  const [volume, setVolumeState] = useState(0.8);
   const [scriptText, setScriptText] = useState<string | null>(null);
   const [keyPoints, setKeyPoints] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const cachedScriptRef = useRef<string | null>(null);
-  
-  const speechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (speechSupported) {
-        try {
-          window.speechSynthesis.cancel();
-        } catch {
-          // Silent cleanup
-        }
-      }
-    };
-  }, [speechSupported]);
-
-  const speakText = useCallback((text: string) => {
-    console.log('[VideoRobotPresenter] speakText called');
-    
-    if (!speechSupported) {
-      console.log('[VideoRobotPresenter] TTS not supported');
-      setPlaybackState('ready');
-      return;
-    }
-
-    try {
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.volume = volume;
-      utterance.rate = 0.95;
-      utterance.pitch = 1;
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find(
-        (v) =>
-          v.lang.startsWith('en') &&
-          (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Premium'))
-      ) || voices.find((v) => v.lang.startsWith('en'));
-      
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-
-      utterance.onstart = () => {
-        console.log('[VideoRobotPresenter] TTS started');
-        setPlaybackState('playing');
-      };
-      utterance.onend = () => {
-        console.log('[VideoRobotPresenter] TTS ended');
-        setPlaybackState('ready');
-      };
-      utterance.onerror = (event) => {
-        console.error('[VideoRobotPresenter] TTS error:', event.error);
-        // Don't show error to user, just log and proceed
-        setPlaybackState('ready');
-      };
-      utterance.onpause = () => setPlaybackState('paused');
-      utterance.onresume = () => setPlaybackState('playing');
-
-      utteranceRef.current = utterance;
-      window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.error('[VideoRobotPresenter] TTS failed:', err);
-      setPlaybackState('ready');
-    }
-  }, [volume, speechSupported]);
+  const {
+    playbackState,
+    isSpeaking,
+    isSupported,
+    volume,
+    setVolume,
+    play,
+    pause,
+    skip,
+    replay,
+  } = useRobotOverviewAudio();
 
   const handlePlay = useCallback(async () => {
     console.log('[VideoRobotPresenter] Play clicked');
-    
-    // Resume if paused
-    if (playbackState === 'paused' && speechSupported) {
-      try {
-        window.speechSynthesis.resume();
-        setPlaybackState('playing');
-        return;
-      } catch (err) {
-        console.error('[VideoRobotPresenter] Resume failed:', err);
-      }
-    }
 
-    // If we have a cached script, just play it
+    // If we already have a script, just play/resume it
     if (cachedScriptRef.current) {
-      speakText(cachedScriptRef.current);
+      await play({ getScript: async () => cachedScriptRef.current as string });
       return;
     }
 
@@ -142,11 +71,10 @@ export function VideoRobotPresenter({
           cachedScriptRef.current = fallbackScript;
           setScriptText(fallbackScript);
           setKeyPoints([tagline || 'Innovative solution'].filter(Boolean));
-          setPlaybackState('ready');
           setIsLoading(false);
           
-          if (speechSupported) {
-            speakText(fallbackScript);
+          if (isSupported) {
+            await play({ getScript: async () => fallbackScript });
           }
           return;
         }
@@ -156,23 +84,20 @@ export function VideoRobotPresenter({
         cachedScriptRef.current = data.script;
         setScriptText(data.script);
         setKeyPoints(data.key_points || []);
-        setPlaybackState('ready');
         setIsLoading(false);
         
-        // Play audio
-        if (speechSupported) {
-          speakText(data.script);
+        if (isSupported) {
+          await play({ getScript: async () => data.script });
         }
       } else {
         // Last resort: use minimal fallback
         const minimalScript = `This is ${title || 'an innovation'}. ${tagline || ''} ${description ? description.substring(0, 150) : ''}`.trim();
         cachedScriptRef.current = minimalScript;
         setScriptText(minimalScript);
-        setPlaybackState('ready');
         setIsLoading(false);
         
-        if (speechSupported) {
-          speakText(minimalScript);
+        if (isSupported) {
+          await play({ getScript: async () => minimalScript });
         }
       }
     } catch (err) {
@@ -184,21 +109,19 @@ export function VideoRobotPresenter({
         cachedScriptRef.current = fallbackScript;
         setScriptText(fallbackScript);
         setKeyPoints([tagline || 'Innovative solution'].filter(Boolean));
-        setPlaybackState('ready');
         
-        if (speechSupported) {
-          speakText(fallbackScript);
+        if (isSupported) {
+          await play({ getScript: async () => fallbackScript });
         }
       } else {
         // Minimal fallback if nothing else works
         const minimalScript = `Introducing ${title || 'this innovation'}.`;
         cachedScriptRef.current = minimalScript;
         setScriptText(minimalScript);
-        setPlaybackState('ready');
       }
       setIsLoading(false);
     }
-  }, [playbackState, speechSupported, speakText, title, tagline, category, description, transcript, videoUrl]);
+  }, [play, isSupported, title, tagline, category, description, transcript, videoUrl]);
 
   // Generate a fallback script from available innovation data
   const generateFallbackScript = (title: string, tagline: string, description: string, category: string): string | null => {
@@ -228,53 +151,26 @@ export function VideoRobotPresenter({
   };
 
   const handlePause = useCallback(() => {
-    if (speechSupported) {
-      try {
-        window.speechSynthesis.pause();
-      } catch {
-        // Silent
-      }
-      setPlaybackState('paused');
-    }
-  }, [speechSupported]);
+    pause();
+  }, [pause]);
 
   const handleReplay = useCallback(() => {
-    if (speechSupported) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // Silent
-      }
+    if (cachedScriptRef.current) {
+      replay();
     }
-    
-    if (cachedScriptRef.current && speechSupported) {
-      speakText(cachedScriptRef.current);
-    }
-  }, [speechSupported, speakText]);
+  }, [replay]);
 
   const handleSkip = useCallback(() => {
-    if (speechSupported) {
-      try {
-        window.speechSynthesis.cancel();
-      } catch {
-        // Silent
-      }
-    }
-    setPlaybackState('ready');
-  }, [speechSupported]);
+    skip();
+  }, [skip]);
 
   const handleVolumeChange = (values: number[]) => {
-    setVolumeState(values[0]);
-    if (utteranceRef.current) {
-      utteranceRef.current.volume = values[0];
-    }
+    setVolume(values[0]);
   };
 
   const toggleMute = () => {
-    setVolumeState(volume > 0 ? 0 : 0.8);
+    setVolume(volume > 0 ? 0 : 0.8);
   };
-
-  const isSpeaking = playbackState === 'playing';
   const hasContent = scriptText !== null;
 
   return (
@@ -368,7 +264,7 @@ export function VideoRobotPresenter({
       </div>
 
       {/* Playback Controls */}
-      {hasContent && speechSupported && (
+      {hasContent && isSupported && (
         <div className="flex items-center justify-between pt-2 border-t border-border/50">
           <div className="flex items-center gap-1.5">
             <Button
@@ -429,9 +325,12 @@ export function VideoRobotPresenter({
             <Slider
               value={[volume]}
               onValueChange={handleVolumeChange}
+              onValueCommit={handleVolumeChange}
+              min={0}
               max={1}
-              step={0.1}
-              className="w-20"
+              step={0.01}
+              aria-label="Robot overview volume"
+              className="w-24"
             />
           </div>
         </div>
