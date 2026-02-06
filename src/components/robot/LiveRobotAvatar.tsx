@@ -147,8 +147,8 @@ export function LiveRobotAvatar({ className, compact = false }: LiveRobotAvatarP
         )}
       </div>
 
-      {/* Controls */}
-      <div className="p-4 space-y-4 bg-gradient-to-b from-transparent to-muted/30">
+      {/* Controls - ensure pointer events work */}
+      <div className="p-4 space-y-4 bg-gradient-to-b from-transparent to-muted/30 relative z-10 pointer-events-auto">
         {/* Language Selection */}
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
@@ -162,10 +162,10 @@ export function LiveRobotAvatar({ className, compact = false }: LiveRobotAvatarP
               if (lang) setSelectedLanguage(lang);
             }}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full pointer-events-auto relative z-10">
               <SelectValue placeholder="Select language" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="z-[200]">
               {ROBOT_LANGUAGES.map(lang => (
                 <SelectItem key={lang.code} value={lang.code}>
                   <span className="flex items-center gap-2">

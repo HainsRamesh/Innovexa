@@ -336,12 +336,14 @@ export function LiveRobot3D({ isSpeaking, mood }: LiveRobot3DProps) {
       style={{ 
         boxShadow: isSpeaking 
           ? '0 0 30px hsl(var(--primary) / 0.4)' 
-          : '0 0 15px hsl(222 47% 4% / 0.3)'
+          : '0 0 15px hsl(222 47% 4% / 0.3)',
+        pointerEvents: 'none', // Allow clicks to pass through to elements below
       }}
     >
       <Canvas
         camera={{ position: [0, 0.5, 2.2], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
+        style={{ pointerEvents: 'none' }} // Disable pointer events on canvas
       >
         <Suspense fallback={null}>
           <RobotScene isSpeaking={isSpeaking} mood={mood} />
