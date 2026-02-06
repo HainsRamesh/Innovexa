@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { InnovationCategoryRow } from "@/components/innovations/InnovationCategoryRow";
 import { InnovationDetailModal } from "@/components/innovations/InnovationDetailModal";
 import { MyInnovationsSection } from "@/components/innovations/MyInnovationsSection";
-import { LiveRobotAvatar } from "@/components/robot";
+import { ChatAssistant } from "@/components/robot";
 import { Innovation, InnovationCategory } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Loader2, Bot } from "lucide-react";
@@ -287,15 +287,9 @@ export default function Innovations() {
               <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-accent rounded-full border-2 border-background" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[360px] sm:w-[400px] p-0 z-[110]">
-            <SheetHeader className="p-4 border-b border-border">
-              <SheetTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" />
-                ZyNoveXa AI Assistant
-              </SheetTitle>
-            </SheetHeader>
-            <div className="p-4">
-              <LiveRobotAvatar />
+          <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 z-[110] flex flex-col">
+            <div className="flex-1 overflow-hidden">
+              <ChatAssistant />
             </div>
           </SheetContent>
         </Sheet>
