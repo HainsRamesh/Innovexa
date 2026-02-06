@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Plus, Search, Loader2, Bot } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { FloatingActionsContainer, FloatingMessageButton } from "@/components/ui/FloatingActions";
 
 const categories: InnovationCategory[] = [
   "ai",
@@ -267,9 +268,12 @@ export default function Innovations() {
       {/* Detail Modal */}
       <InnovationDetailModal innovation={selectedInnovation} open={modalOpen} onOpenChange={setModalOpen} />
 
-      {/* Fixed Container for Bottom-Right Elements */}
-      <div className="fixed bottom-6 right-6 z-[100] flex flex-col items-end gap-3">
-        {/* Robot Avatar FAB */}
+      {/* Fixed Container for Bottom-Right FABs - stacked vertically */}
+      <FloatingActionsContainer>
+        {/* Message FAB (top) */}
+        <FloatingMessageButton />
+        
+        {/* Robot Avatar FAB (bottom) */}
         <Sheet open={robotOpen} onOpenChange={setRobotOpen}>
           <SheetTrigger asChild>
             <Button
@@ -280,7 +284,7 @@ export default function Innovations() {
               }}
             >
               <Bot className="h-6 w-6" />
-              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-emerald-500 rounded-full border-2 border-background" />
+              <span className="absolute -top-1 -right-1 h-3.5 w-3.5 bg-accent rounded-full border-2 border-background" />
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[360px] sm:w-[400px] p-0 z-[110]">
@@ -295,7 +299,7 @@ export default function Innovations() {
             </div>
           </SheetContent>
         </Sheet>
-      </div>
+      </FloatingActionsContainer>
 
       <Footer />
     </div>
