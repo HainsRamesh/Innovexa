@@ -83,42 +83,6 @@ export const MessengerDrawer = () => {
 
   return (
     <>
-      {/* Floating Chat Button (when drawer is closed) */}
-      {!isDrawerOpen && (
-        <button
-          onClick={() => {
-            // Always open to list view when clicking the floating button
-            openChat({
-              userId: "",
-              userName: null,
-            });
-            setView("list");
-            setSelectedChat(null);
-          }}
-          className={cn(
-            "fixed bottom-6 right-6 z-50",
-            "h-14 w-14 rounded-full",
-            "bg-primary text-primary-foreground",
-            "shadow-lg hover:shadow-xl",
-            "flex items-center justify-center",
-            "transition-all hover:scale-105 active:scale-95"
-          )}
-          aria-label="Open messages"
-        >
-          <MessageCircle className="h-6 w-6" />
-          {totalUnread > 0 && (
-            <Badge
-              className={cn(
-                "absolute -top-1 -right-1",
-                "h-5 min-w-[20px] flex items-center justify-center",
-                "p-0 text-xs bg-destructive text-destructive-foreground"
-              )}
-            >
-              {totalUnread > 99 ? "99+" : totalUnread}
-            </Badge>
-          )}
-        </button>
-      )}
 
       {/* Messenger Drawer - High z-index to appear above all content */}
       <div
