@@ -1,5 +1,4 @@
 import { MessageCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { useChat } from "@/contexts/ChatContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -15,11 +14,9 @@ interface FloatingMessageButtonProps {
  */
 export const FloatingMessageButton = ({ className }: FloatingMessageButtonProps) => {
   const { user } = useAuth();
-  const { isDrawerOpen, openChat, getTotalUnreadCount } = useChat();
+  const { isDrawerOpen, openChat } = useChat();
 
   if (!user || isDrawerOpen) return null;
-
-  const totalUnread = getTotalUnreadCount();
 
   return (
     <button
@@ -41,17 +38,6 @@ export const FloatingMessageButton = ({ className }: FloatingMessageButtonProps)
       aria-label="Open messages"
     >
       <MessageCircle className="h-6 w-6" />
-      {totalUnread > 0 && (
-        <Badge
-          className={cn(
-            "absolute -top-1 -right-1",
-            "h-5 min-w-[20px] flex items-center justify-center",
-            "p-0 text-xs bg-destructive text-destructive-foreground"
-          )}
-        >
-          {totalUnread > 99 ? "99+" : totalUnread}
-        </Badge>
-      )}
     </button>
   );
 };
