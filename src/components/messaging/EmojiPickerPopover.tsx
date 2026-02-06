@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Smile } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import EmojiPicker from "emoji-picker-react";
+import EmojiPicker, { Theme, EmojiStyle } from "emoji-picker-react";
 import { cn } from "@/lib/utils";
 
 interface EmojiPickerPopoverProps {
@@ -56,11 +56,11 @@ export const EmojiPickerPopover = ({
       >
         {isClient ? (
           <EmojiPicker
-            theme="dark"
+            theme={Theme.DARK}
             onEmojiClick={handleSelect}
             lazyLoadEmojis
             searchPlaceholder="Search"
-            emojiStyle="native"
+            emojiStyle={EmojiStyle.NATIVE}
             width={320}
             height={380}
             previewConfig={{ showPreview: false }}
