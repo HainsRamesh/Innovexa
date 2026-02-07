@@ -330,6 +330,25 @@ export const ChatThread = ({
     setPendingAttachments([]);
     setReplyingTo(null);
 
+    // Create optimistic message for instant UI
+    const optimisticId = `optimistic-${Date.now()}`;
+    const optimisticMessage: Message = {
+      id: optimisticId,
+      conversation_id: conversationId,
+      sender_id: user.id,
+      text: currentText || "",
+      type: currentAttachments.length > 0 ? "mixed" : "text",
+      read_at: null,
+      created_at: new Date().toISOString(),
+      attachments: [],
+      reply_to_message_id: currentReply?.messageId || null,
+      reply_to_sender_id: currentReply?.senderId || null,
+      reply_to_snippet: currentReply?.snippet?.slice(0, 100) || null,
+    };
+
+    // Show message instantly
+    setMessages(prev => [...prev, optimisticMessage]);
+
     try {
       // Upload all attachments first
       const uploadedAttachments: Array<{
@@ -389,6 +408,13 @@ export const ChatThread = ({
 
       if (msgError) throw msgError;
 
+      // Replace optimistic message with real one
+      setMessages(prev => prev.map(msg => 
+        msg.id === optimisticId 
+          ? { ...newMessage, attachments: [] } 
+          : msg
+      ));
+
       // Insert attachments
       if (uploadedAttachments.length > 0) {
         const attachmentRecords = uploadedAttachments.map(att => ({
@@ -409,16 +435,21 @@ export const ChatThread = ({
         }
       }
 
-      // Update conversation timestamp
-      await supabase
+      // Update conversation timestamp (fire and forget)
+      supabase
         .from("conversations")
         .update({ updated_at: new Date().toISOString() })
-        .eq("id", conversationId);
-
-      // Refetch to get attachments with proper URLs
-      await fetchMessages(conversationId);
+        .eq("id", conversationId)
+        .then(() => {});
     } catch (error) {
       console.error("Error sending message:", error);
+      // Remove optimistic message on failure
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticId));
+      toast({
+        title: "Error",
+        description: "Failed to send message",
+        variant: "destructive",
+      });
     }
   };
 
@@ -616,17 +647,26 @@ export const ChatThread = ({
           
           // Skip if deleted for current user
           if (newMessage.deleted_for_user_ids?.includes(user.id)) return;
-          
-          // Check if already exists - use functional update to access latest state
-          setMessages(prev => {
-            if (prev.some(m => m.id === newMessage.id)) {
-              return prev; // Already exists, don't add
-            }
-            // Will be added after we fetch attachments
-            return prev;
-          });
 
-          // Fetch attachments for new message
+          // For own messages, the optimistic message is already replaced
+          // by the sendMessage handler. Skip to avoid duplicates.
+          if (newMessage.sender_id === user.id) {
+            setMessages(prev => {
+              // If real message already exists, skip
+              if (prev.some(m => m.id === newMessage.id)) return prev;
+              // If there's still an optimistic version, replace it
+              const optimisticIdx = prev.findIndex(m => m.id.startsWith("optimistic-") && m.text === newMessage.text);
+              if (optimisticIdx >= 0) {
+                const updated = [...prev];
+                updated[optimisticIdx] = { ...newMessage, attachments: prev[optimisticIdx].attachments || [] };
+                return updated;
+              }
+              return prev;
+            });
+            return;
+          }
+
+          // Fetch attachments for new message from other user
           const { data: attachmentsData } = await supabase
             .from("message_attachments")
             .select("*")
@@ -649,16 +689,11 @@ export const ChatThread = ({
 
           // Use functional update to avoid duplicates
           setMessages(prev => {
-            // Final check before adding
-            if (prev.some(m => m.id === newMessage.id)) {
-              return prev;
-            }
+            if (prev.some(m => m.id === newMessage.id)) return prev;
             return [...prev, { ...newMessage, attachments }];
           });
 
-          if (newMessage.sender_id !== user.id) {
-            markMessagesAsRead(conversationId);
-          }
+          markMessagesAsRead(conversationId);
         }
       )
       .on(
@@ -882,8 +917,19 @@ export const ChatThread = ({
                     "max-w-[80%] flex gap-1",
                     isOwn ? "flex-row-reverse" : "flex-row"
                   )}>
-                    {/* Message Actions removed per UX request */}
-                    
+                    {/* Message Actions */}
+                    {!isDeleted && !isEditing && (
+                      <MessageActions
+                        messageId={message.id}
+                        messageText={message.text}
+                        isOwnMessage={isOwn}
+                        canEdit={canEditMessage(message.created_at)}
+                        onEdit={() => setEditingMessageId(message.id)}
+                        onReply={handleReply}
+                        onDeleteForMe={() => handleDeleteForMe(message.id)}
+                        onDeleteForEveryone={() => handleDeleteForEveryone(message.id)}
+                      />
+                    )}
                     <div className={cn("flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
                       {/* Quoted reply block */}
                       {hasReply && (
