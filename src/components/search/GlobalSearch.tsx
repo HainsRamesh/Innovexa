@@ -205,7 +205,7 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl p-0 gap-0">
+        <DialogContent className="max-w-2xl p-0 gap-0 border-none [&>button:last-child]:top-[1.35rem] [&>button:last-child]:right-5">
           <DialogHeader className="p-4 pb-2">
             <DialogTitle className="sr-only">Search</DialogTitle>
             <div className="relative">
