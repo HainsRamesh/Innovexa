@@ -9,6 +9,7 @@ import { LoadingProvider } from "@/contexts/LoadingContext";
 import { GlobalOverlayProvider } from "@/contexts/GlobalOverlayContext";
 import { ChatProvider } from "@/contexts/ChatContext";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { MessengerDrawer } from "@/components/messaging";
 import { supabase } from "@/integrations/supabase/client";
 // Pages
@@ -324,6 +325,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <GlobalOverlayProvider>
               <ChatProvider>
                 <AppRoutes />
