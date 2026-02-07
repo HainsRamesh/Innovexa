@@ -152,10 +152,10 @@ export const GlobalSearch = ({ className }: GlobalSearchProps) => {
         navigate(`/explore/${result.id}`);
         break;
       case 'innovation':
-        navigate(`/dashboard/innovations/${result.id}`);
+        navigate(`/innovations/${result.id}`);
         break;
       case 'solution':
-        navigate(`/dashboard/solutions/${result.id}`);
+        navigate(`/solutions/${result.id}`);
         break;
       case 'profile':
         navigate(`/users/${result.id}`);

@@ -23,9 +23,11 @@ import Profile from "./pages/Profile";
 import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
 import Innovations from "./pages/Innovations";
+import InnovationDetail from "./pages/InnovationDetail";
 import NewInnovation from "./pages/NewInnovation";
 import EditInnovation from "./pages/EditInnovation";
 import NewProblem from "./pages/NewProblem";
+import SolutionDetail from "./pages/SolutionDetail";
 import EditProblem from "./pages/EditProblem";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
@@ -282,6 +284,9 @@ const AppRoutes = () => {
       <Route path="/innovations/:innovationId/edit" element={
         <ProtectedRoute><EditInnovation /></ProtectedRoute>
       } />
+      <Route path="/innovations/:innovationId" element={
+        <ProtectedRoute><InnovationDetail /></ProtectedRoute>
+      } />
       <Route path="/explore" element={
         <ProtectedRoute><ExploreProblems /></ProtectedRoute>
       } />
@@ -297,6 +302,9 @@ const AppRoutes = () => {
       } />
       <Route path="/solutions" element={
         <ProtectedRoute><Solutions /></ProtectedRoute>
+      } />
+      <Route path="/solutions/:solutionId" element={
+        <ProtectedRoute><SolutionDetail /></ProtectedRoute>
       } />
       <Route path="/profile" element={
         <ProtectedRoute><Profile /></ProtectedRoute>
