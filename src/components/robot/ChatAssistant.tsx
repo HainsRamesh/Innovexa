@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { LiveRobot3D } from './LiveRobot3D';
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition';
+import { useAuth } from '@/contexts/AuthContext';
 import { ROBOT_LANGUAGES, RobotLanguage } from '@/lib/robotLanguages';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,11 +54,13 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assista
 
 export function ChatAssistant({ className }: ChatAssistantProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, role, profile } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: "Hello! I'm your ZyNoveXa AI Assistant. I can help you navigate the platform, answer questions about features, or assist with your innovations. Try saying 'Open Dashboard' or ask me anything!",
+      content: "👋 Hello! I'm your ZyNoveXa AI Assistant. Here's what I can help with:\n\n🚀 **Explore innovations**\n➕ **Submit a new innovation**\n💡 **Help me improve my idea**\n\nYou can also ask me to navigate anywhere, or just chat!",
       timestamp: new Date(),
     }
   ]);
@@ -138,6 +141,9 @@ export function ChatAssistant({ className }: ChatAssistantProps) {
       body: JSON.stringify({ 
         messages: userMessages,
         language: selectedLanguage.code,
+        page: location.pathname,
+        userRole: role || '',
+        userName: profile?.full_name || '',
       }),
     });
 
