@@ -106,17 +106,18 @@ export default function Innovations() {
     },
   });
 
-  // Fetch innovator's own innovations (all statuses) with creator profiles
+  // Fetch innovator's own PUBLISHED innovations only (drafts are managed in dashboard)
   const { data: myInnovations = [], refetch: refetchMyInnovations } = useQuery({
-    queryKey: ["my-innovations", user?.id],
+    queryKey: ["my-innovations-published", user?.id],
     queryFn: async () => {
       if (!user || !isInnovator) return [];
       
-      // Fetch innovations
+      // Fetch only published/featured innovations (NOT drafts)
       const { data: innovationsData, error: innovationsError } = await supabase
         .from("innovations")
         .select("*")
         .eq("innovator_id", user.id)
+        .in("status", ["published", "featured"])
         .order("created_at", { ascending: false });
 
       if (innovationsError) throw innovationsError;
