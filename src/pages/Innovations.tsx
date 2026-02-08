@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +48,24 @@ export default function Innovations() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [robotOpen, setRobotOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const robotOpenRef = useRef(robotOpen);
+
+  // Keep ref in sync so the callback doesn't need robotOpen as a dependency
+  useEffect(() => {
+    robotOpenRef.current = robotOpen;
+  }, [robotOpen]);
+
+  // Reset unread when chat opens
+  useEffect(() => {
+    if (robotOpen) setUnreadCount(0);
+  }, [robotOpen]);
+
+  const handleNewAssistantMessage = useCallback(() => {
+    if (!robotOpenRef.current) {
+      setUnreadCount(prev => prev + 1);
+    }
+  }, []);
 
   const isInnovator = role === "innovator";
 
@@ -278,17 +296,22 @@ export default function Innovations() {
           <SheetTrigger asChild>
             <Button
               size="lg"
-              className="h-14 w-14 rounded-full shadow-2xl hover:shadow-xl transition-all bg-primary hover:bg-primary/90"
+              className="relative h-14 w-14 rounded-full shadow-2xl hover:shadow-xl transition-all bg-primary hover:bg-primary/90"
               style={{
                 boxShadow: '0 0 20px hsl(var(--primary) / 0.5), 0 4px 15px rgba(0,0,0,0.25)'
               }}
             >
               <Bot className="h-6 w-6" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold border-2 border-background">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 z-[110] flex flex-col">
             <div className="flex-1 overflow-hidden">
-              <ChatAssistant />
+              <ChatAssistant onNewAssistantMessage={handleNewAssistantMessage} />
             </div>
           </SheetContent>
         </Sheet>

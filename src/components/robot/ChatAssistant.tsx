@@ -48,11 +48,12 @@ interface FileAttachment {
 
 interface ChatAssistantProps {
   className?: string;
+  onNewAssistantMessage?: () => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`;
 
-export function ChatAssistant({ className }: ChatAssistantProps) {
+export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistantProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, role, profile } = useAuth();
@@ -213,6 +214,7 @@ export function ChatAssistant({ className }: ChatAssistantProps) {
     }
 
     setIsSpeaking(false);
+    onNewAssistantMessage?.();
     
     // Parse final response for navigation
     const finalContent = parseAssistantResponse(assistantContent);
