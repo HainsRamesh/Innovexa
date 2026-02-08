@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, ArrowLeft, Save, Upload, ImageIcon, X } from 'lucide-react';
-import { Innovation, InnovationCategory, InnovationStatus } from '@/types';
+import { Innovation, InnovationCategory } from '@/types';
 import { toast } from 'sonner';
 
 const InnovationEditPage = () => {
@@ -36,7 +36,6 @@ const InnovationEditPage = () => {
     video_url: '',
     without_product: '',
     with_product: '',
-    status: 'draft' as InnovationStatus,
   });
 
   const fromLocation = location.state?.from;
@@ -68,7 +67,6 @@ const InnovationEditPage = () => {
         video_url: innovation.video_url || '',
         without_product: innovation.without_product,
         with_product: innovation.with_product,
-        status: innovation.status,
       });
     } catch (error) {
       console.error('Error fetching innovation:', error);
@@ -148,7 +146,6 @@ const InnovationEditPage = () => {
           video_url: formData.video_url || null,
           without_product: formData.without_product,
           with_product: formData.with_product,
-          status: formData.status,
           updated_at: new Date().toISOString(),
         })
         .eq('id', innovationId);
@@ -217,45 +214,27 @@ const InnovationEditPage = () => {
                   placeholder="A brief tagline for your innovation"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Category</Label>
-                  <Select 
-                    value={formData.category} 
-                    onValueChange={(value: InnovationCategory) => setFormData(prev => ({ ...prev, category: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ai">AI & ML</SelectItem>
-                      <SelectItem value="healthtech">HealthTech</SelectItem>
-                      <SelectItem value="fintech">FinTech</SelectItem>
-                      <SelectItem value="climatetech">ClimateTech</SelectItem>
-                      <SelectItem value="edtech">EdTech</SelectItem>
-                      <SelectItem value="saas">SaaS</SelectItem>
-                      <SelectItem value="hardware">Hardware</SelectItem>
-                      <SelectItem value="web3">Web3</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Status</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={(value: InnovationStatus) => setFormData(prev => ({ ...prev, status: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="published">Published</SelectItem>
-                      <SelectItem value="archived">Archived</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div className="space-y-2">
+                <Label>Category</Label>
+                <Select 
+                  value={formData.category} 
+                  onValueChange={(value: InnovationCategory) => setFormData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ai">AI & ML</SelectItem>
+                    <SelectItem value="healthtech">HealthTech</SelectItem>
+                    <SelectItem value="fintech">FinTech</SelectItem>
+                    <SelectItem value="climatetech">ClimateTech</SelectItem>
+                    <SelectItem value="edtech">EdTech</SelectItem>
+                    <SelectItem value="saas">SaaS</SelectItem>
+                    <SelectItem value="hardware">Hardware</SelectItem>
+                    <SelectItem value="web3">Web3</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description *</Label>
