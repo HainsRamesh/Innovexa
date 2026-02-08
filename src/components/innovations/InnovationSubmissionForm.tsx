@@ -103,8 +103,7 @@ const categoryOptions: { value: InnovationCategory; label: string }[] = [
 export const InnovationSubmissionForm = ({ initialData, mode = "create" }: InnovationSubmissionFormProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [isPublishSubmitting, setIsPublishSubmitting] = useState(false);
-  const [isDraftSubmitting, setIsDraftSubmitting] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [coverAsset, setCoverAsset] = useState<MediaAssetState | null>(
     initialData?.cover_image_url
       ? {
@@ -676,17 +675,7 @@ const moderateAsset = async (
       return;
     }
 
-    // Set the appropriate loading state based on action type
-    if (asDraft) {
-      setIsDraftSubmitting(true);
-    } else {
-      setIsPublishSubmitting(true);
-    }
-
-    const resetSubmittingState = () => {
-      setIsDraftSubmitting(false);
-      setIsPublishSubmitting(false);
-    };
+    setIsSubmitting(true);
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -696,7 +685,7 @@ const moderateAsset = async (
       console.log("token iss", decoded?.iss, "accessToken present", !!accessToken, "anonKey present", !!anonKey);
       if (!accessToken) {
         toast.error("Please login again");
-        resetSubmittingState();
+        setIsSubmitting(false);
         return;
       }
 
@@ -856,7 +845,7 @@ const moderateAsset = async (
                reason: redundancyResult?.reason || "This submission appears to be a duplicate",
                matches,
              });
-             resetSubmittingState();
+             setIsSubmitting(false);
              return;
            }
 
@@ -870,7 +859,7 @@ const moderateAsset = async (
             pendingPublishAction.current = performSave;
             setRedundancyWarning({ matches: (redundancyResult?.matches || []) as RedundancyMatch[] });
             setWarningOpen(true);
-            resetSubmittingState();
+            setIsSubmitting(false);
             return;
           }
         } catch (error) {
@@ -884,7 +873,7 @@ const moderateAsset = async (
       console.error("Error submitting innovation:", error);
       toast.error(error.message || "Failed to submit innovation");
     } finally {
-      resetSubmittingState();
+      setIsSubmitting(false);
     }
   };
 
@@ -1318,7 +1307,7 @@ const moderateAsset = async (
 
         {/* Actions */}
         <div className="flex items-center justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate("/innovations")} disabled={isDraftSubmitting || isPublishSubmitting}>
+          <Button type="button" variant="outline" onClick={() => navigate("/innovations")} disabled={isSubmitting}>
             Cancel
           </Button>
           {/* Only show Save as Draft for create mode, not edit mode */}
@@ -1327,14 +1316,14 @@ const moderateAsset = async (
               type="button"
               variant="secondary"
               onClick={form.handleSubmit((data) => onSubmit(data, true))}
-              disabled={isDraftSubmitting || isPublishSubmitting}
+              disabled={isSubmitting}
             >
-              {isDraftSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Save as Draft
             </Button>
           )}
-          <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, false))} disabled={isDraftSubmitting || isPublishSubmitting}>
-            {isPublishSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+          <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, false))} disabled={isSubmitting}>
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
             {mode === "edit" ? "Update Innovation" : "Publish Innovation"}
           </Button>
         </div>
@@ -1387,11 +1376,11 @@ const moderateAsset = async (
             <Button
               onClick={async () => {
                 setWarningOpen(false);
-                setIsPublishSubmitting(true);
+                setIsSubmitting(true);
                 try {
                   await pendingPublishAction.current?.();
                 } finally {
-                  setIsPublishSubmitting(false);
+                  setIsSubmitting(false);
                   pendingPublishAction.current = null;
                 }
               }}

@@ -112,12 +112,11 @@ export default function Innovations() {
     queryFn: async () => {
       if (!user || !isInnovator) return [];
       
-      // Fetch innovations - exclude drafts from public listing
+      // Fetch innovations
       const { data: innovationsData, error: innovationsError } = await supabase
         .from("innovations")
         .select("*")
         .eq("innovator_id", user.id)
-        .in("status", ["published", "featured", "archived"])
         .order("created_at", { ascending: false });
 
       if (innovationsError) throw innovationsError;
