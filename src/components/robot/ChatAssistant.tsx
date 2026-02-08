@@ -343,7 +343,7 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
       {/* Header with Language Selector */}
       <div
         className="flex items-center justify-between border-b border-border bg-muted/30"
-        style={{ gap: 12, padding: '12px 12px 8px', overflow: 'visible' }}
+        style={{ gap: 12, padding: '16px 12px 12px', minHeight: 56, marginBottom: 12, overflow: 'visible' }}
       >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
@@ -381,7 +381,7 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
       {/* Mini Robot Avatar */}
       <div
         className="w-full relative shrink-0 bg-gradient-to-b from-background/50 to-transparent"
-        style={{ height: 96, overflow: 'visible', paddingTop: 6 }}
+        style={{ height: 96, overflow: 'visible', marginTop: 12, paddingTop: 6 }}
       >
         <LiveRobot3D isSpeaking={isSpeaking} mood={isListening ? 'thinking' : 'idle'} />
       </div>
