@@ -339,17 +339,20 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
   };
 
   return (
-    <div className={cn("flex flex-col h-full bg-card", className)}>
+    <div className={cn("flex flex-col h-full bg-card", className)} style={{ overflow: 'visible' }}>
       {/* Header with Language Selector */}
-      <div className="flex items-center gap-2 px-3 py-2.5 border-b border-border bg-muted/30 min-h-[48px]">
+      <div
+        className="flex items-center justify-between border-b border-border bg-muted/30"
+        style={{ gap: 12, padding: '12px 12px 8px', overflow: 'visible' }}
+      >
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
             <Bot className="h-4 w-4 text-primary" />
           </div>
           <span className="font-medium text-sm truncate">AI Assistant</span>
         </div>
-        
-        <div className="flex items-center gap-1 shrink-0">
+
+        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
           <Select
             value={selectedLanguage.code}
             onValueChange={(code) => {
@@ -357,11 +360,14 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
               if (lang) setSelectedLanguage(lang);
             }}
           >
-            <SelectTrigger className="w-[110px] h-8 text-xs pointer-events-auto">
+            <SelectTrigger
+              className="w-[110px] text-xs pointer-events-auto"
+              style={{ height: 36 }}
+            >
               <Globe className="h-3 w-3 mr-1" />
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="z-[300]" position="popper" sideOffset={5}>
+            <SelectContent className="z-[300] bg-popover" position="popper" sideOffset={5}>
               {ROBOT_LANGUAGES.map(lang => (
                 <SelectItem key={lang.code} value={lang.code} className="text-xs">
                   {lang.nativeName}
@@ -373,7 +379,10 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
       </div>
 
       {/* Mini Robot Avatar */}
-      <div className="h-32 w-full relative shrink-0 bg-gradient-to-b from-background/50 to-transparent overflow-visible py-1">
+      <div
+        className="w-full relative shrink-0 bg-gradient-to-b from-background/50 to-transparent"
+        style={{ height: 96, overflow: 'visible', paddingTop: 6 }}
+      >
         <LiveRobot3D isSpeaking={isSpeaking} mood={isListening ? 'thinking' : 'idle'} />
       </div>
 
