@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Search, Lightbulb, MoreVertical, Eye, Edit, Trash2, Play, Sparkles, Calendar, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Search, Lightbulb, MoreVertical, Eye, Edit, Trash2, Play, Sparkles, Calendar, Bookmark, BookmarkCheck, Send, Loader2 } from 'lucide-react';
 import { Innovation } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmationModal } from '@/components/dashboard/ConfirmationModal';
@@ -31,6 +32,7 @@ const MyInnovationsPage = () => {
   const { user, role } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { isBookmarked, toggleBookmark } = useBookmarks();
 
   const [innovations, setInnovations] = useState<Innovation[]>([]);
@@ -40,6 +42,7 @@ const MyInnovationsPage = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -82,6 +85,9 @@ const MyInnovationsPage = () => {
       const { error } = await supabase.from('innovations').delete().eq('id', deleteTarget);
       if (error) throw error;
       setInnovations((prev) => prev.filter((i) => i.id !== deleteTarget));
+      // Invalidate the /innovations page query to sync deletions
+      queryClient.invalidateQueries({ queryKey: ['innovations'] });
+      queryClient.invalidateQueries({ queryKey: ['my-innovations-published'] });
       toast({
         title: 'Innovation deleted',
         description: 'The innovation has been removed.',
@@ -96,6 +102,41 @@ const MyInnovationsPage = () => {
     } finally {
       setIsDeleting(false);
       setDeleteTarget(null);
+    }
+  };
+
+  const handlePublish = async (innovationId: string) => {
+    setPublishingId(innovationId);
+    try {
+      const { error } = await supabase
+        .from('innovations')
+        .update({ status: 'published' })
+        .eq('id', innovationId);
+      
+      if (error) throw error;
+      
+      // Update local state
+      setInnovations((prev) =>
+        prev.map((i) => (i.id === innovationId ? { ...i, status: 'published' as const } : i))
+      );
+      
+      // Invalidate queries to sync with /innovations page
+      queryClient.invalidateQueries({ queryKey: ['innovations'] });
+      queryClient.invalidateQueries({ queryKey: ['my-innovations-published'] });
+      
+      toast({
+        title: 'Innovation published',
+        description: 'Your innovation is now visible to everyone.',
+      });
+    } catch (error) {
+      console.error('Error publishing innovation:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to publish innovation',
+        variant: 'destructive',
+      });
+    } finally {
+      setPublishingId(null);
     }
   };
 
@@ -114,6 +155,8 @@ const MyInnovationsPage = () => {
 
   const InnovationCard = ({ innovation }: { innovation: Innovation }) => {
     const bookmarked = isBookmarked(undefined, undefined, innovation.id);
+    const isDraft = innovation.status === 'draft';
+    const isPublishing = publishingId === innovation.id;
     
     return (
       <Card className="group hover:border-primary/50 transition-all duration-200 overflow-hidden">
@@ -206,15 +249,33 @@ const MyInnovationsPage = () => {
               <Calendar className="h-3.5 w-3.5" />
               {format(new Date(innovation.created_at), 'MMM d, yyyy')}
             </div>
-            <Badge
-              variant={
-                innovation.status === 'published'
-                  ? 'status_open'
-                  : 'outline'
-              }
-            >
-              {innovation.status === 'published' ? 'Published' : 'Draft'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {isDraft && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="h-7 text-xs gap-1.5"
+                  onClick={() => handlePublish(innovation.id)}
+                  disabled={isPublishing}
+                >
+                  {isPublishing ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Send className="h-3 w-3" />
+                  )}
+                  Publish
+                </Button>
+              )}
+              <Badge
+                variant={
+                  innovation.status === 'published'
+                    ? 'status_open'
+                    : 'outline'
+                }
+              >
+                {innovation.status === 'published' ? 'Published' : 'Draft'}
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
