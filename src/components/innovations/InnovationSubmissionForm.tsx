@@ -104,6 +104,8 @@ export const InnovationSubmissionForm = ({ initialData, mode = "create" }: Innov
   const navigate = useNavigate();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const [coverAsset, setCoverAsset] = useState<MediaAssetState | null>(
     initialData?.cover_image_url
       ? {
@@ -675,6 +677,12 @@ const moderateAsset = async (
       return;
     }
 
+    // Set specific loading state based on action
+    if (asDraft) {
+      setIsSavingDraft(true);
+    } else {
+      setIsPublishing(true);
+    }
     setIsSubmitting(true);
 
     try {
@@ -686,6 +694,8 @@ const moderateAsset = async (
       if (!accessToken) {
         toast.error("Please login again");
         setIsSubmitting(false);
+        setIsSavingDraft(false);
+        setIsPublishing(false);
         return;
       }
 
@@ -841,13 +851,15 @@ const moderateAsset = async (
              Boolean(currentInnovationId) && rawMatches.length > 0 && matches.length === 0;
 
            if (isBlockStatus && !isSelfMatchOnly) {
-             setBlockData({
-               reason: redundancyResult?.reason || "This submission appears to be a duplicate",
-               matches,
-             });
-             setIsSubmitting(false);
-             return;
-           }
+            setBlockData({
+              reason: redundancyResult?.reason || "This submission appears to be a duplicate",
+              matches,
+            });
+            setIsSubmitting(false);
+            setIsSavingDraft(false);
+            setIsPublishing(false);
+            return;
+          }
 
           if (redundancyError && !redundancyResult) {
             toast.warning("Could not check similarity. Continuing to publish.");
@@ -860,6 +872,8 @@ const moderateAsset = async (
             setRedundancyWarning({ matches: (redundancyResult?.matches || []) as RedundancyMatch[] });
             setWarningOpen(true);
             setIsSubmitting(false);
+            setIsSavingDraft(false);
+            setIsPublishing(false);
             return;
           }
         } catch (error) {
@@ -874,6 +888,8 @@ const moderateAsset = async (
       toast.error(error.message || "Failed to submit innovation");
     } finally {
       setIsSubmitting(false);
+      setIsSavingDraft(false);
+      setIsPublishing(false);
     }
   };
 
@@ -1318,12 +1334,12 @@ const moderateAsset = async (
               onClick={form.handleSubmit((data) => onSubmit(data, true))}
               disabled={isSubmitting}
             >
-              {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+              {isSavingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Save as Draft
             </Button>
           )}
           <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, false))} disabled={isSubmitting}>
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
+            {isPublishing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
             {mode === "edit" ? "Update Innovation" : "Publish Innovation"}
           </Button>
         </div>
