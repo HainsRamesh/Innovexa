@@ -310,8 +310,8 @@ export default function Innovations() {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[92vw] max-w-[420px] p-0 pr-14 z-[110] flex flex-col">
-            <div className="flex-1 min-h-0">
+          <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 z-[110] flex flex-col">
+            <div className="flex-1 overflow-hidden">
               <ChatAssistant onNewAssistantMessage={handleNewAssistantMessage} />
             </div>
           </SheetContent>

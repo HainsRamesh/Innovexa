@@ -342,17 +342,17 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
     <div className={cn("flex flex-col h-full bg-card", className)} style={{ overflow: 'visible' }}>
       {/* Header with Language Selector */}
       <div
-        className="flex items-center justify-between border-b border-border bg-muted/30 px-3 py-3"
-        style={{ minHeight: 56, overflow: 'visible' }}
+        className="flex items-center justify-between border-b border-border bg-muted/30"
+        style={{ gap: 12, padding: '16px 12px 12px', minHeight: 56, marginBottom: 12, overflow: 'visible' }}
       >
-        <div className="flex items-center gap-2 min-w-0 flex-shrink">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
             <Bot className="h-4 w-4 text-primary" />
           </div>
           <span className="font-medium text-sm truncate">AI Assistant</span>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0 ml-3">
+        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
           <Select
             value={selectedLanguage.code}
             onValueChange={(code) => {
@@ -361,9 +361,10 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
             }}
           >
             <SelectTrigger
-              className="w-[100px] sm:w-[110px] text-xs pointer-events-auto h-9"
+              className="w-[110px] text-xs pointer-events-auto"
+              style={{ height: 36 }}
             >
-              <Globe className="h-3 w-3 mr-1 shrink-0" />
+              <Globe className="h-3 w-3 mr-1" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="z-[300] bg-popover" position="popper" sideOffset={5}>
@@ -380,7 +381,7 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
       {/* Mini Robot Avatar */}
       <div
         className="w-full relative shrink-0 bg-gradient-to-b from-background/50 to-transparent"
-        style={{ height: 110, overflow: 'visible', marginTop: 8, paddingTop: 14 }}
+        style={{ height: 96, overflow: 'visible', marginTop: 12, paddingTop: 6 }}
       >
         <LiveRobot3D isSpeaking={isSpeaking} mood={isListening ? 'thinking' : 'idle'} />
       </div>
