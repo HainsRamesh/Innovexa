@@ -93,7 +93,7 @@ export const InnovationTile = ({
   return (
     <div
       data-innovation-tile-root
-      className="relative flex-shrink-0 w-[260px] cursor-pointer group/tile"
+      className="relative flex-shrink-0 w-[260px] cursor-pointer"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={() => onSelect(innovation)}
@@ -104,17 +104,6 @@ export const InnovationTile = ({
         transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
-      {/* Holographic shimmer overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none overflow-hidden"
-        style={{
-          borderRadius: isActive ? "16px" : "12px",
-          transition: "border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
-        }}
-      >
-        <div className="innovation-shimmer absolute inset-0 opacity-0 group-hover/tile:opacity-100 transition-opacity duration-500" />
-      </div>
-
       {/* Card - image never scales */}
       <div
         className="relative h-[170px]"
@@ -122,7 +111,7 @@ export const InnovationTile = ({
           borderRadius: isActive ? "16px" : "12px",
           overflow: "hidden",
           boxShadow: isActive
-            ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4), 0 0 20px -4px hsl(var(--primary) / 0.15)"
+            ? "0 20px 50px -12px rgba(0,0,0,0.5), 0 8px 20px -8px rgba(0,0,0,0.4)"
             : "0 4px 6px -1px rgba(0,0,0,0.1)",
           transition: "border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease-out",
         }}
