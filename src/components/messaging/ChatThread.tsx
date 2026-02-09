@@ -843,7 +843,7 @@ export const ChatThread = ({
               const hasAttachments = message.attachments && message.attachments.length > 0;
               const isDeleted = message.is_deleted;
               const isEditing = editingMessageId === message.id;
-              const hasReply = !!message.reply_to_message_id;
+              const hasReply = message.reply_to_message_id && message.reply_to_snippet;
 
               // Handler to scroll to the original message
               const scrollToOriginal = () => {
@@ -935,7 +935,7 @@ export const ChatThread = ({
                       {hasReply && (
                         <QuotedMessage
                           senderName={getReplySenderName()}
-                          snippet={message.reply_to_snippet || message.text?.slice(0, 50) || "Message"}
+                          snippet={message.reply_to_snippet || "Message"}
                           isOwnBubble={isOwn}
                           onClick={scrollToOriginal}
                         />
