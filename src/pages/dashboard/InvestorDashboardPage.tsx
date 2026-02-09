@@ -1,6 +1,5 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { InvestorDashboard } from '@/components/investor/InvestorDashboard';
 
 export default function InvestorDashboardPage() {
@@ -19,9 +18,5 @@ export default function InvestorDashboardPage() {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return (
-    <DashboardLayout>
-      <InvestorDashboard />
-    </DashboardLayout>
-  );
+  return <InvestorDashboard />;
 }
