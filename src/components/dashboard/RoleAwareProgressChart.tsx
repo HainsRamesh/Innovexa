@@ -80,20 +80,20 @@ const StatChipLegend = ({ items, data }: StatChipLegendProps) => {
   });
 
   return (
-    <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
+    <div className="flex flex-wrap gap-1 sm:gap-2 justify-center">
       {items.map((item, index) => (
         <div
           key={item.name}
-          className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md bg-muted/30 border border-border/50"
+          className="flex items-center gap-1 sm:gap-1.5 px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded-md bg-muted/30 border border-border/50"
         >
           <div
-            className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+            className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-[10px] sm:text-xs font-medium text-foreground whitespace-nowrap">
+          <span className="text-[9px] sm:text-xs font-medium text-foreground whitespace-nowrap">
             {item.name}
           </span>
-          <span className="text-[10px] sm:text-xs text-muted-foreground font-semibold">
+          <span className="text-[9px] sm:text-xs text-muted-foreground font-semibold">
             {totals[index]}
           </span>
         </div>
@@ -123,24 +123,25 @@ const InnovatorChart = ({ data }: { data: ChartDataPoint[] }) => {
   return (
     <div className="flex flex-col h-full">
       <StatChipLegend items={legendItems} data={data} />
-      <div className="flex-1 mt-3">
-        <ResponsiveContainer width="100%" height={180}>
-          <BarChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+      <div className="flex-1 mt-2 sm:mt-3">
+        <ResponsiveContainer width="100%" height={160}>
+          <BarChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
             <XAxis 
               dataKey="name" 
               stroke="hsl(var(--muted-foreground))" 
-              fontSize={10} 
+              fontSize={9} 
               tickLine={false}
               axisLine={false}
+              interval="preserveStartEnd"
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))" 
-              fontSize={10} 
+              fontSize={9} 
               tickLine={false}
               axisLine={false}
               allowDecimals={false}
-              width={25}
+              width={22}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
             <Bar 
@@ -192,9 +193,9 @@ const EnterpriseChart = ({ data }: { data: ChartDataPoint[] }) => {
   return (
     <div className="flex flex-col h-full">
       <StatChipLegend items={legendItems} data={data} />
-      <div className="flex-1 mt-3">
-        <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+      <div className="flex-1 mt-2 sm:mt-3">
+        <ResponsiveContainer width="100%" height={160}>
+          <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
             <defs>
               <linearGradient id="colorProblems" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={CHART_COLORS.blue} stopOpacity={0.25}/>
@@ -213,17 +214,18 @@ const EnterpriseChart = ({ data }: { data: ChartDataPoint[] }) => {
             <XAxis 
               dataKey="name" 
               stroke="hsl(var(--muted-foreground))" 
-              fontSize={10} 
+              fontSize={9} 
               tickLine={false}
               axisLine={false}
+              interval="preserveStartEnd"
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))" 
-              fontSize={10} 
+              fontSize={9} 
               tickLine={false}
               axisLine={false}
               allowDecimals={false}
-              width={25}
+              width={22}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
             <Area 
@@ -281,24 +283,25 @@ const InvestorChart = ({ data }: { data: ChartDataPoint[] }) => {
   return (
     <div className="flex flex-col h-full">
       <StatChipLegend items={legendItems} data={data} />
-      <div className="flex-1 mt-3">
-        <ResponsiveContainer width="100%" height={180}>
-          <LineChart data={data} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+      <div className="flex-1 mt-2 sm:mt-3">
+        <ResponsiveContainer width="100%" height={160}>
+          <LineChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} vertical={false} />
             <XAxis 
               dataKey="name" 
               stroke="hsl(var(--muted-foreground))" 
-              fontSize={10} 
+              fontSize={9} 
               tickLine={false}
               axisLine={false}
+              interval="preserveStartEnd"
             />
             <YAxis 
               stroke="hsl(var(--muted-foreground))" 
-              fontSize={10} 
+              fontSize={9} 
               tickLine={false}
               axisLine={false}
               allowDecimals={false}
-              width={25}
+              width={22}
             />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.15 }} />
             <Line 
@@ -371,18 +374,18 @@ export const RoleAwareProgressChart = ({ role, data, isLoading }: RoleAwareProgr
 
   return (
     <Card className="bg-card/50 border-border/50 flex flex-col h-full">
-      <CardHeader className="pb-2 flex-shrink-0 px-3 sm:px-6">
+      <CardHeader className="pb-2 flex-shrink-0 px-2 sm:px-6 pt-3 sm:pt-6">
         <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
-          <Icon className="h-4 w-4 text-accent" />
-          {config.title}
+          <Icon className="h-4 w-4 text-accent shrink-0" />
+          <span className="truncate">{config.title}</span>
         </CardTitle>
-        <CardDescription className="text-xs text-muted-foreground leading-relaxed">
+        <CardDescription className="text-[10px] sm:text-xs text-muted-foreground leading-relaxed">
           {config.description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pt-0 px-2 sm:px-6">
+      <CardContent className="flex-1 pt-0 px-1 sm:px-6 pb-3 sm:pb-6">
         {isLoading ? (
-          <div className="flex items-center justify-center h-[260px]">
+          <div className="flex items-center justify-center h-[200px] sm:h-[260px]">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (

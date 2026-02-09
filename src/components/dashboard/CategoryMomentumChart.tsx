@@ -46,25 +46,25 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 export const CategoryMomentumChart = ({ data }: CategoryMomentumChartProps) => {
   return (
     <Card className="bg-card/50 border-border/50">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Layers className="h-5 w-5 text-accent" />
+      <CardHeader className="pb-2 sm:pb-4 px-2 sm:px-6 pt-3 sm:pt-6">
+        <CardTitle className="text-sm sm:text-lg font-semibold flex items-center gap-2">
+          <Layers className="h-4 w-4 sm:h-5 sm:w-5 text-accent shrink-0" />
           Category Momentum
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] w-full">
+      <CardContent className="px-1 sm:px-6 pb-3 sm:pb-6">
+        <div className="h-[220px] sm:h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={data}
               layout="vertical"
-              margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+              margin={{ top: 5, right: 10, left: 5, bottom: 5 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} horizontal={true} vertical={false} />
               <XAxis
                 type="number"
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={9}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value}%`}
@@ -74,10 +74,10 @@ export const CategoryMomentumChart = ({ data }: CategoryMomentumChartProps) => {
                 type="category"
                 dataKey="category"
                 stroke="hsl(var(--muted-foreground))"
-                fontSize={12}
+                fontSize={9}
                 tickLine={false}
                 axisLine={false}
-                width={75}
+                width={55}
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--muted))', opacity: 0.2 }} />
               <Bar dataKey="momentum" radius={[0, 4, 4, 0]} barSize={24}>

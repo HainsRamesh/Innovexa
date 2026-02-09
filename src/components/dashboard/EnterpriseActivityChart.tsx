@@ -198,14 +198,14 @@ export const EnterpriseActivityChart = () => {
 
   return (
     <Card className="bg-card/50 border-border/50 h-full">
-      <CardHeader className="pb-2 px-3 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <CardTitle className="text-sm sm:text-lg font-semibold flex items-center gap-2">
-            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+      <CardHeader className="pb-2 px-2 sm:px-6 pt-3 sm:pt-6">
+        <div className="flex flex-col gap-2">
+          <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-primary animate-pulse shrink-0" />
             Enterprise Activity
           </CardTitle>
 
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             {/* Time Range Toggle */}
             <div className="flex rounded-lg border border-border/50 overflow-hidden">
               {(['daily', 'weekly', 'monthly'] as const).map((range) => (
@@ -214,7 +214,7 @@ export const EnterpriseActivityChart = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setTimeRange(range)}
-                  className={`h-7 px-2 sm:px-3 rounded-none text-[11px] sm:text-xs capitalize ${
+                  className={`h-6 sm:h-7 px-1.5 sm:px-3 rounded-none text-[10px] sm:text-xs capitalize ${
                     timeRange === range
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                       : 'hover:bg-muted/50'
@@ -231,32 +231,32 @@ export const EnterpriseActivityChart = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setChartType('line')}
-                className={`h-7 px-2 rounded-none ${
+                className={`h-6 sm:h-7 px-1.5 sm:px-2 rounded-none ${
                   chartType === 'line'
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : 'hover:bg-muted/50'
                 }`}
               >
-                <LineChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <LineChart className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setChartType('bar')}
-                className={`h-7 px-2 rounded-none ${
+                className={`h-6 sm:h-7 px-1.5 sm:px-2 rounded-none ${
                   chartType === 'bar'
                     ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                     : 'hover:bg-muted/50'
                 }`}
               >
-                <BarChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <BarChart className="h-3 w-3 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4 px-2 sm:px-6">
-        <div className="h-[200px] sm:h-[240px]">
+      <CardContent className="pt-3 sm:pt-4 px-1 sm:px-6 pb-3 sm:pb-6">
+        <div className="h-[180px] sm:h-[240px]">
           {isLoading ? (
             <div className="h-full flex items-center justify-center">
               <div className="animate-pulse text-muted-foreground">Loading...</div>
@@ -280,8 +280,8 @@ export const EnterpriseActivityChart = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={30} />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} width={22} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area type="monotone" dataKey="problemsCreated" name="Problems Created" stroke="#6B7A99" fill="url(#enterpriseProblemsCreated)" strokeWidth={2} />
                   <Area type="monotone" dataKey="problemsViewed" name="Problems Viewed" stroke="#D4A574" fill="url(#enterpriseProblemsViewed)" strokeWidth={2} />
@@ -290,12 +290,12 @@ export const EnterpriseActivityChart = () => {
               ) : (
                 <RechartsBarChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={30} />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} interval="preserveStartEnd" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={9} tickLine={false} axisLine={false} width={22} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="problemsCreated" name="Problems Created" fill="#6B7A99" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="problemsViewed" name="Problems Viewed" fill="#D4A574" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="solutionsReviewed" name="Solutions Reviewed" fill="#5BA3A3" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="problemsCreated" name="Created" fill="#6B7A99" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="problemsViewed" name="Viewed" fill="#D4A574" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="solutionsReviewed" name="Reviewed" fill="#5BA3A3" radius={[4, 4, 0, 0]} />
                 </RechartsBarChart>
               )}
             </ResponsiveContainer>
@@ -303,18 +303,18 @@ export const EnterpriseActivityChart = () => {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-3 sm:gap-6 mt-3 sm:mt-4 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#6B7A99' }} />
-            <span className="text-[10px] sm:text-xs text-muted-foreground">Problems Created</span>
+        <div className="flex items-center justify-center gap-2 sm:gap-6 mt-2 sm:mt-4 flex-wrap">
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#6B7A99' }} />
+            <span className="text-[9px] sm:text-xs text-muted-foreground">Created</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#D4A574' }} />
-            <span className="text-[10px] sm:text-xs text-muted-foreground">Problems Viewed</span>
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#D4A574' }} />
+            <span className="text-[9px] sm:text-xs text-muted-foreground">Viewed</span>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#5BA3A3' }} />
-            <span className="text-[10px] sm:text-xs text-muted-foreground">Solutions Reviewed</span>
+          <div className="flex items-center gap-1">
+            <div className="h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#5BA3A3' }} />
+            <span className="text-[9px] sm:text-xs text-muted-foreground">Reviewed</span>
           </div>
         </div>
       </CardContent>

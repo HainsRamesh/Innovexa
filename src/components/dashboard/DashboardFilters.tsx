@@ -230,17 +230,17 @@ export const DashboardFilters = ({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto max-w-[calc(100vw-1.5rem)] p-0 bg-card border-border" align="start" sideOffset={4}>
+            <PopoverContent className="w-[calc(100vw-2rem)] sm:w-auto max-w-[380px] p-0 bg-card border-border" align="start" sideOffset={4}>
               <div className="flex flex-col sm:flex-row">
                 {/* Quick Range Sidebar */}
-                <div className="border-b sm:border-b-0 sm:border-r border-border p-3 space-y-1">
-                  <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Quick Select</p>
+                <div className="border-b sm:border-b-0 sm:border-r border-border p-2 sm:p-3 space-y-0.5 sm:space-y-1">
+                  <p className="text-[10px] sm:text-xs font-medium text-muted-foreground mb-1 sm:mb-2 px-2">Quick Select</p>
                   {quickRanges.map((range) => (
                     <Button
                       key={range.label}
                       variant="ghost"
                       size="sm"
-                      className="w-full justify-start text-xs h-8 px-2"
+                      className="w-full justify-start text-[10px] sm:text-xs h-7 sm:h-8 px-2"
                       onClick={() => applyQuickRange(range.days)}
                     >
                       {range.label}
@@ -249,7 +249,7 @@ export const DashboardFilters = ({
                 </div>
 
                 {/* Calendar */}
-                <div className="p-3 min-w-0 w-full sm:min-w-[280px]">
+                <div className="p-2 sm:p-3 min-w-0 w-full sm:min-w-[280px]">
                   {/* Selection indicator */}
                   <div className="flex items-center gap-2 mb-3 text-xs">
                     <span className={cn(
