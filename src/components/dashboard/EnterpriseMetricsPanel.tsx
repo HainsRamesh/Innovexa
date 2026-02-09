@@ -19,7 +19,7 @@ interface EnterpriseMetricsPanelProps {
 
 export const EnterpriseMetricsPanel = ({ metrics }: EnterpriseMetricsPanelProps) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
       <AnimatedMetricCard
         title="Problems Posted"
         value={metrics.problemsPosted}
