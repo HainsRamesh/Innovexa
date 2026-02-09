@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Menu, X } from "lucide-react";
+import { Menu, X, MessageCircle } from "lucide-react";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications";
@@ -239,7 +239,7 @@ export const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span>Messages</span>
-                      <MessagesBell />
+                      <MessageCircle className="h-[18px] w-[18px] text-muted-foreground" />
                     </Link>
                     <Link
                       to="/dashboard/notifications"
