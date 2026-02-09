@@ -310,9 +310,9 @@ export default function Innovations() {
               )}
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 z-[110] flex flex-col">
+          <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 z-[110] flex flex-col [&>button]:hidden">
             <div className="flex-1 overflow-hidden">
-              <ChatAssistant onNewAssistantMessage={handleNewAssistantMessage} />
+              <ChatAssistant onNewAssistantMessage={handleNewAssistantMessage} onClose={() => setRobotOpen(false)} />
             </div>
           </SheetContent>
         </Sheet>
