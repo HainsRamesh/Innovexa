@@ -269,6 +269,25 @@
   display: none;
 }
 
+/* Innovation holographic shimmer */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-100%) rotate(-45deg); }
+  100% { transform: translateX(200%) rotate(-45deg); }
+}
+
+.innovation-shimmer {
+  background: linear-gradient(
+    120deg,
+    transparent 20%,
+    hsl(var(--primary) / 0.12) 40%,
+    hsl(var(--primary) / 0.2) 50%,
+    hsl(var(--primary) / 0.12) 60%,
+    transparent 80%
+  );
+  animation: shimmer-sweep 1.8s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
