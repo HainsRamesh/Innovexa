@@ -90,7 +90,7 @@ export const MessageActions = ({
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-40">
+        <DropdownMenuContent align={isOwnMessage ? "end" : "start"} className="w-40 z-[200]">
           <DropdownMenuItem onClick={handleCopy} className="gap-2">
             {copied ? (
               <Check className="h-4 w-4 text-green-500" />
