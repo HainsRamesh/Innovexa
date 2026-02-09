@@ -207,17 +207,12 @@ const MessagesPage = () => {
     );
   };
 
-  const showMobileThread = selectedConversation && conversationId;
-
   return (
     <div className="flex flex-col h-[calc(100vh-80px)]">
 
       <div className="flex flex-1 gap-4 min-h-0">
-        {/* Conversation List - hidden on mobile when a thread is open */}
-        <div className={cn(
-          "w-full md:w-80 flex flex-col bg-card rounded-lg border border-border",
-          showMobileThread && "hidden md:flex"
-        )}>
+        {/* Conversation List */}
+        <div className="w-full md:w-80 flex flex-col bg-card rounded-lg border border-border">
           {/* Search */}
           <div className="p-3 border-b border-border">
             <div className="relative">
@@ -311,11 +306,8 @@ const MessagesPage = () => {
           </ScrollArea>
         </div>
 
-        {/* Chat Area - shown on mobile when a thread is selected */}
-        <div className={cn(
-          "flex-1 flex-col bg-card rounded-lg border border-border overflow-hidden",
-          showMobileThread ? "flex" : "hidden md:flex"
-        )}>
+        {/* Chat Area */}
+        <div className="hidden md:flex flex-1 flex-col bg-card rounded-lg border border-border overflow-hidden">
           {selectedConversation ? (
             <>
               <div className="flex-1 overflow-hidden">
@@ -323,11 +315,7 @@ const MessagesPage = () => {
                   targetUserId={selectedConversation.other_user.id}
                   targetUserName={selectedConversation.other_user.full_name}
                   targetUserAvatar={selectedConversation.other_user.avatar_url}
-                  showBackButton={true}
-                  onBack={() => {
-                    setSelectedConversation(null);
-                    navigate("/dashboard/messages", { replace: true });
-                  }}
+                  showBackButton={false}
                 />
               </div>
 
