@@ -170,8 +170,8 @@ export const DashboardFilters = ({
 
   return (
     <Card className="bg-card/30 border-border/50">
-      <CardContent className="p-4">
-        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
+      <CardContent className="p-3 sm:p-4">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 sm:gap-3">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Filter className="h-4 w-4" />
             <span className="text-sm font-medium">Filters:</span>
@@ -230,7 +230,7 @@ export const DashboardFilters = ({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] p-0 bg-card border-border" align="start">
+            <PopoverContent className="w-auto max-w-[calc(100vw-1.5rem)] p-0 bg-card border-border" align="start" sideOffset={4}>
               <div className="flex flex-col sm:flex-row">
                 {/* Quick Range Sidebar */}
                 <div className="border-b sm:border-b-0 sm:border-r border-border p-3 space-y-1">
@@ -249,7 +249,7 @@ export const DashboardFilters = ({
                 </div>
 
                 {/* Calendar */}
-                <div className="p-3 min-w-[280px]">
+                <div className="p-3 min-w-0 w-full sm:min-w-[280px]">
                   {/* Selection indicator */}
                   <div className="flex items-center gap-2 mb-3 text-xs">
                     <span className={cn(

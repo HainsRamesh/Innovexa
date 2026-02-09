@@ -205,7 +205,7 @@ export const EnterpriseActivityChart = () => {
             Enterprise Activity
           </CardTitle>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* Time Range Toggle */}
             <div className="flex rounded-lg border border-border/50 overflow-hidden">
               {(['daily', 'weekly', 'monthly'] as const).map((range) => (
@@ -214,7 +214,7 @@ export const EnterpriseActivityChart = () => {
                   variant="ghost"
                   size="sm"
                   onClick={() => setTimeRange(range)}
-                  className={`h-7 px-3 rounded-none text-xs capitalize ${
+                  className={`h-7 px-2 sm:px-3 rounded-none text-[11px] sm:text-xs capitalize ${
                     timeRange === range
                       ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                       : 'hover:bg-muted/50'
@@ -237,7 +237,7 @@ export const EnterpriseActivityChart = () => {
                     : 'hover:bg-muted/50'
                 }`}
               >
-                <LineChart className="h-4 w-4" />
+                <LineChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
               <Button
                 variant="ghost"
@@ -249,7 +249,7 @@ export const EnterpriseActivityChart = () => {
                     : 'hover:bg-muted/50'
                 }`}
               >
-                <BarChart className="h-4 w-4" />
+                <BarChart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </div>
@@ -280,8 +280,8 @@ export const EnterpriseActivityChart = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={30} />
                   <Tooltip content={<CustomTooltip />} />
                   <Area type="monotone" dataKey="problemsCreated" name="Problems Created" stroke="#6B7A99" fill="url(#enterpriseProblemsCreated)" strokeWidth={2} />
                   <Area type="monotone" dataKey="problemsViewed" name="Problems Viewed" stroke="#D4A574" fill="url(#enterpriseProblemsViewed)" strokeWidth={2} />
@@ -290,8 +290,8 @@ export const EnterpriseActivityChart = () => {
               ) : (
                 <RechartsBarChart data={data}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={10} tickLine={false} axisLine={false} width={30} />
                   <Tooltip content={<CustomTooltip />} />
                   <Bar dataKey="problemsCreated" name="Problems Created" fill="#6B7A99" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="problemsViewed" name="Problems Viewed" fill="#D4A574" radius={[4, 4, 0, 0]} />
@@ -303,18 +303,18 @@ export const EnterpriseActivityChart = () => {
         </div>
 
         {/* Legend */}
-        <div className="flex items-center justify-center gap-6 mt-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#6B7A99' }} />
-            <span className="text-xs text-muted-foreground">Problems Created</span>
+        <div className="flex items-center justify-center gap-3 sm:gap-6 mt-3 sm:mt-4 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#6B7A99' }} />
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Problems Created</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#D4A574' }} />
-            <span className="text-xs text-muted-foreground">Problems Viewed</span>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#D4A574' }} />
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Problems Viewed</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: '#5BA3A3' }} />
-            <span className="text-xs text-muted-foreground">Solutions Reviewed</span>
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: '#5BA3A3' }} />
+            <span className="text-[10px] sm:text-xs text-muted-foreground">Solutions Reviewed</span>
           </div>
         </div>
       </CardContent>

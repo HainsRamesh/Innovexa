@@ -11,18 +11,18 @@ interface MetricCardProps {
 
 const MetricCard = ({ title, value, icon, trend, trendUp }: MetricCardProps) => (
   <Card className="bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 group">
-    <CardContent className="p-5">
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <p className="text-sm text-muted-foreground font-medium">{title}</p>
-          <p className="text-3xl font-bold tracking-tight">{value}</p>
+    <CardContent className="p-3 sm:p-5">
+      <div className="flex items-start justify-between gap-2">
+        <div className="space-y-1 sm:space-y-2 min-w-0">
+          <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">{title}</p>
+          <p className="text-xl sm:text-3xl font-bold tracking-tight">{value}</p>
           {trend && (
-            <p className={`text-xs font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
+            <p className={`text-[10px] sm:text-xs font-medium ${trendUp ? 'text-emerald-400' : 'text-rose-400'}`}>
               {trendUp ? '↑' : '↓'} {trend}
             </p>
           )}
         </div>
-        <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+        <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors shrink-0 [&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-6 sm:[&>svg]:w-6">
           {icon}
         </div>
       </div>
@@ -44,7 +44,7 @@ export const MetricsPanel = ({
   targetMarketsReached,
 }: MetricsPanelProps) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
       <MetricCard
         title="Products Uploaded"
         value={productsUploaded}

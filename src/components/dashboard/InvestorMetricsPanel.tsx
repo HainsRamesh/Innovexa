@@ -33,7 +33,7 @@ const formatROI = (value: number): string => {
 
 export const InvestorMetricsPanel = ({ metrics }: InvestorMetricsPanelProps) => {
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
       <AnimatedMetricCard
         title="Total Investments"
         value={metrics.totalInvestments}
