@@ -80,20 +80,20 @@ const StatChipLegend = ({ items, data }: StatChipLegendProps) => {
   });
 
   return (
-    <div className="flex flex-wrap gap-2 justify-center">
+    <div className="flex flex-wrap gap-1.5 sm:gap-2 justify-center">
       {items.map((item, index) => (
         <div
           key={item.name}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-muted/30 border border-border/50"
+          className="flex items-center gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-md bg-muted/30 border border-border/50"
         >
           <div
             className="w-2.5 h-2.5 rounded-full flex-shrink-0"
             style={{ backgroundColor: item.color }}
           />
-          <span className="text-xs font-medium text-foreground whitespace-nowrap">
+          <span className="text-[10px] sm:text-xs font-medium text-foreground whitespace-nowrap">
             {item.name}
           </span>
-          <span className="text-xs text-muted-foreground font-semibold">
+          <span className="text-[10px] sm:text-xs text-muted-foreground font-semibold">
             {totals[index]}
           </span>
         </div>

@@ -386,8 +386,8 @@ const DashboardOverview = () => {
       <DashboardFilters />
 
       {/* Charts Row - Aligned with consistent heights */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="min-h-[300px] sm:min-h-[340px]">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+        <div className="min-h-[280px] sm:min-h-[340px]">
           {role === 'enterprise' ? (
             <EnterpriseActivityChart />
           ) : role === 'investor' ? (
@@ -400,7 +400,7 @@ const DashboardOverview = () => {
             />
           )}
         </div>
-        <div className="min-h-[300px] sm:min-h-[340px]">
+        <div className="min-h-[280px] sm:min-h-[340px]">
           <RoleAwareProgressChart role={role} data={roleProgressData} isLoading={progressLoading} />
         </div>
       </div>
