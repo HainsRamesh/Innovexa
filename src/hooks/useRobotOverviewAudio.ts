@@ -247,19 +247,18 @@ export function useRobotOverviewAudio(): RobotOverviewAudioApi {
     [cleanupUtterance, findChunkAtOffset, isSupported, speakChunk]
   );
 
+  // Mobile browsers (iOS Safari, Android Chrome) silently fail on
+  // speechSynthesis.resume(). The reliable cross-platform strategy is to
+  // cancel the paused utterance and re-speak from the last known boundary.
   const resumeIfPaused = useCallback(() => {
     if (!isSupported) return false;
     if (playbackState === "paused") {
-      try {
-        window.speechSynthesis.resume();
-        setPlaybackState("playing");
-        return true;
-      } catch (err) {
-        console.error("[robot-audio] resume failed", err);
-      }
+      const start = boundaryRef.current;
+      speakFrom(start);
+      return true;
     }
     return false;
-  }, [isSupported, playbackState]);
+  }, [isSupported, playbackState, speakFrom]);
 
   const play = useCallback(
     async ({ getScript }: PlayOptions) => {
@@ -287,12 +286,17 @@ export function useRobotOverviewAudio(): RobotOverviewAudioApi {
 
   const pause = useCallback(() => {
     if (!isSupported) return;
+    // Cancel instead of native pause — mobile browsers drop the audio
+    // session on pause and silently fail to resume. We save the boundary
+    // position so resumeIfPaused can re-speak from where we left off.
     try {
-      window.speechSynthesis.pause();
-      setPlaybackState("paused");
+      continueQueueRef.current = false;
+      window.speechSynthesis.cancel();
     } catch {
       /* ignore */
     }
+    utteranceRef.current = null;
+    setPlaybackState("paused");
   }, [isSupported]);
 
   const skip = useCallback(() => {
