@@ -144,7 +144,7 @@ const NotificationsPage = () => {
                 <div
                   key={notification.id}
                   className={cn(
-                    "group flex items-start gap-3 px-4 py-3 cursor-pointer transition-all",
+                    "group relative flex items-start gap-3 px-4 py-3 cursor-pointer transition-all overflow-hidden",
                     "hover:bg-muted/50",
                     !notification.is_read && "bg-primary/[0.06]",
                     "animate-in fade-in slide-in-from-top-1"
@@ -158,14 +158,14 @@ const NotificationsPage = () => {
                   
                   <div className="relative flex-shrink-0">
                     {notification.actor_avatar_url ? (
-                      <Avatar className="h-11 w-11 border border-border/50">
+                      <Avatar className="h-10 w-10 border border-border/50">
                         <AvatarImage src={notification.actor_avatar_url} />
                         <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
                           {notification.actor_name?.charAt(0).toUpperCase() || meta.icon}
                         </AvatarFallback>
                       </Avatar>
                     ) : (
-                      <div className="h-11 w-11 rounded-full bg-muted flex items-center justify-center text-xl">
+                      <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-lg">
                         {meta.icon}
                       </div>
                     )}
@@ -177,8 +177,8 @@ const NotificationsPage = () => {
                     )}
                   </div>
                   
-                  <div className="flex-1 min-w-0 py-0.5">
-                    <p className="text-sm leading-snug line-clamp-2">
+                  <div className="flex-1 min-w-0 overflow-hidden py-0.5">
+                    <p className="text-sm leading-snug line-clamp-2 break-words">
                       {renderMessage(notification)}
                     </p>
                     <p className="text-xs text-muted-foreground/60 mt-1">
@@ -186,7 +186,7 @@ const NotificationsPage = () => {
                     </p>
                   </div>
                   
-                  <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 pt-1">
+                  <div className="hidden sm:flex flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity items-center gap-1 pt-1">
                     {!notification.is_read && (
                       <Button
                         variant="ghost"
