@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Trash2, ArrowLeft } from 'lucide-react';
+import { Bell, CheckCheck, Trash2 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -82,26 +82,8 @@ const NotificationsPage = () => {
   return (
     <DashboardLayout>
       <div className="h-full flex flex-col max-w-3xl mx-auto">
-        {/* Compact Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-card/30 backdrop-blur-sm sticky top-0 z-10">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="h-8 w-8 mr-1"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <Bell className="h-5 w-5 text-primary" />
-            <h1 className="text-lg font-semibold text-foreground">Notifications</h1>
-            {unreadCount > 0 && (
-              <span className="text-xs text-primary bg-primary/15 px-2 py-0.5 rounded-full font-medium">
-                {unreadCount} unread
-              </span>
-            )}
-          </div>
-          
+        {/* Action bar – no duplicate header */}
+        <div className="flex items-center justify-end px-4 py-2">
           {unreadCount > 0 && (
             <Button
               variant="ghost"
