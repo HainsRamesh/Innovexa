@@ -25,11 +25,14 @@ import {
   TrendingUp,
   Building2,
   Rocket,
+  Bell,
+  MessageCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AppRole } from "@/types";
 import { NotificationBell } from "@/components/notifications";
 import { MessagesBell } from "@/components/messaging/MessagesBell";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -105,6 +108,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleSignOut = async () => {
     await signOut();
@@ -216,11 +220,35 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div className="flex-1" />
 
             <div className="flex items-center gap-2">
-              {/* Notification Bell */}
-              <NotificationBell />
-
-              {/* Messages Bell */}
-              <MessagesBell />
+              {/* On mobile, use simple icon buttons that navigate to full pages */}
+              {isMobile ? (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9 rounded-full hover:bg-muted/80"
+                    onClick={() => navigate("/dashboard/notifications")}
+                    aria-label="Notifications"
+                  >
+                    <Bell className="h-[18px] w-[18px] text-muted-foreground" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative h-9 w-9 rounded-full hover:bg-muted/80"
+                    onClick={() => navigate("/dashboard/messages")}
+                    aria-label="Messages"
+                  >
+                    <MessageCircle className="h-[18px] w-[18px] text-muted-foreground" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Desktop: use overlay/drawer components */}
+                  <NotificationBell />
+                  <MessagesBell />
+                </>
+              )}
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
