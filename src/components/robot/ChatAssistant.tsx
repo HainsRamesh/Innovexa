@@ -49,11 +49,12 @@ interface FileAttachment {
 interface ChatAssistantProps {
   className?: string;
   onNewAssistantMessage?: () => void;
+  onClose?: () => void;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-assistant`;
 
-export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistantProps) {
+export function ChatAssistant({ className, onNewAssistantMessage, onClose }: ChatAssistantProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, role, profile } = useAuth();
@@ -352,7 +353,7 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
           <span className="font-medium text-sm truncate">AI Assistant</span>
         </div>
 
-        <div className="flex items-center shrink-0" style={{ gap: 10 }}>
+        <div className="flex items-center gap-2 shrink-0">
           <Select
             value={selectedLanguage.code}
             onValueChange={(code) => {
@@ -375,6 +376,17 @@ export function ChatAssistant({ className, onNewAssistantMessage }: ChatAssistan
               ))}
             </SelectContent>
           </Select>
+          {onClose && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 shrink-0"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close</span>
+            </Button>
+          )}
         </div>
       </div>
 
