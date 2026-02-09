@@ -341,7 +341,7 @@ export function LiveRobot3D({ isSpeaking, mood }: LiveRobot3DProps) {
       }}
     >
       <Canvas
-        camera={{ position: [0, 0.9, 2.6], fov: 40 }}
+        camera={{ position: [0, 1.1, 2.8], fov: 40 }}
         gl={{ antialias: true, alpha: true }}
         style={{ pointerEvents: 'none' }} // Disable pointer events on canvas
       >
