@@ -208,11 +208,7 @@ const MessagesPage = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-120px)]">
-      <div className="mb-4">
-        <h1 className="text-2xl font-bold">Messages</h1>
-        <p className="text-muted-foreground">Your conversations</p>
-      </div>
+    <div className="flex flex-col h-[calc(100vh-80px)]">
 
       <div className="flex flex-1 gap-4 min-h-0">
         {/* Conversation List */}
