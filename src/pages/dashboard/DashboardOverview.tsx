@@ -366,7 +366,7 @@ const DashboardOverview = () => {
   }
 
   return (
-    <div className="space-y-3 sm:space-y-6 overflow-x-hidden max-w-full">
+    <div className="w-full max-w-full overflow-x-hidden space-y-3 sm:space-y-6 [&_*]:max-w-full">
       {/* Role-based Metrics Panel */}
       {role === 'innovator' || role === 'admin' ? (
         metrics && 'totalInnovations' in metrics && (
