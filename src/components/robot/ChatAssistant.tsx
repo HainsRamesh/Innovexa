@@ -392,8 +392,8 @@ export function ChatAssistant({ className, onNewAssistantMessage, onClose }: Cha
 
       {/* Mini Robot Avatar */}
       <div
-        className="w-full relative shrink-0 flex items-center justify-center bg-gradient-to-b from-background/50 to-transparent"
-        style={{ minHeight: 160, overflow: 'visible' }}
+        className="w-full relative shrink-0 bg-gradient-to-b from-background/50 to-transparent"
+        style={{ height: 120, overflow: 'visible', paddingTop: 0 }}
       >
         <LiveRobot3D isSpeaking={isSpeaking} mood={isListening ? 'thinking' : 'idle'} />
       </div>
