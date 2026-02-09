@@ -67,13 +67,13 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
 
   return (
     <Card className="bg-card/50 border-border/50 flex flex-col h-full">
-      <CardHeader className="pb-2 flex-shrink-0 px-3 sm:px-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <CardHeader className="pb-2 flex-shrink-0 px-2 sm:px-6 pt-3 sm:pt-6">
+        <div className="flex flex-col gap-2">
           <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
+            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
             Demo Play Trends
           </CardTitle>
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          <div className="flex items-center gap-1 sm:gap-2 flex-wrap">
             {/* Time Range Selector */}
             <div className="flex items-center bg-muted/30 rounded-md p-0.5">
               {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((range) => (
@@ -83,7 +83,7 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
                   size="sm"
                   onClick={() => setTimeRange(range)}
                   className={cn(
-                    "h-7 px-2.5 text-[11px] capitalize transition-all duration-200",
+                    "h-6 sm:h-7 px-1.5 sm:px-2.5 text-[10px] sm:text-[11px] capitalize transition-all duration-200",
                     timeRange === range 
                       ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
                       : "hover:bg-muted/50 text-muted-foreground"
@@ -103,25 +103,25 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
                   size="sm"
                   onClick={() => setChartType(type)}
                   className={cn(
-                    "h-7 px-2 text-[11px] capitalize transition-all duration-200 gap-1",
+                    "h-6 sm:h-7 px-1.5 sm:px-2 text-[10px] sm:text-[11px] capitalize transition-all duration-200 gap-1",
                     chartType === type 
                       ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-sm" 
                       : "hover:bg-muted/50 text-muted-foreground"
                   )}
                 >
                   {type === 'line' ? <LineChart className="h-3 w-3" /> : <BarChart3 className="h-3 w-3" />}
-                  {type}
+                  <span className="hidden xs:inline">{type}</span>
                 </Button>
               ))}
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 pt-0 px-2 sm:px-6">
-        <div className="h-[220px] sm:h-[260px] w-full">
+      <CardContent className="flex-1 pt-0 px-1 sm:px-6 pb-3 sm:pb-6">
+        <div className="h-[200px] sm:h-[260px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'line' ? (
-              <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <AreaChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                 <defs>
                   <linearGradient id="demoPlaysGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
@@ -136,17 +136,19 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
                 <XAxis
                   dataKey="name"
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
+                  fontSize={9}
                   tickLine={false}
                   axisLine={false}
+                  tick={{ fontSize: 9 }}
+                  interval="preserveStartEnd"
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
+                  fontSize={9}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value.toLocaleString()}
-                  width={40}
+                  width={28}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Area
@@ -169,22 +171,23 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
                 />
               </AreaChart>
             ) : (
-              <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <BarChart data={data} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
                 <XAxis
                   dataKey="name"
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
+                  fontSize={9}
                   tickLine={false}
                   axisLine={false}
+                  interval="preserveStartEnd"
                 />
                 <YAxis
                   stroke="hsl(var(--muted-foreground))"
-                  fontSize={10}
+                  fontSize={9}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => value.toLocaleString()}
-                  width={40}
+                  width={28}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Bar

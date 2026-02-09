@@ -366,7 +366,7 @@ const DashboardOverview = () => {
   }
 
   return (
-    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
+    <div className="space-y-3 sm:space-y-6 overflow-x-hidden max-w-full">
       {/* Role-based Metrics Panel */}
       {role === 'innovator' || role === 'admin' ? (
         metrics && 'totalInnovations' in metrics && (
@@ -387,7 +387,7 @@ const DashboardOverview = () => {
 
       {/* Charts Row - Aligned with consistent heights */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-        <div className="min-h-[280px] sm:min-h-[340px]">
+        <div className="min-h-0">
           {role === 'enterprise' ? (
             <EnterpriseActivityChart />
           ) : role === 'investor' ? (
@@ -400,7 +400,7 @@ const DashboardOverview = () => {
             />
           )}
         </div>
-        <div className="min-h-[280px] sm:min-h-[340px]">
+        <div className="min-h-0">
           <RoleAwareProgressChart role={role} data={roleProgressData} isLoading={progressLoading} />
         </div>
       </div>
