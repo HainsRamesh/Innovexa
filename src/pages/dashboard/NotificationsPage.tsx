@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CheckCheck, Trash2 } from 'lucide-react';
+import { Bell, CheckCheck, Trash2, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +12,7 @@ import {
 } from '@/hooks/useNotifications';
 import { NotificationSkeleton } from '@/components/notifications/NotificationSkeleton';
 import { cn } from '@/lib/utils';
+import { useChat } from '@/contexts/ChatContext';
 
 const FILTER_TABS = [
   { id: 'all', label: 'All' },
@@ -24,6 +25,7 @@ const FILTER_TABS = [
 
 const NotificationsPage = () => {
   const navigate = useNavigate();
+  const { openChat } = useChat();
   const [activeFilter, setActiveFilter] = useState('all');
   const {
     groupedNotifications,
@@ -181,9 +183,29 @@ const NotificationsPage = () => {
                     <p className="text-sm leading-snug line-clamp-2 break-words">
                       {renderMessage(notification)}
                     </p>
-                    <p className="text-xs text-muted-foreground/60 mt-1">
-                      {formatRelativeTime(notification.created_at)}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground/60">
+                        {formatRelativeTime(notification.created_at)}
+                      </p>
+                      {notification.type === 'interest' && notification.actor_id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-5 px-2 text-[10px] gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openChat({
+                              userId: notification.actor_id!,
+                              userName: notification.actor_name || "User",
+                              userAvatar: notification.actor_avatar_url,
+                            });
+                          }}
+                        >
+                          <MessageCircle className="h-3 w-3" />
+                          Message
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="hidden sm:flex flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity items-center gap-1 pt-1">

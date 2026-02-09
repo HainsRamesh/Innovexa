@@ -2,9 +2,10 @@ import { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Check, X } from 'lucide-react';
+import { Check, X, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GroupedNotification, getNotificationMeta, formatRelativeTime } from '@/hooks/useNotifications';
+import { useChat } from '@/contexts/ChatContext';
 
 interface NotificationItemProps {
   notification: GroupedNotification;
@@ -22,8 +23,11 @@ export const NotificationItem = memo(({
   compact = false
 }: NotificationItemProps) => {
   const navigate = useNavigate();
+  const { openChat } = useChat();
   const meta = getNotificationMeta(notification.type);
   const timeAgo = formatRelativeTime(notification.created_at);
+
+  const isInterestNotification = notification.type === 'interest';
 
   const getNavigationPath = (): string | null => {
     const { related_type, related_id, data, type } = notification;
@@ -171,9 +175,30 @@ export const NotificationItem = memo(({
         <p className={cn("text-sm line-clamp-2 leading-snug", compact && "text-[13px]")}>
           {renderMessage()}
         </p>
-        <p className="text-xs text-muted-foreground/60">
-          {timeAgo}
-        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <p className="text-xs text-muted-foreground/60">
+            {timeAgo}
+          </p>
+          {isInterestNotification && notification.actor_id && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-5 px-2 text-[10px] gap-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                openChat({
+                  userId: notification.actor_id!,
+                  userName: notification.actor_name || "User",
+                  userAvatar: notification.actor_avatar_url,
+                });
+                onClose();
+              }}
+            >
+              <MessageCircle className="h-3 w-3" />
+              Message
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Hover actions */}
