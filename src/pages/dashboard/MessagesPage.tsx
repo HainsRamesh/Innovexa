@@ -310,35 +310,6 @@ const MessagesPage = () => {
         <div className="hidden md:flex flex-1 flex-col bg-card rounded-lg border border-border overflow-hidden">
           {selectedConversation ? (
             <>
-              {/* Chat Header with Actions */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={selectedConversation.other_user.avatar_url || undefined} />
-                    <AvatarFallback className="bg-muted text-sm">
-                      {getInitials(selectedConversation.other_user.full_name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-semibold text-sm">
-                    {selectedConversation.other_user.full_name || "User"}
-                  </span>
-                </div>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setReportDialogOpen(true)}>
-                      <Flag className="h-4 w-4 mr-2" />
-                      Report Conversation
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-
               <div className="flex-1 overflow-hidden">
                 <ChatThread
                   targetUserId={selectedConversation.other_user.id}
