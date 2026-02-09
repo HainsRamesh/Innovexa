@@ -371,8 +371,8 @@ export const RoleAwareProgressChart = ({ role, data, isLoading }: RoleAwareProgr
 
   return (
     <Card className="bg-card/50 border-border/50 flex flex-col h-full">
-      <CardHeader className="pb-2 flex-shrink-0">
-        <CardTitle className="text-base font-semibold flex items-center gap-2">
+      <CardHeader className="pb-2 flex-shrink-0 px-3 sm:px-6">
+        <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
           <Icon className="h-4 w-4 text-accent" />
           {config.title}
         </CardTitle>
@@ -380,7 +380,7 @@ export const RoleAwareProgressChart = ({ role, data, isLoading }: RoleAwareProgr
           {config.description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pt-0">
+      <CardContent className="flex-1 pt-0 px-2 sm:px-6">
         {isLoading ? (
           <div className="flex items-center justify-center h-[260px]">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />

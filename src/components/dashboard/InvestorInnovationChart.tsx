@@ -201,9 +201,9 @@ export const InvestorInnovationChart = () => {
 
   return (
     <Card className="bg-card/50 border-border/50 h-full">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <CardTitle className="text-lg font-semibold flex items-center gap-2">
+      <CardHeader className="pb-2 px-3 sm:px-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <CardTitle className="text-sm sm:text-lg font-semibold flex items-center gap-2">
             <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
             Innovation Insights
           </CardTitle>
@@ -258,8 +258,8 @@ export const InvestorInnovationChart = () => {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="pt-4">
-        <div className="h-[240px]">
+      <CardContent className="pt-4 px-2 sm:px-6">
+        <div className="h-[200px] sm:h-[240px]">
           {isLoading ? (
             <div className="h-full flex items-center justify-center">
               <div className="animate-pulse text-muted-foreground">Loading...</div>

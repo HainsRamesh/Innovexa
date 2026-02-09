@@ -67,13 +67,13 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
 
   return (
     <Card className="bg-card/50 border-border/50 flex flex-col h-full">
-      <CardHeader className="pb-2 flex-shrink-0">
+      <CardHeader className="pb-2 flex-shrink-0 px-3 sm:px-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-          <CardTitle className="text-base font-semibold flex items-center gap-2">
+          <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" />
             Demo Play Trends
           </CardTitle>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             {/* Time Range Selector */}
             <div className="flex items-center bg-muted/30 rounded-md p-0.5">
               {(['daily', 'weekly', 'monthly'] as TimeRange[]).map((range) => (
@@ -117,8 +117,8 @@ export const DemoTrendsChart = ({ dailyData, weeklyData, monthlyData }: DemoTren
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 pt-0">
-        <div className="h-[260px] w-full">
+      <CardContent className="flex-1 pt-0 px-2 sm:px-6">
+        <div className="h-[220px] sm:h-[260px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === 'line' ? (
               <AreaChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>

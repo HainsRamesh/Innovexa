@@ -99,14 +99,14 @@ const ProblemsPage = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold">My Problems</h1>
-          <p className="text-muted-foreground">Manage your posted challenges and track solutions</p>
+          <h1 className="text-xl sm:text-2xl font-bold">My Problems</h1>
+          <p className="text-sm text-muted-foreground">Manage your posted challenges and track solutions</p>
         </div>
-        <Button variant="hero" asChild>
+        <Button variant="hero" asChild className="w-full sm:w-auto">
           <Link to="/dashboard/problems/new">
             <Plus className="h-4 w-4 mr-2" />
             Post New Problem
@@ -169,7 +169,7 @@ const ProblemsPage = () => {
 
       {/* Problems Grid */}
       {isLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i}>
               <CardContent className="p-5">
@@ -189,7 +189,7 @@ const ProblemsPage = () => {
           ))}
         </div>
       ) : filteredProblems.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredProblems.map((problem) => (
             <ProblemCard
               key={problem.id}

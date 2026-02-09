@@ -171,14 +171,14 @@ export const DashboardFilters = ({
   return (
     <Card className="bg-card/30 border-border/50">
       <CardContent className="p-4">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Filter className="h-4 w-4" />
             <span className="text-sm font-medium">Filters:</span>
           </div>
 
           <Select value={category} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-[160px] bg-background/50 border-border/50">
+            <SelectTrigger className="w-full sm:w-[160px] bg-background/50 border-border/50">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -192,7 +192,7 @@ export const DashboardFilters = ({
           </Select>
 
           <Select value={status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-[140px] bg-background/50 border-border/50">
+            <SelectTrigger className="w-full sm:w-[140px] bg-background/50 border-border/50">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
@@ -210,7 +210,7 @@ export const DashboardFilters = ({
               <Button
                 variant="outline"
                 className={cn(
-                  'justify-start text-left font-normal bg-background/50 border-border/50 min-w-[200px]',
+                  'justify-start text-left font-normal bg-background/50 border-border/50 w-full sm:w-auto sm:min-w-[200px]',
                   !dateRange && 'text-muted-foreground'
                 )}
               >
@@ -230,10 +230,10 @@ export const DashboardFilters = ({
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-              <div className="flex">
+            <PopoverContent className="w-auto max-w-[calc(100vw-2rem)] p-0 bg-card border-border" align="start">
+              <div className="flex flex-col sm:flex-row">
                 {/* Quick Range Sidebar */}
-                <div className="border-r border-border p-3 space-y-1">
+                <div className="border-b sm:border-b-0 sm:border-r border-border p-3 space-y-1">
                   <p className="text-xs font-medium text-muted-foreground mb-2 px-2">Quick Select</p>
                   {quickRanges.map((range) => (
                     <Button
