@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Edit, Trash2 } from "lucide-react";
+import { InterestedUsersSection } from "@/components/dashboard/InterestedUsersSection";
 
 export default function ProblemDetailPage() {
   const { problemId } = useParams();
@@ -218,6 +219,10 @@ export default function ProblemDetailPage() {
               )}
             </CardContent>
           </Card>
+
+          {isOwner && (
+            <InterestedUsersSection problemId={problem.id} />
+          )}
         </>
       )}
     </div>

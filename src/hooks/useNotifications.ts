@@ -32,6 +32,7 @@ export const NOTIFICATION_TYPES = {
   solution_approved: { icon: '✅', category: 'approvals', label: 'Approved' },
   solution_rejected: { icon: '❌', category: 'approvals', label: 'Rejected' },
   like: { icon: '👍', category: 'likes', label: 'Like' },
+  interest: { icon: '✨', category: 'likes', label: 'Interest' },
   bookmark: { icon: '📌', category: 'bookmarks', label: 'Bookmarked' },
   investor_interest: { icon: '💰', category: 'investments', label: 'Investment' },
   comment: { icon: '💬', category: 'comments', label: 'Comment' },
