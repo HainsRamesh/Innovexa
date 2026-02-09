@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Check, X, MessageCircle } from 'lucide-react';
@@ -110,12 +110,23 @@ export const NotificationItem = memo(({
   const renderMessage = () => {
     const message = getDisplayMessage();
     const actorName = notification.actor_name;
+    const actorId = notification.actor_id;
     
     if (actorName && message.startsWith(actorName)) {
       const restOfMessage = message.substring(actorName.length);
       return (
         <>
-          <span className="font-semibold text-foreground">{actorName}</span>
+          {actorId ? (
+            <Link
+              to={`/users/${actorId}`}
+              className="font-semibold text-foreground hover:underline focus:underline focus:outline-none"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {actorName}
+            </Link>
+          ) : (
+            <span className="font-semibold text-foreground">{actorName}</span>
+          )}
           <span className={notification.is_read ? "text-muted-foreground" : "text-foreground/90"}>
             {restOfMessage}
           </span>
