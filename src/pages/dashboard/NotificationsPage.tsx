@@ -79,7 +79,7 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="h-full flex flex-col max-w-3xl mx-auto">
+    <div className="h-full flex flex-col max-w-3xl mx-auto w-full overflow-x-hidden">
       {/* Action bar */}
       <div className="flex items-center justify-end px-4 py-2">
         {unreadCount > 0 && (
