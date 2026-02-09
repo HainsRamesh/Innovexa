@@ -332,12 +332,13 @@ function RobotScene({ isSpeaking, mood }: LiveRobot3DProps) {
 export function LiveRobot3D({ isSpeaking, mood }: LiveRobot3DProps) {
   return (
     <div 
-      className="w-full h-full rounded-xl overflow-hidden bg-gradient-to-b from-background/80 to-muted/40 border border-border/50"
+      className="w-full h-full rounded-xl bg-gradient-to-b from-background/80 to-muted/40 border border-border/50"
       style={{ 
+        overflow: 'visible',
         boxShadow: isSpeaking 
           ? '0 0 30px hsl(var(--primary) / 0.4)' 
           : '0 0 15px hsl(222 47% 4% / 0.3)',
-        pointerEvents: 'none', // Allow clicks to pass through to elements below
+        pointerEvents: 'none',
       }}
     >
       <Canvas
