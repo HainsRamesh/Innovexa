@@ -233,14 +233,22 @@ export const Navbar = () => {
               <div className="flex flex-col gap-2 pt-4 border-t border-border/50">
                 {user ? (
                   <>
-                    <div className="flex items-center justify-between px-2 pb-2">
-                      <span className="text-sm text-muted-foreground">Messages</span>
+                    <Link
+                      to="/dashboard/messages"
+                      className="flex items-center justify-between px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span>Messages</span>
                       <MessagesBell />
-                    </div>
-                    <div className="flex items-center justify-between px-2 pb-2">
-                      <span className="text-sm text-muted-foreground">Notifications</span>
+                    </Link>
+                    <Link
+                      to="/dashboard/notifications"
+                      className="flex items-center justify-between px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span>Notifications</span>
                       <NotificationBell />
-                    </div>
+                    </Link>
                     <Button variant="ghost" asChild className="justify-start">
                       <Link to={getDashboardLink()} onClick={() => setMobileMenuOpen(false)}>
                         Dashboard
