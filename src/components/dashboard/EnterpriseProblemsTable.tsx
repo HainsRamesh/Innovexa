@@ -85,9 +85,9 @@ export const EnterpriseProblemsTable = ({
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border border-border/50 overflow-hidden">
-          <Table>
+      <CardContent className="px-3 sm:px-6">
+        <div className="rounded-lg border border-border/50 overflow-x-auto -mx-1">
+          <Table className="min-w-[700px]">
             <TableHeader>
               <TableRow className="bg-muted/30 hover:bg-muted/30">
                 <TableHead className="text-muted-foreground font-semibold w-12">S.No</TableHead>

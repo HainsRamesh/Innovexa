@@ -283,11 +283,11 @@ const MyInnovationsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold">My Innovations</h1>
-        <p className="text-muted-foreground">Manage your innovations portfolio</p>
+        <h1 className="text-xl sm:text-2xl font-bold">My Innovations</h1>
+        <p className="text-sm text-muted-foreground">Manage your innovations portfolio</p>
       </div>
 
       {/* Filters */}
@@ -343,7 +343,7 @@ const MyInnovationsPage = () => {
 
       {/* Innovations Grid */}
       {isLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i}>
               <div className="aspect-video bg-secondary animate-pulse" />
@@ -358,7 +358,7 @@ const MyInnovationsPage = () => {
           ))}
         </div>
       ) : filteredInnovations.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredInnovations.map((innovation) => (
             <InnovationCard key={innovation.id} innovation={innovation} />
           ))}

@@ -104,14 +104,14 @@ const MySolutionsPage = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h1 className="text-2xl font-bold">My Solutions</h1>
-          <p className="text-muted-foreground">Track your submitted solutions and their status</p>
+          <h1 className="text-xl sm:text-2xl font-bold">My Solutions</h1>
+          <p className="text-sm text-muted-foreground">Track your submitted solutions and their status</p>
         </div>
-        <Button variant="hero" asChild>
+        <Button variant="hero" asChild className="w-full sm:w-auto">
           <Link to="/dashboard/browse">
             <Rocket className="h-4 w-4 mr-2" />
             Explore Problems
@@ -159,7 +159,7 @@ const MySolutionsPage = () => {
 
       {/* Solutions Grid */}
       {isLoading ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i}>
               <CardContent className="p-5">
@@ -177,7 +177,7 @@ const MySolutionsPage = () => {
           ))}
         </div>
       ) : filteredSolutions.length > 0 ? (
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredSolutions.map((solution) => (
             <SolutionCard
               key={solution.id}

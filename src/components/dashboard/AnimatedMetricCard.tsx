@@ -89,16 +89,16 @@ export const AnimatedMetricCard = ({
 
   return (
     <Card className="bg-card/50 border-border/50 hover:border-primary/30 transition-all duration-300 group">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground font-medium">{title}</p>
-            <p className="text-3xl font-bold tracking-tight">
+      <CardContent className="p-3 sm:p-5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 sm:space-y-2 min-w-0">
+            <p className="text-xs sm:text-sm text-muted-foreground font-medium truncate">{title}</p>
+            <p className="text-xl sm:text-3xl font-bold tracking-tight">
               {displayValue}{suffix}
             </p>
             {trendText && (
               <p className={cn(
-                'text-xs font-medium',
+                'text-[10px] sm:text-xs font-medium',
                 trendLabel === 'New account' ? 'text-muted-foreground' :
                 trend !== undefined && trend >= 0 ? 'text-emerald-400' : 'text-rose-400'
               )}>
@@ -106,7 +106,7 @@ export const AnimatedMetricCard = ({
               </p>
             )}
           </div>
-          <div className="h-12 w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+          <div className="h-9 w-9 sm:h-12 sm:w-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary/20 transition-colors shrink-0 [&>svg]:h-4 [&>svg]:w-4 sm:[&>svg]:h-6 sm:[&>svg]:w-6">
             {icon}
           </div>
         </div>
