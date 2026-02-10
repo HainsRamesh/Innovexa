@@ -518,7 +518,7 @@ const Solutions = () => {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-6">
                 <TabsTrigger value="approved">Approved Solutions</TabsTrigger>
-                <TabsTrigger value="my-solutions">My Solutions ({mySolutions.length})</TabsTrigger>
+                <TabsTrigger value="my-solutions">My Solutions ({filteredMine.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="approved">
