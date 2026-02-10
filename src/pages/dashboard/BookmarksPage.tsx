@@ -363,14 +363,14 @@ const BookmarksPage = () => {
         {/* Bookmarked Solutions */}
         <TabsContent value="solutions" className="mt-0">
           {isLoading ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {[1, 2, 3].map((i) => <SkeletonCard key={i} />)}
             </div>
           ) : bookmarkedSolutions.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {bookmarkedSolutions.map((solution) => (
-                <Card key={solution.id} className="group hover:border-primary/50 transition-all duration-200">
-                  <CardContent className="p-5">
+                <Card key={solution.id} className="group hover:border-primary/50 transition-all duration-200 min-w-0">
+                  <CardContent className="p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-3 mb-3">
                       <Badge variant={getStatusBadge(solution.status)}>
                         {getStatusLabel(solution.status)}
@@ -410,9 +410,9 @@ const BookmarksPage = () => {
                     </p>
 
                     {(solution as any).problems && (
-                      <div className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-secondary/50">
-                        <span className="text-xs text-muted-foreground">For:</span>
-                        <span className="text-sm font-medium truncate">
+                      <div className="flex items-center gap-2 mb-4 p-2 rounded-lg bg-secondary/50 min-w-0">
+                        <span className="text-xs text-muted-foreground shrink-0">For:</span>
+                        <span className="text-sm font-medium truncate min-w-0">
                           {(solution as any).problems.title}
                         </span>
                       </div>
