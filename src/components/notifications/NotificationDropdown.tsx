@@ -62,7 +62,7 @@ export const NotificationDropdown = ({
       aria-label="Notifications"
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/50 bg-card/50">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 bg-muted/30">
         <div className="flex items-center gap-2">
           <Bell className="h-4 w-4 text-primary" />
           <h3 className="font-semibold text-sm text-foreground">Notifications</h3>
