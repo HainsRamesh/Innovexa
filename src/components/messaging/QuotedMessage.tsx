@@ -18,25 +18,25 @@ export const QuotedMessage = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full text-left rounded-lg px-2 py-1.5 mb-1 border-l-2 transition-colors",
+        "w-full text-left rounded-lg px-3 py-2 mb-1 border-l-3 transition-colors",
         "hover:bg-black/5 dark:hover:bg-white/5",
         isOwnBubble
-          ? "bg-primary-foreground/10 border-primary-foreground/50"
-          : "bg-muted/50 border-primary"
+          ? "bg-primary-foreground/20 border-primary-foreground/70"
+          : "bg-accent/60 border-primary"
       )}
     >
       <p
         className={cn(
-          "text-[11px] font-semibold truncate",
-          isOwnBubble ? "text-primary-foreground/80" : "text-primary"
+          "text-xs font-bold truncate",
+          isOwnBubble ? "text-primary-foreground/90" : "text-primary"
         )}
       >
         {senderName}
       </p>
       <p
         className={cn(
-          "text-[11px] truncate",
-          isOwnBubble ? "text-primary-foreground/60" : "text-muted-foreground"
+          "text-xs truncate mt-0.5",
+          isOwnBubble ? "text-primary-foreground/70" : "text-muted-foreground"
         )}
       >
         {snippet || "Message"}
