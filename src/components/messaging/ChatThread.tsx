@@ -1,12 +1,22 @@
 import { useState, useEffect, useRef, useCallback, DragEvent } from "react";
 import { format } from "date-fns";
-import { Send, Loader2, ArrowLeft } from "lucide-react";
+import { Send, Loader2, ArrowLeft, MoreVertical, Flag, UserX, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useProfileActions } from "@/hooks/useProfileActions";
+import { ReportUserModal } from "@/components/profile/ReportUserModal";
+import { BlockConfirmModal } from "@/components/profile/BlockConfirmModal";
 import { EmojiPickerPopover } from "./EmojiPickerPopover";
 import { AttachmentPicker, PendingAttachment } from "./AttachmentPicker";
 import { AttachmentPreview } from "./AttachmentPreview";
@@ -59,6 +69,9 @@ export const ChatThread = ({
   onMessagesRead,
 }: ChatThreadProps) => {
   const { user } = useAuth();
+  const { isBlocked, blockUser, unblockUser, reportUser } = useProfileActions(targetUserId);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showBlockModal, setShowBlockModal] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -814,7 +827,60 @@ export const ChatThread = ({
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">{displayName}</p>
         </div>
+
+        {/* Safety menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44 z-[200]">
+            <DropdownMenuItem onClick={() => setShowReportModal(true)} className="gap-2">
+              <Flag className="h-4 w-4" />
+              Report User
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            {isBlocked ? (
+              <DropdownMenuItem onClick={() => unblockUser()} className="gap-2">
+                <ShieldOff className="h-4 w-4" />
+                Unblock User
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onClick={() => setShowBlockModal(true)}
+                className="gap-2 text-destructive focus:text-destructive"
+              >
+                <UserX className="h-4 w-4" />
+                Block User
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
+      {/* Report User Modal */}
+      <ReportUserModal
+        open={showReportModal}
+        onOpenChange={setShowReportModal}
+        userName={displayName}
+        onSubmit={async (reason, description) => {
+          await reportUser(reason, description);
+          setShowReportModal(false);
+        }}
+      />
+
+      {/* Block User Confirm Modal */}
+      <BlockConfirmModal
+        open={showBlockModal}
+        onOpenChange={setShowBlockModal}
+        userName={displayName}
+        onConfirm={async () => {
+          await blockUser();
+          setShowBlockModal(false);
+          onBack?.();
+        }}
+      />
 
       {/* Drag overlay */}
       {isDragOver && (
@@ -1016,6 +1082,13 @@ export const ChatThread = ({
       />
 
       {/* Input Area */}
+      {isBlocked ? (
+        <div className="p-4 border-t border-border flex-shrink-0 text-center">
+          <p className="text-sm text-muted-foreground">
+            You have blocked this user. <button onClick={() => unblockUser()} className="text-primary hover:underline font-medium">Unblock</button> to send messages.
+          </p>
+        </div>
+      ) : (
       <div className="p-3 border-t border-border flex-shrink-0">
         <div className="flex items-end gap-2">
           <AttachmentPicker
@@ -1048,6 +1121,7 @@ export const ChatThread = ({
           </Button>
         </div>
       </div>
+      )}
     </div>
   );
 };
