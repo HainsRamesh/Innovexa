@@ -100,9 +100,8 @@ export const InnovationTile = ({
       style={{
         zIndex: isActive ? 40 : 1,
         transform: isActive ? "scale(1.08)" : "scale(1)",
-        margin: isActive ? "0 12px" : "0 0px",
         transformOrigin: getTransformOrigin(),
-        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), margin 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
+        transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
     >
       {/* Card - image never scales */}
@@ -112,7 +111,7 @@ export const InnovationTile = ({
           borderRadius: isActive ? "16px" : "12px",
           overflow: "hidden",
           boxShadow: isActive
-            ? "0 0 12px hsl(var(--primary) / 0.25), 0 12px 30px -8px rgba(0,0,0,0.4)"
+            ? "0 0 20px hsl(var(--primary) / 0.4), 0 0 40px hsl(var(--primary) / 0.15), 0 20px 50px -12px rgba(0,0,0,0.5)"
             : "0 4px 6px -1px rgba(0,0,0,0.1)",
           transition: "border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 400ms ease-out",
         }}
