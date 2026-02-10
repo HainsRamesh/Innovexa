@@ -93,8 +93,13 @@ const NotificationsPage = () => {
 
   return (
     <div className="h-full flex flex-col max-w-3xl mx-auto w-full overflow-x-hidden overflow-y-auto">
+      {/* Page header */}
+      <div className="px-4 pt-4 pb-2">
+        <h1 className="text-xl font-bold text-foreground">Notifications</h1>
+      </div>
+
       {/* Action bar */}
-      <div className="flex items-center justify-end px-4 py-2">
+      <div className="flex items-center justify-end px-4 py-1">
         {unreadCount > 0 && (
           <Button
             variant="ghost"
