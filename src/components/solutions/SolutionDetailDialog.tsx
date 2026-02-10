@@ -128,7 +128,7 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto" aria-describedby="solution-detail-description">
+      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto" aria-describedby="solution-detail-description">
         <DialogHeader>
           <div className="flex items-center gap-2">
             <DialogTitle className="text-xl">{solution.title}</DialogTitle>
@@ -310,6 +310,19 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
           {/* Submitted Date */}
           <div className="text-sm text-muted-foreground">
             Submitted on {format(new Date(solution.created_at), "MMMM d, yyyy")}
+          </div>
+
+          <Separator />
+
+          {/* Close Button */}
+          <div className="pt-2 pb-1">
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => onOpenChange(false)}
+            >
+              Close
+            </Button>
           </div>
         </div>
       </DialogContent>
