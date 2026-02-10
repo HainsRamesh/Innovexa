@@ -92,7 +92,7 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="h-full flex flex-col max-w-3xl mx-auto w-full overflow-x-hidden">
+    <div className="h-full flex flex-col max-w-3xl mx-auto w-full overflow-x-hidden overflow-y-auto">
       {/* Action bar */}
       <div className="flex items-center justify-end px-4 py-2">
         {unreadCount > 0 && (
@@ -157,7 +157,7 @@ const NotificationsPage = () => {
                 <div
                   key={notification.id}
                   className={cn(
-                    "group relative flex items-start gap-3 px-4 py-3 cursor-pointer transition-all overflow-hidden",
+                    "group relative flex items-start gap-3 px-3 sm:px-4 py-3 cursor-pointer transition-all overflow-hidden",
                     "hover:bg-muted/50",
                     !notification.is_read && "bg-primary/[0.06]",
                     "animate-in fade-in slide-in-from-top-1"
@@ -191,7 +191,7 @@ const NotificationsPage = () => {
                   </div>
                   
                   <div className="flex-1 min-w-0 overflow-hidden py-0.5">
-                    <p className="text-sm leading-snug line-clamp-2 break-words">
+                    <p className="text-sm leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]">
                       {renderMessage(notification)}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
