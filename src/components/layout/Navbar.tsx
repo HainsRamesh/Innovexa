@@ -205,30 +205,8 @@ export const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile Icons + Menu Button */}
-          <div className="lg:hidden flex items-center gap-1">
-            {user && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-9 w-9 rounded-full hover:bg-muted/80"
-                  onClick={() => navigate("/dashboard/notifications")}
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-[18px] w-[18px] text-muted-foreground" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative h-9 w-9 rounded-full hover:bg-muted/80"
-                  onClick={() => navigate("/dashboard/messages")}
-                  aria-label="Messages"
-                >
-                  <MessageCircle className="h-[18px] w-[18px] text-muted-foreground" />
-                </Button>
-              </>
-            )}
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden flex items-center">
             <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
