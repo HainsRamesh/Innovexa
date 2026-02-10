@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,8 @@ import {
   Loader2,
   FileImage,
   File,
+  Target,
+  ExternalLink,
 } from "lucide-react";
 
 interface SolutionDetailDialogProps {
@@ -38,6 +41,7 @@ interface SolutionDetailDialogProps {
     created_at: string;
     status: string;
     innovator_id?: string;
+    problem_id?: string;
   } | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -68,6 +72,22 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
   const { toast } = useToast();
   const { startLoading, stopLoading } = useGlobalLoading();
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
+  const [linkedProblem, setLinkedProblem] = useState<{ id: string; title: string; category: string } | null>(null);
+
+  useEffect(() => {
+    if (open && solution?.problem_id) {
+      supabase
+        .from("problems")
+        .select("id, title, category")
+        .eq("id", solution.problem_id)
+        .single()
+        .then(({ data }) => {
+          setLinkedProblem(data ?? null);
+        });
+    } else if (!open) {
+      setLinkedProblem(null);
+    }
+  }, [open, solution?.problem_id]);
 
   if (!solution) return null;
 
@@ -124,7 +144,29 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
         </DialogHeader>
 
         <div className="space-y-6 mt-4">
-          {/* Description */}
+          {/* Linked Problem */}
+          {linkedProblem && (
+            <>
+              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Target className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Linked Problem</p>
+                    <p className="font-medium text-sm">{linkedProblem.title}</p>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm" asChild className="shrink-0">
+                  <Link to={`/explore/${linkedProblem.id}`} onClick={() => onOpenChange(false)}>
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                    View
+                  </Link>
+                </Button>
+              </div>
+              <Separator />
+            </>
+          )}
           <div>
             <h4 className="font-semibold flex items-center gap-2 mb-2">
               <FileText className="h-4 w-4 text-primary" />
