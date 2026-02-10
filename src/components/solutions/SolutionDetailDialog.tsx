@@ -321,19 +321,6 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
           <div className="text-sm text-muted-foreground">
             Submitted on {format(new Date(solution.created_at), "MMMM d, yyyy")}
           </div>
-
-          <Separator />
-
-          {/* Close Button */}
-          <div className="pt-2 pb-1">
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => onOpenChange(false)}
-            >
-              Close
-            </Button>
-          </div>
         </div>
       </DialogContent>
     </Dialog>
