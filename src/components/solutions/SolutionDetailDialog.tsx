@@ -26,6 +26,7 @@ import {
   File,
   Target,
   ExternalLink,
+  X,
 } from "lucide-react";
 
 interface SolutionDetailDialogProps {
@@ -128,10 +129,19 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto" aria-describedby="solution-detail-description">
+      <DialogContent className="max-w-2xl w-[calc(100vw-2rem)] max-h-[85vh] overflow-y-auto p-4 sm:p-6" aria-describedby="solution-detail-description">
+        {/* Close icon */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-3 top-3 z-10 rounded-full bg-muted/80 p-1.5 hover:bg-muted transition-colors"
+          aria-label="Close"
+        >
+          <X className="h-4 w-4" />
+        </button>
+
         <DialogHeader>
-          <div className="flex items-center gap-2">
-            <DialogTitle className="text-xl">{solution.title}</DialogTitle>
+          <div className="flex items-center gap-2 pr-8">
+            <DialogTitle className="text-xl break-words">{solution.title}</DialogTitle>
             {solution.status === "accepted" && (
               <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
                 Approved
@@ -147,20 +157,20 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
           {/* Linked Problem */}
           {linkedProblem && (
             <>
-              <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/50">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                     <Target className="h-4 w-4 text-primary" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Linked Problem</p>
-                    <p className="font-medium text-sm">{linkedProblem.title}</p>
+                    <p className="font-medium text-sm break-words">{linkedProblem.title}</p>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" asChild className="shrink-0">
+                <Button variant="outline" size="sm" asChild className="shrink-0 w-full sm:w-auto">
                   <Link to={`/explore/${linkedProblem.id}`} onClick={() => onOpenChange(false)}>
                     <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                    View
+                    View Problem
                   </Link>
                 </Button>
               </div>
@@ -213,17 +223,17 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
           )}
 
           {/* Cost and Timeline */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg bg-muted/50">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
               <div className="flex items-center gap-2 mb-1">
                 <DollarSign className="h-4 w-4 text-primary" />
                 <span className="text-sm text-muted-foreground">Estimated Cost</span>
               </div>
-              <p className="text-lg font-semibold">
+              <p className="text-lg font-semibold break-words">
                 {formatCurrency(solution.estimated_cost)}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-muted/50">
+            <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="h-4 w-4 text-primary" />
                 <span className="text-sm text-muted-foreground">Timeline</span>
