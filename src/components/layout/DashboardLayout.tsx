@@ -145,7 +145,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex overflow-x-hidden max-w-[100vw]">
       {/* Sidebar */}
       <aside
         className={cn(
@@ -209,7 +209,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       )}
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
+      <div className="flex-1 lg:ml-64 min-w-0 max-w-[100vw] overflow-x-hidden">
         {/* Top Bar */}
         <header className="h-16 bg-background/95 backdrop-blur-sm border-b border-border sticky top-0 z-30">
           <div className="flex items-center justify-between h-full px-4 lg:px-8">
@@ -286,7 +286,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page Content */}
-        <main className="p-3 sm:p-4 lg:p-8 overflow-x-hidden w-full max-w-full [&_*]:max-w-full">{children}</main>
+        <main className="p-3 sm:p-4 lg:p-8 overflow-x-hidden w-full min-w-0">{children}</main>
       </div>
     </div>
   );
