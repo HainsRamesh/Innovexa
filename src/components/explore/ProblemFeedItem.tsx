@@ -5,7 +5,7 @@ import { Sparkles, MessageCircle, ChevronDown, ChevronUp, Send, Loader2, CheckCi
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { SolutionSubmissionForm } from "@/components/solutions/SolutionSubmissionForm";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,9 +43,6 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
   
   // Solution submission state
   const [showSolutionForm, setShowSolutionForm] = useState(false);
-  const [solutionTitle, setSolutionTitle] = useState("");
-  const [solutionDescription, setSolutionDescription] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Selected solution for detail view
   const [selectedSolution, setSelectedSolution] = useState<Solution | null>(null);
@@ -123,36 +120,9 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
     await toggleInterest();
   };
 
-  const handleSubmitSolution = async () => {
-    if (!solutionTitle.trim() || !solutionDescription.trim() || !user) return;
-
-    setIsSubmitting(true);
-    try {
-      const { error } = await supabase.from("solutions").insert({
-        problem_id: problem.id,
-        innovator_id: user.id,
-        title: solutionTitle.trim(),
-        description: solutionDescription.trim(),
-        status: "submitted",
-      });
-
-      if (error) throw error;
-
-      toast({ title: "Solution submitted successfully" });
-      setSolutionTitle("");
-      setSolutionDescription("");
-      setShowSolutionForm(false);
-      fetchSolutions();
-    } catch (error) {
-      console.error("Error submitting solution:", error);
-      toast({
-        title: "Failed to submit solution",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSolutionSuccess = () => {
+    setShowSolutionForm(false);
+    fetchSolutions();
   };
 
   const handleApproveSolution = async (solutionId: string) => {
@@ -347,48 +317,11 @@ export function ProblemFeedItem({ problem, ownerProfile }: ProblemFeedItemProps)
           {isInnovator && !isProblemOwner && (
             <div className="mb-6">
               {showSolutionForm ? (
-                <div className="space-y-3 p-4 bg-muted/30 rounded-lg">
-                  <input
-                    type="text"
-                    placeholder="Solution title..."
-                    value={solutionTitle}
-                    onChange={(e) => setSolutionTitle(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <Textarea
-                    placeholder="Describe your solution approach..."
-                    value={solutionDescription}
-                    onChange={(e) => setSolutionDescription(e.target.value)}
-                    className="min-h-[100px]"
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleSubmitSolution}
-                      disabled={!solutionTitle.trim() || !solutionDescription.trim() || isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          <Send className="h-4 w-4 mr-2" />
-                          Submit Solution
-                        </>
-                      )}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setShowSolutionForm(false);
-                        setSolutionTitle("");
-                        setSolutionDescription("");
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </div>
+                <SolutionSubmissionForm
+                  problemId={problem.id}
+                  onSuccess={handleSolutionSuccess}
+                  onCancel={() => setShowSolutionForm(false)}
+                />
               ) : (
                 <Button
                   variant="outline"
