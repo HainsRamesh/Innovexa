@@ -99,7 +99,7 @@ export const InnovationTile = ({
       onClick={() => onSelect(innovation)}
       style={{
         zIndex: isActive ? 40 : 1,
-        transform: isActive ? "scale(1.25)" : "scale(1)",
+        transform: isActive ? "scale(1.08)" : "scale(1)",
         transformOrigin: getTransformOrigin(),
         transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1)",
       }}
