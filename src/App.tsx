@@ -46,6 +46,8 @@ import FeatureRequests from "./pages/FeatureRequests";
 import Accessibility from "./pages/Accessibility";
 import Roadmap from "./pages/Roadmap";
 import Community from "./pages/Community";
+import Messages from "./pages/Messages";
+import Notifications from "./pages/Notifications";
 
 // Dashboard Pages
 import DashboardOverview from "./pages/dashboard/DashboardOverview";
@@ -311,6 +313,15 @@ const AppRoutes = () => {
       } />
       <Route path="/users/:userId" element={
         <ProtectedRoute><PublicProfile /></ProtectedRoute>
+      } />
+      <Route path="/messages" element={
+        <ProtectedRoute><Messages /></ProtectedRoute>
+      } />
+      <Route path="/messages/:conversationId" element={
+        <ProtectedRoute><Messages /></ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute><Notifications /></ProtectedRoute>
       } />
       <Route
         path="/dashboard/*"
