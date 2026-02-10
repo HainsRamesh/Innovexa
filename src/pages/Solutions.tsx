@@ -517,8 +517,8 @@ const Solutions = () => {
           {isInnovator ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-6">
-                <TabsTrigger value="approved">Approved Solutions</TabsTrigger>
-                <TabsTrigger value="my-solutions">My Solutions ({filteredMine.length})</TabsTrigger>
+                <TabsTrigger value="approved">Approved Solutions ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</TabsTrigger>
+                <TabsTrigger value="my-solutions">My Solutions ({activeTab === 'my-solutions' ? filteredMine.length : mySolutions.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="approved">
