@@ -236,7 +236,7 @@ export const Navbar = () => {
                 {user ? (
                   <>
                     <Link
-                      to="/dashboard/messages"
+                      to="/messages"
                       className="flex items-center justify-between px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
@@ -244,12 +244,12 @@ export const Navbar = () => {
                       <MessageCircle className="h-[18px] w-[18px] text-muted-foreground" />
                     </Link>
                     <Link
-                      to="/dashboard/notifications"
+                      to="/notifications"
                       className="flex items-center justify-between px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span>Notifications</span>
-                      <NotificationBell />
+                      <Bell className="h-[18px] w-[18px] text-muted-foreground" />
                     </Link>
                     <Button variant="ghost" asChild className="justify-start">
                       <Link to={getDashboardLink()} onClick={() => setMobileMenuOpen(false)}>

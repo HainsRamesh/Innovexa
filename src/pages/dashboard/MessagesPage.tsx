@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Search, MessageCircle, Loader2, Flag, MoreVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,8 @@ const MessagesPage = () => {
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const location = useLocation();
+  const isDashboard = location.pathname.startsWith("/dashboard");
   
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [filteredConversations, setFilteredConversations] = useState<ConversationItem[]>([]);
@@ -163,7 +165,8 @@ const MessagesPage = () => {
 
   const handleSelectConversation = (conv: ConversationItem) => {
     setSelectedConversation(conv);
-    navigate(`/dashboard/messages/${conv.id}`, { replace: true });
+    const basePath = isDashboard ? "/dashboard/messages" : "/messages";
+    navigate(`${basePath}/${conv.id}`, { replace: true });
   };
 
   const formatTime = (dateStr: string) => {
@@ -209,7 +212,8 @@ const MessagesPage = () => {
 
   const handleBackToList = () => {
     setSelectedConversation(null);
-    navigate("/dashboard/messages", { replace: true });
+    const basePath = isDashboard ? "/dashboard/messages" : "/messages";
+    navigate(basePath, { replace: true });
   };
 
   return (
