@@ -140,9 +140,9 @@ export const NotificationItem = memo(({
   return (
     <div
       className={cn(
-        "group relative flex items-start gap-3 cursor-pointer transition-all duration-200",
+        "group relative flex items-start gap-3 cursor-pointer transition-all duration-200 overflow-hidden",
         "hover:bg-muted/60 border-b border-border/20 last:border-b-0",
-        compact ? "px-3 py-2.5" : "px-4 py-3",
+        compact ? "px-3 py-2.5" : "px-3 sm:px-4 py-3",
         !notification.is_read && "bg-primary/[0.08]"
       )}
       onClick={handleClick}
@@ -182,8 +182,8 @@ export const NotificationItem = memo(({
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <p className={cn("text-sm line-clamp-2 leading-snug", compact && "text-[13px]")}>
+      <div className="flex-1 min-w-0 space-y-0.5 overflow-hidden">
+        <p className={cn("text-sm line-clamp-2 leading-snug break-words [overflow-wrap:anywhere]", compact && "text-[13px]")}>
           {renderMessage()}
         </p>
         <div className="flex items-center gap-2 mt-0.5">

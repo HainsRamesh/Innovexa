@@ -286,7 +286,7 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         </header>
 
         {/* Page Content */}
-        <main className="p-3 sm:p-4 lg:p-8 overflow-x-hidden">{children}</main>
+        <main className="p-3 sm:p-4 lg:p-8 overflow-x-hidden w-full max-w-full [&_*]:max-w-full">{children}</main>
       </div>
     </div>
   );
