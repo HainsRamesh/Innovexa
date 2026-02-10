@@ -413,6 +413,8 @@ export const ChatThread = ({
         messagePayload.reply_to_snippet = currentReply.snippet.slice(0, 100);
       }
 
+      console.log("[REPLY DEBUG] messagePayload:", JSON.stringify(messagePayload));
+
       const { data: newMessage, error: msgError } = await supabase
         .from("messages")
         .insert(messagePayload)
@@ -420,6 +422,13 @@ export const ChatThread = ({
         .single();
 
       if (msgError) throw msgError;
+
+      console.log("[REPLY DEBUG] newMessage from DB:", JSON.stringify({
+        id: newMessage.id,
+        reply_to_message_id: newMessage.reply_to_message_id,
+        reply_to_sender_id: newMessage.reply_to_sender_id,
+        reply_to_snippet: newMessage.reply_to_snippet,
+      }));
 
       // Replace optimistic message with real one
       setMessages(prev => prev.map(msg => 
