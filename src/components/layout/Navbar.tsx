@@ -160,7 +160,7 @@ export const Navbar = () => {
                 <Button variant="ghost" asChild>
                   <Link to={getDashboardLink()}>Dashboard</Link>
                 </Button>
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                       <Avatar className="h-10 w-10 border-2 border-primary/30">
