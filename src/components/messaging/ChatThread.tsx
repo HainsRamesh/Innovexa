@@ -966,10 +966,10 @@ export const ChatThread = ({
                       <div className={cn("max-w-[80%] flex flex-col", isOwn ? "items-end" : "items-start")}>
                       <div
                         className={cn(
-                          "rounded-xl px-3 py-2 italic opacity-60",
+                          "rounded-xl px-3 py-2 italic opacity-60 shadow-md",
                           isOwn
-                            ? "bg-[hsl(var(--chat-sent))] text-[hsl(var(--chat-sent-foreground))] rounded-tr-sm"
-                            : "bg-[hsl(var(--chat-received))] text-[hsl(var(--chat-received-foreground))] rounded-tl-sm"
+                            ? "bg-primary text-primary-foreground rounded-tr-sm"
+                            : "bg-muted text-foreground rounded-tl-sm"
                         )}
                       >
                         <p className="text-sm">This message was deleted</p>
@@ -1026,10 +1026,10 @@ export const ChatThread = ({
                       ) : (hasText || hasReply) ? (
                         <div
                           className={cn(
-                            "rounded-xl px-3 pt-1.5 pb-1 max-w-full",
+                            "rounded-xl px-3 pt-1.5 pb-1 max-w-full shadow-md",
                             isOwn
-                              ? "bg-[hsl(var(--chat-sent))] text-[hsl(var(--chat-sent-foreground))] rounded-tr-sm"
-                              : "bg-[hsl(var(--chat-received))] text-[hsl(var(--chat-received-foreground))] rounded-tl-sm"
+                              ? "bg-primary text-primary-foreground rounded-tr-sm"
+                              : "bg-muted text-foreground rounded-tl-sm"
                           )}
                         >
                           {/* Quoted reply inside bubble */}
