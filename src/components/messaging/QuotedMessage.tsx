@@ -21,8 +21,8 @@ export const QuotedMessage = ({
         "w-full text-left rounded-lg px-3 py-2 mb-1 border-l-3 transition-colors",
         "hover:bg-black/5 dark:hover:bg-white/5",
         isOwnBubble
-          ? "bg-black/15 border-primary-foreground/70"
-          : "bg-muted border-primary"
+          ? "bg-primary/80 border-primary-foreground/50"
+          : "bg-secondary border-primary"
       )}
     >
       <p
