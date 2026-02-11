@@ -18,11 +18,10 @@ export const QuotedMessage = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full text-left px-3 py-2 mb-1 border-l-4 transition-colors rounded-none",
-        "hover:bg-black/5 dark:hover:bg-white/5",
+        "w-full text-left px-3 py-2 mb-1 border-l-4 rounded-none",
         isOwnBubble
-          ? "bg-primary/30 border-foreground"
-          : "bg-secondary/50 border-foreground"
+          ? "bg-primary border-foreground"
+          : "bg-secondary border-foreground"
       )}
     >
       <p
