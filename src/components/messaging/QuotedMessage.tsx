@@ -36,7 +36,7 @@ export const QuotedMessage = ({
       <p
         className={cn(
           "text-xs truncate mt-0.5",
-          isOwnBubble ? "text-primary-foreground/85" : "text-foreground/70"
+          isOwnBubble ? "text-primary-foreground" : "text-foreground"
         )}
       >
         {snippet || "Message"}
