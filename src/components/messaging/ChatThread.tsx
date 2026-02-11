@@ -1028,7 +1028,7 @@ export const ChatThread = ({
                           className={cn(
                             "rounded-xl px-3 pt-1.5 pb-1 max-w-full shadow-md",
                             isOwn
-                              ? "bg-primary text-primary-foreground rounded-tr-sm"
+                              ? "bg-primary text-[hsl(var(--chat-sent-foreground))] rounded-tr-sm"
                               : "bg-muted text-foreground rounded-tl-sm"
                           )}
                         >
