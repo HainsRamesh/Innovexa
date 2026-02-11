@@ -1470,10 +1470,6 @@ export type Database = {
         Args: { p_conversation_id: string }
         Returns: number
       }
-      soft_delete_message_for_me: {
-        Args: { p_message_id: string }
-        Returns: undefined
-      }
       track_enterprise_video_view: {
         Args: { _innovation_id: string }
         Returns: undefined
