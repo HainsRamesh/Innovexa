@@ -88,9 +88,9 @@ export const MessengerDrawer = () => {
       <div
         className={cn(
           "fixed bottom-0 right-0 z-[100]",
-          "w-full h-[100dvh] sm:w-[380px] sm:h-[550px]",
+          "w-full sm:w-[380px] h-[500px] sm:h-[550px]",
           "sm:bottom-6 sm:right-6 sm:max-h-[calc(100vh-5rem)]",
-          "bg-card border-0 sm:border sm:border-border",
+          "bg-card border border-border",
           "sm:rounded-xl shadow-2xl",
           "flex flex-col overflow-hidden",
           "transition-all duration-300 ease-out",
