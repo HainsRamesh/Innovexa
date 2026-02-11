@@ -147,7 +147,7 @@ function SolutionDetailContent({
         </div>
       )}
 
-      <div className={isMobile ? "px-4 py-4 space-y-6 pb-[env(safe-area-inset-bottom,1rem)]" : "space-y-6 mt-4"}>
+      <div className={isMobile ? "pl-4 pr-5 py-4 space-y-6 pb-[env(safe-area-inset-bottom,1rem)]" : "space-y-6 mt-4"}>
         {/* Title (shown inside content for desktop, or below header for mobile) */}
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-xl font-semibold break-words">{solution.title}</h3>
