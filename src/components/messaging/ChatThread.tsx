@@ -82,6 +82,7 @@ export const ChatThread = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<ReplyingTo | null>(null);
+  const [hiddenMessageIds, setHiddenMessageIds] = useState<Set<string>>(new Set());
   const [otherUserProfile, setOtherUserProfile] = useState<{
     full_name: string | null;
     avatar_url: string | null;
@@ -125,21 +126,48 @@ export const ChatThread = ({
   }, [user?.id, onMessagesRead]);
 
   // Fetch messages with attachments
+  // Fetch hidden message IDs for current user
+  const fetchHiddenMessageIds = useCallback(async (): Promise<Set<string>> => {
+    if (!user?.id) return new Set();
+    try {
+      const { data, error } = await (supabase as any)
+        .from("message_hidden")
+        .select("message_id")
+        .eq("profile_id", user.id);
+      if (error) {
+        console.error("Error fetching hidden messages:", error);
+        return new Set();
+      }
+      const ids = new Set<string>((data || []).map((r: any) => r.message_id));
+      setHiddenMessageIds(ids);
+      return ids;
+    } catch (error) {
+      console.error("Error fetching hidden messages:", error);
+      return new Set();
+    }
+  }, [user?.id]);
+
   const fetchMessages = useCallback(async (convId: string) => {
     if (!user?.id) return;
 
     setIsLoading(true);
     try {
-      const { data: messagesData, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
+      // Fetch hidden IDs and messages in parallel
+      const [hidden, messagesResult] = await Promise.all([
+        fetchHiddenMessageIds(),
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true }),
+      ]);
 
-      if (error) throw error;
+      if (messagesResult.error) throw messagesResult.error;
 
-      // Filter out messages deleted for current user (client-side filter for extra safety)
-      const filteredMessages = (messagesData || []).filter(msg => {
+      // Filter out messages hidden for current user (via message_hidden table)
+      // Also keep legacy deleted_for_user_ids filter for backward compat
+      const filteredMessages = (messagesResult.data || []).filter(msg => {
+        if (hidden.has(msg.id)) return false;
         const deletedFor = msg.deleted_for_user_ids || [];
         return !deletedFor.includes(user.id);
       });
@@ -192,7 +220,7 @@ export const ChatThread = ({
     } finally {
       setIsLoading(false);
     }
-  }, [user?.id, markMessagesAsRead]);
+  }, [user?.id, markMessagesAsRead, fetchHiddenMessageIds]);
 
   // Edit message
   const handleEditMessage = async (messageId: string, newText: string) => {
@@ -228,34 +256,24 @@ export const ChatThread = ({
     }
   };
 
-  // Delete message for me
+  // Delete message for me (uses message_hidden table)
   const handleDeleteForMe = async (messageId: string) => {
     if (!user?.id) return;
 
     try {
-      // Get current deleted_for_user_ids
-      const { data: msgData } = await supabase
-        .from("messages")
-        .select("deleted_for_user_ids")
-        .eq("id", messageId)
-        .single();
-
-      const currentDeletedFor = msgData?.deleted_for_user_ids || [];
-      const updatedDeletedFor = [...currentDeletedFor, user.id];
-
-      const { error } = await supabase
-        .from("messages")
-        .update({ deleted_for_user_ids: updatedDeletedFor })
-        .eq("id", messageId);
+      const { error } = await (supabase as any)
+        .from("message_hidden")
+        .insert({ message_id: messageId, profile_id: user.id });
 
       if (error) throw error;
 
-      // Remove from local state
+      // Update local hidden set and remove from rendered messages
+      setHiddenMessageIds(prev => new Set([...prev, messageId]));
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
       
-      toast({ description: "Message deleted for you" });
+      toast({ description: "Message removed for you" });
     } catch (error) {
-      console.error("Error deleting message for me:", error);
+      console.error("Error hiding message:", error);
       toast({
         title: "Error",
         description: "Failed to delete message",
@@ -667,7 +685,9 @@ export const ChatThread = ({
         async (payload) => {
           const newMessage = payload.new as Message;
           
-          // Skip if deleted for current user
+          // Skip if hidden for current user (via message_hidden table)
+          if (hiddenMessageIds.has(newMessage.id)) return;
+          // Legacy: skip if deleted for current user
           if (newMessage.deleted_for_user_ids?.includes(user.id)) return;
 
           // For own messages, the optimistic message is already replaced
