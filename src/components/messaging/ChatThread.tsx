@@ -1034,7 +1034,7 @@ export const ChatThread = ({
                         >
                           {/* Quoted reply inside bubble */}
                           {hasReply && (
-                            <div className="mb-1 -mx-3 -mt-1.5">
+                            <div className="mb-1 -mx-1.5 mt-0.5">
                               <QuotedMessage
                                 senderName={getReplySenderName()}
                                 snippet={message.reply_to_snippet || "Message"}
