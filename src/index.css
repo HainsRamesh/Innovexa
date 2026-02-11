@@ -78,6 +78,16 @@
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 30% 14%;
     --sidebar-ring: 172 66% 50%;
+
+    /* WhatsApp-style chat tokens */
+    --chat-sent: 153 35% 22%;
+    --chat-sent-foreground: 0 0% 95%;
+    --chat-received: 222 30% 14%;
+    --chat-received-foreground: 210 40% 98%;
+    --chat-reply-sent: 153 35% 16%;
+    --chat-reply-received: 222 30% 10%;
+    --chat-reply-accent-sent: 172 66% 50%;
+    --chat-reply-accent-received: 215 20% 40%;
   }
 
   .light {

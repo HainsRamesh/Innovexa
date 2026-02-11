@@ -963,18 +963,18 @@ export const ChatThread = ({
                     ref={(el) => { messageRefs.current[message.id] = el; }}
                     className={`flex ${isOwn ? "justify-end" : "justify-start"}`}
                   >
-                    <div className={cn("max-w-[80%] flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
+                      <div className={cn("max-w-[80%] flex flex-col", isOwn ? "items-end" : "items-start")}>
                       <div
                         className={cn(
-                          "rounded-2xl px-3 py-2 italic",
+                          "rounded-xl px-3 py-2 italic opacity-60",
                           isOwn
-                            ? "bg-muted/50 text-muted-foreground rounded-br-md"
-                            : "bg-muted/50 text-muted-foreground rounded-bl-md"
+                            ? "bg-[hsl(var(--chat-sent))] text-[hsl(var(--chat-sent-foreground))] rounded-tr-sm"
+                            : "bg-[hsl(var(--chat-received))] text-[hsl(var(--chat-received-foreground))] rounded-tl-sm"
                         )}
                       >
                         <p className="text-sm">This message was deleted</p>
                       </div>
-                      <p className="text-[10px] text-muted-foreground">
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
                         {format(new Date(message.created_at), "h:mm a")}
                       </p>
                     </div>
@@ -1005,17 +1005,7 @@ export const ChatThread = ({
                         onDeleteForEveryone={() => handleDeleteForEveryone(message.id)}
                       />
                     )}
-                    <div className={cn("flex flex-col gap-1", isOwn ? "items-end" : "items-start")}>
-                      {/* Quoted reply block */}
-                      {hasReply && (
-                        <QuotedMessage
-                          senderName={getReplySenderName()}
-                          snippet={message.reply_to_snippet || "Message"}
-                          isOwnBubble={isOwn}
-                          onClick={scrollToOriginal}
-                        />
-                      )}
-                      
+                    <div className={cn("flex flex-col", isOwn ? "items-end" : "items-start")}>
                       {/* Attachments */}
                       {hasAttachments && (
                         <MessageAttachmentsList
@@ -1025,7 +1015,7 @@ export const ChatThread = ({
                         />
                       )}
                       
-                      {/* Text bubble or edit form */}
+                      {/* Message bubble with inline reply */}
                       {isEditing ? (
                         <MessageEditForm
                           initialText={message.text}
@@ -1033,32 +1023,54 @@ export const ChatThread = ({
                           onCancel={() => setEditingMessageId(null)}
                           isOwn={isOwn}
                         />
-                      ) : hasText ? (
+                      ) : (hasText || hasReply) ? (
                         <div
                           className={cn(
-                            "rounded-2xl px-3 py-2",
+                            "rounded-xl px-3 pt-1.5 pb-1 max-w-full",
                             isOwn
-                              ? "bg-primary text-primary-foreground rounded-br-md"
-                              : "bg-muted text-foreground rounded-bl-md"
+                              ? "bg-[hsl(var(--chat-sent))] text-[hsl(var(--chat-sent-foreground))] rounded-tr-sm"
+                              : "bg-[hsl(var(--chat-received))] text-[hsl(var(--chat-received-foreground))] rounded-tl-sm"
                           )}
                         >
-                          <p className="text-sm whitespace-pre-wrap break-words">
-                            {message.text}
-                          </p>
+                          {/* Quoted reply inside bubble */}
+                          {hasReply && (
+                            <div className="mb-1 -mx-0.5 mt-0.5">
+                              <QuotedMessage
+                                senderName={getReplySenderName()}
+                                snippet={message.reply_to_snippet || "Message"}
+                                isOwnBubble={isOwn}
+                                onClick={scrollToOriginal}
+                              />
+                            </div>
+                          )}
+                          {hasText && (
+                            <p className="text-sm whitespace-pre-wrap break-words">
+                              {message.text}
+                            </p>
+                          )}
+                          {/* Inline timestamp */}
+                          <div className="flex items-center gap-1 justify-end mt-0.5 -mb-0.5">
+                            {message.edited_at && (
+                              <span className="text-[10px] opacity-60 italic">edited</span>
+                            )}
+                            <span className="text-[10px] opacity-60">
+                              {format(new Date(message.created_at), "h:mm a")}
+                            </span>
+                          </div>
                         </div>
                       ) : null}
                       
-                      {/* Timestamp and edited indicator */}
-                      <div className="flex items-center gap-1">
-                        {message.edited_at && (
-                          <span className="text-[10px] text-muted-foreground italic">
-                            edited
-                          </span>
-                        )}
-                        <p className="text-[10px] text-muted-foreground">
-                          {format(new Date(message.created_at), "h:mm a")}
-                        </p>
-                      </div>
+                      {/* Timestamp outside only when no text bubble */}
+                      {!hasText && !hasReply && (
+                        <div className="flex items-center gap-1">
+                          {message.edited_at && (
+                            <span className="text-[10px] text-muted-foreground italic">edited</span>
+                          )}
+                          <p className="text-[10px] text-muted-foreground">
+                            {format(new Date(message.created_at), "h:mm a")}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
