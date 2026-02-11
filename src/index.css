@@ -155,17 +155,21 @@
   }
 
   /* Prevent layout shift from Radix scroll-lock adding margin-right/padding-right */
+  body,
   body[data-scroll-locked] {
     margin-right: 0 !important;
     padding-right: 0 !important;
     overflow: auto !important;
   }
 
-  /* Also prevent scroll-lock padding on root */
+  /* Also prevent scroll-lock padding on root and html */
+  #root,
   #root[data-scroll-locked],
+  html,
   html[data-scroll-locked] {
     margin-right: 0 !important;
     padding-right: 0 !important;
+    overflow: auto !important;
   }
 }
 
