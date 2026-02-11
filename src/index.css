@@ -154,22 +154,21 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  /* Prevent layout shift from Radix scroll-lock adding margin-right/padding-right */
+  /* Prevent ALL layout shift from Radix/react-remove-scroll scroll-lock */
   body,
-  body[data-scroll-locked] {
+  body[data-scroll-locked],
+  html,
+  html[data-scroll-locked],
+  #root,
+  #root[data-scroll-locked] {
     margin-right: 0 !important;
     padding-right: 0 !important;
     overflow: auto !important;
   }
 
-  /* Also prevent scroll-lock padding on root and html */
-  #root,
-  #root[data-scroll-locked],
-  html,
-  html[data-scroll-locked] {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
-    overflow: auto !important;
+  /* Hide the fake scrollbar-width compensator injected by react-remove-scroll */
+  [data-remove-scroll-bar] {
+    display: none !important;
   }
 }
 
