@@ -130,8 +130,6 @@
     scroll-behavior: smooth;
     /* Force dark background to prevent white flash during navigation */
     background-color: #060B16;
-    /* Stable scrollbar gutter prevents layout shift when overlays toggle scrollbar */
-    scrollbar-gutter: stable;
   }
 
   body {
@@ -140,8 +138,6 @@
     /* Ensure body also has dark background */
     background-color: #060B16;
     min-height: 100vh;
-    /* Prevent any scroll-lock library from injecting width changes */
-    overflow-y: scroll !important;
   }
 
   /* Prevent white flash during page transitions */
@@ -158,26 +154,10 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  /* Prevent ALL layout shift from Radix/react-remove-scroll scroll-lock */
+  /* Prevent layout shift from Radix scroll-lock adding margin-right */
   body[data-scroll-locked] {
     margin-right: 0 !important;
-    padding-right: 0 !important;
-    overflow-y: scroll !important;
-  }
-
-  html[data-scroll-locked] {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  #root[data-scroll-locked] {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
-  }
-
-  /* Hide the fake scrollbar-width compensator injected by react-remove-scroll */
-  [data-remove-scroll-bar] {
-    display: none !important;
+    overflow: auto !important;
   }
 }
 

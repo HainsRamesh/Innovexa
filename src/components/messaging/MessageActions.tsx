@@ -76,7 +76,7 @@ export const MessageActions = ({
 
   return (
     <>
-      <DropdownMenu modal={false}>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
@@ -105,6 +105,12 @@ export const MessageActions = ({
             Reply
           </DropdownMenuItem>
           
+          {isOwnMessage && canEdit && (
+            <DropdownMenuItem onClick={onEdit} className="gap-2">
+              <Pencil className="h-4 w-4" />
+              Edit
+            </DropdownMenuItem>
+          )}
           
           <DropdownMenuSeparator />
           
