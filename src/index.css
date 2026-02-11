@@ -154,10 +154,18 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  /* Prevent layout shift from Radix scroll-lock adding margin-right */
+  /* Prevent layout shift from Radix scroll-lock adding margin-right/padding-right */
   body[data-scroll-locked] {
     margin-right: 0 !important;
+    padding-right: 0 !important;
     overflow: auto !important;
+  }
+
+  /* Also prevent scroll-lock padding on root */
+  #root[data-scroll-locked],
+  html[data-scroll-locked] {
+    margin-right: 0 !important;
+    padding-right: 0 !important;
   }
 }
 
