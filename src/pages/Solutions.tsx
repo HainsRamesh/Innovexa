@@ -323,7 +323,7 @@ const Solutions = () => {
           )}
 
           {showViewButton && (
-            <Button variant="outline" size="sm" className="mt-2" onClick={() => handleViewDetails(solution)}>
+            <Button size="sm" className="mt-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm" onClick={() => handleViewDetails(solution)}>
               <Eye className="h-4 w-4 mr-1" />
               View Details
             </Button>
