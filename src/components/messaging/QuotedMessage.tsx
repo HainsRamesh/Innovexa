@@ -18,7 +18,7 @@ export const QuotedMessage = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "block w-full text-left px-3 py-2 rounded-lg border-l-[3px]",
+        "block w-full text-left px-3 py-2 border-l-[3px] rounded-none rounded-tl-xl rounded-tr-xl",
         isOwnBubble
           ? "bg-primary-foreground/10 border-primary-foreground/60"
           : "bg-foreground/5 border-primary"
