@@ -239,12 +239,9 @@ const Solutions = () => {
     solution: Solution;
     showViewButton?: boolean;
   }) => (
-    <Card className="group relative overflow-hidden hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 border-border/50 hover:border-primary/40 bg-card">
-      {/* Subtle top accent line */}
-      <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-      <CardHeader className="space-y-3 pb-3">
-        {/* Author Mini Profile */}
+    <Card className="group hover:shadow-lg transition-all duration-300 border-border/50 hover:border-primary/30">
+      <CardHeader className="space-y-3">
+        {/* Author Mini Profile - LinkedIn style */}
         <div className="flex items-center gap-3">
           <UserProfileLink
             userId={solution.innovator_id}
@@ -266,7 +263,7 @@ const Solutions = () => {
 
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="flex items-center gap-2 mb-2">
               <Badge variant="outline" className="capitalize">
                 {solution.problems?.category || 'General'}
               </Badge>
@@ -286,10 +283,10 @@ const Solutions = () => {
         <CardDescription className="line-clamp-2">{solution.description}</CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent>
         <div className="space-y-3">
           {solution.problems?.title && (
-            <div className="text-sm px-3 py-2 rounded-md bg-muted/40 border border-border/50">
+            <div className="text-sm">
               <span className="text-muted-foreground">For: </span>
               <span className="font-medium">{solution.problems.title}</span>
             </div>
@@ -297,28 +294,28 @@ const Solutions = () => {
 
           <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
             {solution.estimated_cost && (
-              <div className="flex items-center gap-1.5 bg-muted/30 rounded-md px-2.5 py-1">
-                <DollarSign className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium text-foreground">{formatCurrency(solution.estimated_cost)}</span>
+              <div className="flex items-center gap-1">
+                <DollarSign className="h-4 w-4" />
+                <span>{formatCurrency(solution.estimated_cost)}</span>
               </div>
             )}
             {solution.timeline_weeks && (
-              <div className="flex items-center gap-1.5 bg-muted/30 rounded-md px-2.5 py-1">
-                <Clock className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium text-foreground">{solution.timeline_weeks} weeks</span>
+              <div className="flex items-center gap-1">
+                <Clock className="h-4 w-4" />
+                <span>{solution.timeline_weeks} weeks</span>
               </div>
             )}
           </div>
 
           {solution.technology_stack && solution.technology_stack.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1">
               {solution.technology_stack.slice(0, 3).map((tech) => (
-                <Badge key={tech} variant="outline" className="text-xs font-normal bg-secondary/50">
+                <Badge key={tech} variant="outline" className="text-xs">
                   {tech}
                 </Badge>
               ))}
               {solution.technology_stack.length > 3 && (
-                <Badge variant="outline" className="text-xs font-normal bg-secondary/50">
+                <Badge variant="outline" className="text-xs">
                   +{solution.technology_stack.length - 3}
                 </Badge>
               )}
@@ -326,13 +323,8 @@ const Solutions = () => {
           )}
 
           {showViewButton && (
-            <Button
-              size="sm"
-              className="mt-3 w-full gap-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-primary-foreground transition-all duration-200 shadow-none hover:shadow-md hover:shadow-primary/10"
-              variant="outline"
-              onClick={() => handleViewDetails(solution)}
-            >
-              <Eye className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => handleViewDetails(solution)}>
+              <Eye className="h-4 w-4 mr-1" />
               View Details
             </Button>
           )}
