@@ -568,6 +568,16 @@ export const ChatThread = ({
     }
   }, [prefilledMessage, hasSetPrefilled, messages.length, isLoading, conversationId]);
 
+  // Auto-focus textarea whenever reply mode is activated
+  useEffect(() => {
+    if (replyingTo) {
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [replyingTo]);
+
   // Reset state when target user changes
   useEffect(() => {
     setHasSetPrefilled(false);
@@ -952,10 +962,14 @@ export const ChatThread = ({
                   hasAttachment: hasAtt && !snippet,
                   attachmentType: attType as "image" | "file",
                 });
-                // Defer focus to after React re-render so the textarea is still mounted
-                setTimeout(() => {
+                // Use requestAnimationFrame to focus after React commit + paint
+                requestAnimationFrame(() => {
                   textareaRef.current?.focus();
-                }, 0);
+                  // Double-ensure focus persists after any scroll effects
+                  requestAnimationFrame(() => {
+                    textareaRef.current?.focus();
+                  });
+                });
               };
 
               // Render deleted message placeholder
