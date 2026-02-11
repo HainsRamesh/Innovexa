@@ -952,7 +952,10 @@ export const ChatThread = ({
                   hasAttachment: hasAtt && !snippet,
                   attachmentType: attType as "image" | "file",
                 });
-                textareaRef.current?.focus();
+                // Defer focus to after React re-render so the textarea is still mounted
+                setTimeout(() => {
+                  textareaRef.current?.focus();
+                }, 0);
               };
 
               // Render deleted message placeholder
