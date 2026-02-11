@@ -228,34 +228,25 @@ export const ChatThread = ({
     }
   };
 
-  // Delete message for me
+  // Delete message for me (soft delete via secure RPC)
   const handleDeleteForMe = async (messageId: string) => {
     if (!user?.id) return;
 
+    // Optimistic: remove from local state immediately
+    setMessages(prev => prev.filter(msg => msg.id !== messageId));
+
     try {
-      // Get current deleted_for_user_ids
-      const { data: msgData } = await supabase
-        .from("messages")
-        .select("deleted_for_user_ids")
-        .eq("id", messageId)
-        .single();
-
-      const currentDeletedFor = msgData?.deleted_for_user_ids || [];
-      const updatedDeletedFor = [...currentDeletedFor, user.id];
-
-      const { error } = await supabase
-        .from("messages")
-        .update({ deleted_for_user_ids: updatedDeletedFor })
-        .eq("id", messageId);
+      const { error } = await supabase.rpc("soft_delete_message_for_me", {
+        p_message_id: messageId,
+      });
 
       if (error) throw error;
 
-      // Remove from local state
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      
       toast({ description: "Message deleted for you" });
     } catch (error) {
       console.error("Error deleting message for me:", error);
+      // Revert optimistic update on failure
+      if (conversationId) fetchMessages(conversationId);
       toast({
         title: "Error",
         description: "Failed to delete message",
