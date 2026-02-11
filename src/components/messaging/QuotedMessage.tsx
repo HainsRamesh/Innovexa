@@ -18,24 +18,28 @@ export const QuotedMessage = ({
       type="button"
       onClick={onClick}
       className={cn(
-        "w-full text-left px-3 py-2 mb-1 border-l-4 rounded-none",
+        "w-full text-left px-3 py-2 rounded-lg border-l-[3px]",
         isOwnBubble
-          ? "bg-primary border-foreground"
-          : "bg-secondary border-foreground"
+          ? "bg-[hsl(var(--chat-reply-sent))] border-[hsl(var(--chat-reply-accent-sent))]"
+          : "bg-[hsl(var(--chat-reply-received))] border-[hsl(var(--chat-reply-accent-received))]"
       )}
     >
       <p
         className={cn(
           "text-xs font-bold truncate",
-          isOwnBubble ? "text-primary-foreground" : "text-primary"
+          isOwnBubble
+            ? "text-[hsl(var(--chat-reply-accent-sent))]"
+            : "text-[hsl(var(--chat-reply-accent-received))]"
         )}
       >
         {senderName}
       </p>
       <p
         className={cn(
-          "text-xs truncate mt-0.5",
-          isOwnBubble ? "text-primary-foreground" : "text-foreground"
+          "text-xs truncate mt-0.5 opacity-80",
+          isOwnBubble
+            ? "text-[hsl(var(--chat-sent-foreground))]"
+            : "text-[hsl(var(--chat-received-foreground))]"
         )}
       >
         {snippet || "Message"}
