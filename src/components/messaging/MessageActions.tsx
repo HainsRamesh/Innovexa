@@ -105,12 +105,6 @@ export const MessageActions = ({
             Reply
           </DropdownMenuItem>
           
-          {isOwnMessage && canEdit && (
-            <DropdownMenuItem onClick={onEdit} className="gap-2">
-              <Pencil className="h-4 w-4" />
-              Edit
-            </DropdownMenuItem>
-          )}
           
           <DropdownMenuSeparator />
           
