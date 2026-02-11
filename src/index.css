@@ -153,6 +153,12 @@
   code, pre {
     font-family: 'JetBrains Mono', monospace;
   }
+
+  /* Prevent layout shift from Radix scroll-lock adding margin-right */
+  body[data-scroll-locked] {
+    margin-right: 0 !important;
+    overflow: auto !important;
+  }
 }
 
 @layer utilities {
