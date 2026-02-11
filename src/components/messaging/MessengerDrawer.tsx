@@ -52,7 +52,7 @@ export const MessengerDrawer = () => {
     }
   }, [currentChatTarget, isDrawerOpen]);
 
-  const handleSelectConversation = (
+  const handleSelectConversation = useCallback((
     userId: string,
     userName: string | null,
     avatarUrl: string | null
@@ -63,7 +63,7 @@ export const MessengerDrawer = () => {
       userAvatar: avatarUrl,
     });
     setView("chat");
-  };
+  }, []);
 
   const handleBackToList = useCallback(() => {
     setView("list");

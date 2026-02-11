@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from "react";
+import { useEffect, useState, useCallback, useImperativeHandle, forwardRef, memo, useRef } from "react";
 import { format } from "date-fns";
 import { MessageCircle, Loader2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -36,7 +36,7 @@ export interface ConversationListRef {
   refreshConversations: () => Promise<void>;
 }
 
-export const ConversationList = forwardRef<ConversationListRef, ConversationListProps>(({
+const ConversationListInner = forwardRef<ConversationListRef, ConversationListProps>(({
   onSelectConversation,
   selectedUserId,
   onTotalUnreadChange,
@@ -44,6 +44,8 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
   const { user } = useAuth();
   const [conversations, setConversations] = useState<ConversationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const fetchConversations = useCallback(async () => {
     if (!user?.id) return;
@@ -57,7 +59,6 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
 
       if (error) throw error;
 
-      // Enrich with other user profiles and last messages
       const enriched = await Promise.all(
         (data || []).map(async (conv) => {
           const otherUserId =
@@ -65,14 +66,12 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
               ? conv.participant_two
               : conv.participant_one;
 
-          // Get other user profile
           const { data: profile } = await supabase
             .from("public_profiles")
             .select("id, full_name, avatar_url")
             .eq("id", otherUserId)
             .maybeSingle();
 
-          // Get last message
           const { data: lastMsg } = await supabase
             .from("messages")
             .select("text, created_at, sender_id")
@@ -81,7 +80,6 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
             .limit(1)
             .maybeSingle();
 
-          // Get unread count - only messages from other user that are not read
           const { count } = await supabase
             .from("messages")
             .select("*", { count: "exact", head: true })
@@ -100,7 +98,6 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
 
       setConversations(enriched);
 
-      // Calculate total unread
       const totalUnread = enriched.reduce((sum, c) => sum + (c.unread_count || 0), 0);
       onTotalUnreadChange?.(totalUnread);
     } catch (error) {
@@ -110,7 +107,22 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
     }
   }, [user?.id, onTotalUnreadChange]);
 
-  // Expose refresh method to parent
+  // Local optimistic update for the sidebar when the current user sends a message
+  const updateConversationLocally = useCallback((conversationId: string, text: string, senderId: string, createdAt: string) => {
+    setConversations(prev => {
+      const idx = prev.findIndex(c => c.id === conversationId);
+      if (idx < 0) return prev;
+
+      const updated = [...prev];
+      const conv = { ...updated[idx] };
+      conv.last_message = { text, created_at: createdAt, sender_id: senderId };
+      conv.updated_at = createdAt;
+      // Move to top
+      updated.splice(idx, 1);
+      return [conv, ...updated];
+    });
+  }, []);
+
   useImperativeHandle(ref, () => ({
     refreshConversations: fetchConversations,
   }), [fetchConversations]);
@@ -121,7 +133,7 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
     }
   }, [user?.id, fetchConversations]);
 
-  // Real-time subscription for new messages AND updates (for read status)
+  // Real-time subscription - skip own messages, debounce others
   useEffect(() => {
     if (!user?.id) return;
 
@@ -134,9 +146,23 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
           schema: "public",
           table: "messages",
         },
-        () => {
-          // Refetch conversations when new messages arrive
-          fetchConversations();
+        (payload) => {
+          const newMsg = payload.new as any;
+          
+          // For own messages: just update last_message locally, no refetch
+          if (newMsg.sender_id === user.id) {
+            updateConversationLocally(newMsg.conversation_id, newMsg.text, newMsg.sender_id, newMsg.created_at);
+            return;
+          }
+
+          // For other user's messages: update locally + debounced refetch for unread count
+          updateConversationLocally(newMsg.conversation_id, newMsg.text, newMsg.sender_id, newMsg.created_at);
+          
+          // Debounce the full refetch (for unread count update)
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => {
+            fetchConversations();
+          }, 1500);
         }
       )
       .on(
@@ -146,17 +172,24 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
           schema: "public",
           table: "messages",
         },
-        () => {
-          // Refetch when messages are marked as read
-          fetchConversations();
+        (payload) => {
+          const updatedMsg = payload.new as any;
+          // Only refetch (debounced) for read status changes from other users
+          if (updatedMsg.sender_id === user.id) return;
+          
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          debounceRef.current = setTimeout(() => {
+            fetchConversations();
+          }, 1500);
         }
       )
       .subscribe();
 
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       supabase.removeChannel(channel);
     };
-  }, [user?.id, fetchConversations]);
+  }, [user?.id, fetchConversations, updateConversationLocally]);
 
   const getInitials = (name: string | null) => {
     if (!name) return "U";
@@ -204,7 +237,7 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
   }
 
   return (
-    <ScrollArea className="h-full">
+    <ScrollArea className="h-full" ref={scrollRef}>
       <div className="divide-y divide-border">
         {conversations.map((conv) => {
           const isSelected = selectedUserId === conv.other_user?.id;
@@ -275,3 +308,8 @@ export const ConversationList = forwardRef<ConversationListRef, ConversationList
     </ScrollArea>
   );
 });
+
+ConversationListInner.displayName = "ConversationList";
+
+// Memoize to prevent re-renders from parent state changes
+export const ConversationList = memo(ConversationListInner);
