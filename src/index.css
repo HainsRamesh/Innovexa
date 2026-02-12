@@ -16,11 +16,6 @@
 }
 
 @layer base {
-  html {
-    overflow-y: scroll;
-    scrollbar-gutter: stable;
-  }
-
   :root {
     /* INNOVEXA Design System - Dark Mode First */
     --background: 222 47% 6%;
@@ -161,7 +156,12 @@
 
 }
 
-/* Prevent layout shift from Radix scroll-lock — must be outside @layer to override injected styles */
+/* Prevent layout shift from Radix scroll-lock — outside @layer for highest specificity */
+html {
+  overflow-y: scroll !important;
+  scrollbar-gutter: stable !important;
+}
+
 html, body, #root {
   margin-right: 0 !important;
   padding-right: 0 !important;
@@ -170,7 +170,7 @@ html, body, #root {
 body[data-scroll-locked] {
   margin-right: 0 !important;
   padding-right: 0 !important;
-  overflow: auto !important;
+  overflow: hidden !important;
 }
 
 /* Hide the injected scrollbar-compensation style element */
