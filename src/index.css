@@ -157,8 +157,7 @@
 }
 
 /* Prevent layout shift from Radix scroll-lock — outside @layer for highest specificity */
-html {
-  overflow-y: scroll !important;
+html, body {
   scrollbar-gutter: stable !important;
 }
 
@@ -170,7 +169,8 @@ html, body, #root {
 body[data-scroll-locked] {
   margin-right: 0 !important;
   padding-right: 0 !important;
-  overflow: hidden !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
 }
 
 /* Hide the injected scrollbar-compensation style element */
