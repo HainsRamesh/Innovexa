@@ -16,8 +16,8 @@ export const FloatingActionsContainer = ({
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 z-[100]",
-        "flex flex-col items-end gap-3",
+        "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[100]",
+        "flex flex-col items-center gap-2 sm:gap-3",
         "overflow-visible",
         className
       )}

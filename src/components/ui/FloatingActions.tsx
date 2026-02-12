@@ -27,7 +27,7 @@ export const FloatingMessageButton = ({ className }: FloatingMessageButtonProps)
         });
       }}
       className={cn(
-        "relative h-14 w-14 rounded-full",
+        "relative h-11 w-11 sm:h-14 sm:w-14 rounded-full",
         "bg-secondary text-secondary-foreground",
         "shadow-lg hover:shadow-xl",
         "flex items-center justify-center",
@@ -37,7 +37,7 @@ export const FloatingMessageButton = ({ className }: FloatingMessageButtonProps)
       )}
       aria-label="Open messages"
     >
-      <MessageCircle className="h-6 w-6" />
+      <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
     </button>
   );
 };
