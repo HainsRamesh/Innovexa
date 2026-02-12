@@ -193,11 +193,11 @@ export default function Innovations() {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Search Section */}
+      {/* Search Section – fixed height to prevent layout shift from dropdown */}
       <section className="pt-24 pb-12 bg-background">
         <div className="container mx-auto px-4">
-          {/* Search & Filter Bar */}
-          <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-4">
+          {/* Search & Filter Bar – fixed min-height so dropdown open/close doesn't reflow */}
+          <div className="max-w-2xl mx-auto min-h-[40px] flex flex-col sm:flex-row gap-4 relative">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -207,19 +207,21 @@ export default function Innovations() {
                 className="pl-10"
               />
             </div>
-            <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {categoryLabels[cat]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="relative w-full sm:w-[180px]">
+              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent position="popper" sideOffset={4}>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat} value={cat}>
+                      {categoryLabels[cat]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             {isInnovator && (
               <Button asChild className="gap-2">
                 <Link to="/innovations/new">

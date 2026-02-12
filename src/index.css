@@ -167,16 +167,32 @@ html, body, #root {
   padding-right: 0 !important;
 }
 
+/* Completely neutralise Radix / react-remove-scroll body lock so it never
+   hides the scrollbar or adds compensating padding/margin. */
 body[data-scroll-locked] {
   margin-right: 0 !important;
   padding-right: 0 !important;
   overflow-y: scroll !important;
   overflow-x: hidden !important;
+  /* Prevent any width recalculation */
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Hide the injected scrollbar-compensation style element */
 [data-remove-scroll-bar] {
   display: none !important;
+}
+
+/* Prevent Radix inline style overrides on html/body */
+html[style], body[style] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  overflow: initial !important;
+}
+
+html[style] {
+  overflow-y: scroll !important;
 }
 
 @layer utilities {
