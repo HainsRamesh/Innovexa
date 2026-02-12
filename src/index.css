@@ -16,6 +16,11 @@
 }
 
 @layer base {
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+
   :root {
     /* INNOVEXA Design System - Dark Mode First */
     --background: 222 47% 6%;
