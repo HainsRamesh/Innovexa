@@ -159,22 +159,23 @@
     font-family: 'JetBrains Mono', monospace;
   }
 
-  /* Prevent layout shift from Radix scroll-lock adding margin/padding-right */
-  html, body, #root {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
-  }
+}
 
-  body[data-scroll-locked] {
-    margin-right: 0 !important;
-    padding-right: 0 !important;
-    overflow: auto !important;
-  }
+/* Prevent layout shift from Radix scroll-lock — must be outside @layer to override injected styles */
+html, body, #root {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+}
 
-  /* Hide the injected scrollbar-compensation style element */
-  [data-remove-scroll-bar] {
-    display: none !important;
-  }
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+  padding-right: 0 !important;
+  overflow: auto !important;
+}
+
+/* Hide the injected scrollbar-compensation style element */
+[data-remove-scroll-bar] {
+  display: none !important;
 }
 
 @layer utilities {
