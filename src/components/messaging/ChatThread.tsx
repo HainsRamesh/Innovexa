@@ -164,20 +164,32 @@ export const ChatThread = ({
 
     setIsLoading(true);
     try {
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
+      const [deletionsResult, messagesResult] = await Promise.all([
+        supabase
+          .from("message_attachments")
+          .select("message_id")
+          .limit(0) as any,
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true }),
+      ]);
+
+      // Fetch per-user deletions via soft_delete tracking (deleted_for_user_ids column)
+      const { data: messagesData, error: messagesError } = messagesResult;
 
       if (messagesError) throw messagesError;
 
-      // Filter out messages soft-deleted for current user via deleted_for_user_ids
-      const filteredMessages = (messagesData || []).filter(msg => {
-        const deletedFor = msg.deleted_for_user_ids;
-        if (!deletedFor || !Array.isArray(deletedFor)) return true;
-        return !deletedFor.includes(user.id);
-      });
+      const deletedIds = new Set(
+        (messagesData || [])
+          .filter(msg => msg.deleted_for_user_ids?.includes(user.id))
+          .map(msg => msg.id)
+      );
+      setDeletedMessageIds(deletedIds);
+
+      // Filter out messages deleted for current user (client-side filter for extra safety)
+      const filteredMessages = (messagesData || []).filter(msg => !deletedIds.has(msg.id));
 
       // Fetch attachments for all messages
       const messageIds = filteredMessages.map(m => m.id);
@@ -214,10 +226,24 @@ export const ChatThread = ({
       }
 
       const messagesWithAttachments = filteredMessages.map(msg => {
+        const msgAny = msg as any;
+        const inlineAttachment: MessageAttachmentData[] =
+          msgAny.file_url
+            ? [{
+                id: `${msg.id}-inline`,
+                url: msgAny.file_url,
+                file_name: msgAny.file_name || "file",
+                mime_type: msgAny.file_mime || "application/octet-stream",
+                size: msgAny.file_size || 0,
+                thumbnail_url: undefined,
+                message_id: msg.id,
+              }]
+            : [];
+
         return {
           ...msg,
-          attachments: attachmentsMap[msg.id] || [],
-          message_type: (msg as any).message_type || msg.type || "text",
+          attachments: attachmentsMap[msg.id] || inlineAttachment,
+          message_type: (msg as any).message_type || (msg as any).type || "text",
         };
       });
 
@@ -275,7 +301,14 @@ export const ChatThread = ({
         p_message_id: messageId,
       });
 
-      if (error) throw error;
+      // Ignore duplicate delete attempts
+      if (error && error.code !== "23505") throw error;
+
+      setDeletedMessageIds(prev => {
+        const updated = new Set(prev);
+        updated.add(messageId);
+        return updated;
+      });
 
       // Remove from local state
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
