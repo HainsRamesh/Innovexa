@@ -556,9 +556,19 @@ export const ChatThread = ({
   }, [user?.id, targetUserId]);
 
   // Scroll to bottom when messages change
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    });
+  }, []);
+
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length > 0) {
+      // Use instant scroll on initial load, smooth for subsequent updates
+      const isInitialLoad = !isLoading && messages.length > 0;
+      scrollToBottom(isInitialLoad ? "auto" : "smooth");
+    }
+  }, [messages, scrollToBottom, isLoading]);
 
   // Set prefilled message (only once per conversation)
   useEffect(() => {
