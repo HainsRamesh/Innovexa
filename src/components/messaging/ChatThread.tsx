@@ -165,18 +165,31 @@ export const ChatThread = ({
 
     setIsLoading(true);
     try {
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
+      const [
+        { data: messagesData, error: messagesError },
+        { data: deletionsData, error: deletionsError },
+      ] = await Promise.all([
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true }),
+        supabase
+          .from("message_deletions")
+          .select("message_id")
+          .eq("user_id", user.id),
+      ]);
 
       if (messagesError) throw messagesError;
+      if (deletionsError) throw deletionsError;
 
-      // Filter out messages soft-deleted for current user
-      const filteredMessages = (messagesData || []).filter(msg => 
-        !(msg.deleted_for_user_ids && msg.deleted_for_user_ids.includes(user.id))
-      );
+      const deletionSet = new Set((deletionsData || []).map((d) => d.message_id));
+      setDeletedMessageIds(deletionSet);
+
+      // Apply any upstream filters (e.g., block rules) first, then always apply per-user deletions last
+      const filteredMessages = (messagesData || [])
+        .filter((msg) => !(msg.deleted_for_user_ids && msg.deleted_for_user_ids.includes(user.id)))
+        .filter((msg) => !deletionSet.has(msg.id));
 
       // Fetch attachments for all messages
       const messageIds = filteredMessages.map(m => m.id);
@@ -224,6 +237,11 @@ export const ChatThread = ({
       await markMessagesAsRead(convId);
     } catch (error) {
       console.error("Error fetching messages:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to load messages",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -268,21 +286,31 @@ export const ChatThread = ({
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase.rpc("soft_delete_message_for_me", {
-        p_message_id: messageId,
-      });
+      const { error } = await supabase
+        .from("message_deletions")
+        .upsert(
+          { user_id: user.id, message_id: messageId },
+          { onConflict: "user_id,message_id" }
+        );
 
       if (error) throw error;
 
-      // Remove from local state
-      setMessages(prev => prev.filter(msg => msg.id !== messageId));
+      // Track deletion locally so realtime + refetch keep it hidden
+      setDeletedMessageIds((prev) => {
+        const next = new Set(prev);
+        next.add(messageId);
+        return next;
+      });
+
+      // Remove from local state immediately
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
       
       toast({ description: "Message deleted for you" });
     } catch (error) {
       console.error("Error deleting message for me:", error);
       toast({
         title: "Error",
-        description: "Failed to delete message",
+        description: error instanceof Error ? error.message : "Failed to delete message",
         variant: "destructive",
       });
     }
@@ -858,6 +886,11 @@ export const ChatThread = ({
       await fetchMessages(convId);
     } catch (error) {
       console.error("Error initializing conversation:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to start conversation",
+        variant: "destructive",
+      });
     } finally {
       setIsInitializing(false);
     }
