@@ -119,11 +119,7 @@ export const AccountSettings = () => {
     } catch (error) {
       console.error('Error uploading avatar:', error);
       setAvatarPreview(null);
-      toast({
-        title: 'Upload failed',
-        description: error instanceof Error ? error.message : 'Failed to upload avatar. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Upload failed', description: 'Failed to upload avatar. Please try again.', variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
@@ -157,11 +153,7 @@ export const AccountSettings = () => {
       toast({ title: 'Profile photo removed' });
     } catch (error) {
       console.error('Error removing avatar:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to remove profile photo.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to remove profile photo.', variant: 'destructive' });
     } finally {
       setIsUploading(false);
     }
@@ -177,12 +169,7 @@ export const AccountSettings = () => {
       setHasChanges(false);
       toast({ title: 'Profile updated', description: 'Your changes have been saved.' });
     } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to update profile.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to update profile.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

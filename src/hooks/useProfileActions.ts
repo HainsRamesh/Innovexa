@@ -17,7 +17,6 @@ export const useProfileActions = (targetUserId: string | undefined) => {
     requestedByMe: false,
   });
   const [isBlocked, setIsBlocked] = useState(false);
-  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
   const [isRestricted, setIsRestricted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -57,7 +56,7 @@ export const useProfileActions = (targetUserId: string | undefined) => {
         });
       }
 
-      // Check if I blocked them
+      // Check if blocked
       const { data: blocks } = await supabase
         .from("user_blocks")
         .select("id")
@@ -66,14 +65,6 @@ export const useProfileActions = (targetUserId: string | undefined) => {
         .maybeSingle();
 
       setIsBlocked(!!blocks);
-
-      // Check if they blocked me (using RPC which checks bidirectionally)
-      const { data: mutualBlock } = await supabase.rpc("is_user_blocked", {
-        _user_id: user.id,
-        _other_user_id: targetUserId,
-      });
-
-      setIsBlockedByOther(!blocks && !!mutualBlock);
 
       // Check if restricted
       const { data: restrictions } = await supabase
@@ -275,13 +266,6 @@ export const useProfileActions = (targetUserId: string | undefined) => {
 
       setIsBlocked(false);
 
-      // Re-check if the other user still has us blocked
-      const { data: stillBlocked } = await supabase.rpc("is_user_blocked", {
-        _user_id: user.id,
-        _other_user_id: targetUserId,
-      });
-      setIsBlockedByOther(!!stillBlocked);
-
       toast({
         title: "User unblocked",
         description: "This user has been unblocked.",
@@ -383,7 +367,6 @@ export const useProfileActions = (targetUserId: string | undefined) => {
   return {
     connectionStatus,
     isBlocked,
-    isBlockedByOther,
     isRestricted,
     isLoading,
     sendConnectionRequest,

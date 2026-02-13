@@ -231,29 +231,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error: new Error('No user logged in') };
     }
 
-    const payload = {
-      id: user.id,
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-
-    console.log("[AuthContext] updateProfile upsert for:", user.id, payload);
-
-    const { data, error } = await supabase
+    console.log("[AuthContext] updateProfile called for:", user.id);
+    const { error } = await supabase
       .from('profiles')
-      .upsert(payload, { onConflict: 'id' })
-      .select()
-      .single();
+      .update(updates)
+      .eq('id', user.id);
 
-    if (error) {
+    if (!error) {
+      setProfile((prev) => prev ? { ...prev, ...updates } : null);
+      console.log("[AuthContext] Profile updated successfully");
+    } else {
       console.error("[AuthContext] updateProfile error:", error);
-      return { error };
     }
 
-    setProfile((prev) => prev ? { ...prev, ...data } : (data as Profile));
-    console.log("[AuthContext] Profile upserted successfully");
-
-    return { error: null };
+    return { error };
   };
 
   // Log current auth state for debugging

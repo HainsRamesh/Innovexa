@@ -22,9 +22,9 @@ interface AttachmentPreviewProps {
 }
 
 export const AttachmentPreview = ({ attachments, onRemove, onRetry }: AttachmentPreviewProps) => {
-  const [confirmId, setConfirmId] = useState<string | null>(null);
-
   if (attachments.length === 0) return null;
+
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const getIconForType = (iconType: string) => {
     switch (iconType) {
@@ -49,9 +49,9 @@ export const AttachmentPreview = ({ attachments, onRemove, onRetry }: Attachment
         <div
           key={attachment.id}
           className={cn(
-          "relative group rounded-lg border border-border bg-background",
+            "relative group rounded-lg overflow-hidden border border-border bg-background pr-8",
             attachment.error && "border-destructive",
-            attachment.type === "image" ? "w-16 h-16 overflow-hidden" : "flex items-center gap-2 pl-3 pr-8 py-2 max-w-[200px]"
+            attachment.type === "image" ? "w-16 h-16" : "flex items-center gap-2 px-3 py-2 max-w-[200px]"
           )}
         >
           {attachment.type === "image" ? (
@@ -119,13 +119,14 @@ export const AttachmentPreview = ({ attachments, onRemove, onRetry }: Attachment
             size="icon"
             variant="destructive"
             className={cn(
-              "absolute top-1 right-1 h-5 w-5 min-h-0 min-w-0 p-0 rounded-full shadow-sm bg-red-600 hover:bg-red-700 text-white z-30 flex items-center justify-center"
+              "absolute h-5 w-5 p-0 rounded-full shadow-sm bg-red-600 hover:bg-red-700 text-white z-30",
+              attachment.type === "image" ? "top-1 right-1" : "-top-1 -right-1"
             )}
             onClick={() => setConfirmId(attachment.id)}
             disabled={attachment.uploading}
             aria-label="Remove attachment"
           >
-            <X className="h-3 w-3 shrink-0" />
+            <X className="h-3 w-3" />
           </Button>
         </div>
       ))}
