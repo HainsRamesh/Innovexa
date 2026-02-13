@@ -35,11 +35,15 @@ interface Message {
   sender_id: string;
   text: string;
   type: string;
+  message_type?: "text" | "file" | "image" | "mixed";
+  file_url?: string | null;
+  file_name?: string | null;
+  file_mime?: string | null;
+  file_size?: number | null;
   read_at: string | null;
   created_at: string;
   edited_at?: string | null;
   is_deleted?: boolean;
-  deleted_for_user_ids?: string[];
   attachments?: MessageAttachmentData[];
   reply_to_message_id?: string | null;
   reply_to_sender_id?: string | null;
@@ -87,11 +91,41 @@ export const ChatThread = ({
     avatar_url: string | null;
   } | null>(null);
   const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const [deletedMessageIds, setDeletedMessageIds] = useState<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const deletedMessageIdsRef = useRef<Set<string>>(new Set());
+
+  // Keep ref in sync for real-time handlers
+  useEffect(() => {
+    deletedMessageIdsRef.current = deletedMessageIds;
+  }, [deletedMessageIds]);
+
+  const fetchAttachmentsForMessage = useCallback(async (messageId: string) => {
+    const { data: attachmentsData } = await supabase
+      .from("message_attachments")
+      .select("*")
+      .eq("message_id", messageId);
+
+    if (!attachmentsData || attachmentsData.length === 0) return [];
+
+    const attachmentsWithUrls = await Promise.all(
+      attachmentsData.map(async (att) => {
+        const { data: signedUrlData } = await supabase.storage
+          .from("chat-attachments")
+          .createSignedUrl(att.url.replace(/^.*chat-attachments\//, ""), 3600);
+        return {
+          ...att,
+          url: signedUrlData?.signedUrl || att.url,
+        };
+      })
+    );
+
+    return attachmentsWithUrls;
+  }, []);
 
   // Mark messages as read using the secure RPC function
   const markMessagesAsRead = useCallback(async (convId: string) => {
@@ -130,23 +164,33 @@ export const ChatThread = ({
 
     setIsLoading(true);
     try {
-      const { data: messagesData, error } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
+      const [deletionsResult, messagesResult] = await Promise.all([
+        supabase
+          .from("message_deletions")
+          .select("message_id")
+          .eq("user_id", user.id),
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true }),
+      ]);
 
-      if (error) throw error;
+      const { data: deletionsData, error: deletionsError } = deletionsResult;
+      const { data: messagesData, error: messagesError } = messagesResult;
+
+      if (deletionsError) throw deletionsError;
+      if (messagesError) throw messagesError;
+
+      const deletedIds = new Set((deletionsData || []).map((d) => d.message_id));
+      setDeletedMessageIds(deletedIds);
 
       // Filter out messages deleted for current user (client-side filter for extra safety)
-      const filteredMessages = (messagesData || []).filter(msg => {
-        const deletedFor = msg.deleted_for_user_ids || [];
-        return !deletedFor.includes(user.id);
-      });
+      const filteredMessages = (messagesData || []).filter(msg => !deletedIds.has(msg.id));
 
       // Fetch attachments for all messages
       const messageIds = filteredMessages.map(m => m.id);
-      let attachmentsMap: Record<string, MessageAttachmentData[]> = {};
+      const attachmentsMap: Record<string, MessageAttachmentData[]> = {};
 
       if (messageIds.length > 0) {
         const { data: attachmentsData } = await supabase
@@ -178,10 +222,26 @@ export const ChatThread = ({
         }
       }
 
-      const messagesWithAttachments = filteredMessages.map(msg => ({
-        ...msg,
-        attachments: attachmentsMap[msg.id] || [],
-      }));
+      const messagesWithAttachments = filteredMessages.map(msg => {
+        const inlineAttachment: MessageAttachmentData[] =
+          msg.file_url
+            ? [{
+                id: `${msg.id}-inline`,
+                url: msg.file_url,
+                file_name: msg.file_name || "file",
+                mime_type: msg.file_mime || "application/octet-stream",
+                size: msg.file_size || 0,
+                thumbnail_url: undefined,
+                message_id: msg.id,
+              }]
+            : [];
+
+        return {
+          ...msg,
+          attachments: attachmentsMap[msg.id] || inlineAttachment,
+          message_type: (msg as any).message_type || (msg as any).type || "text",
+        };
+      });
 
       setMessages(messagesWithAttachments);
       
@@ -233,22 +293,18 @@ export const ChatThread = ({
     if (!user?.id) return;
 
     try {
-      // Get current deleted_for_user_ids
-      const { data: msgData } = await supabase
-        .from("messages")
-        .select("deleted_for_user_ids")
-        .eq("id", messageId)
-        .single();
-
-      const currentDeletedFor = msgData?.deleted_for_user_ids || [];
-      const updatedDeletedFor = [...currentDeletedFor, user.id];
-
       const { error } = await supabase
-        .from("messages")
-        .update({ deleted_for_user_ids: updatedDeletedFor })
-        .eq("id", messageId);
+        .from("message_deletions")
+        .insert({ user_id: user.id, message_id: messageId });
 
-      if (error) throw error;
+      // Ignore duplicate delete attempts
+      if (error && error.code !== "23505") throw error;
+
+      setDeletedMessageIds(prev => {
+        const updated = new Set(prev);
+        updated.add(messageId);
+        return updated;
+      });
 
       // Remove from local state
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
@@ -273,7 +329,9 @@ export const ChatThread = ({
         .from("messages")
         .update({ 
           is_deleted: true,
-          text: "" // Clear the text as well
+          text: "", // Clear the text as well
+          deleted_at: new Date().toISOString(),
+          deleted_by: user.id,
         })
         .eq("id", messageId)
         .eq("sender_id", user.id); // Only allow deleting own messages
@@ -367,6 +425,7 @@ export const ChatThread = ({
       const uploadedAttachments: Array<{
         file: File;
         url: string;
+        signedUrl: string;
         thumbnailUrl?: string;
       }> = [];
 
@@ -374,15 +433,35 @@ export const ChatThread = ({
         try {
           const result = await uploadAttachment(attachment.file);
           if (result) {
+            const { data: signedUrlData } = await supabase.storage
+              .from("chat-attachments")
+              .createSignedUrl(result.url.replace(/^.*chat-attachments\//, ""), 3600);
             uploadedAttachments.push({
               file: attachment.file,
               ...result,
+              signedUrl: signedUrlData?.signedUrl || result.url,
             });
           }
         } catch (error) {
           console.error("Upload failed:", error);
           throw error;
         }
+      }
+
+      const optimisticAttachments = uploadedAttachments.map((att, index) => ({
+        id: `${optimisticId}-att-${index}`,
+        url: att.signedUrl,
+        file_name: att.file.name,
+        mime_type: att.file.type,
+        size: att.file.size,
+        thumbnail_url: att.thumbnailUrl || null,
+        message_id: optimisticId,
+      }));
+
+      if (optimisticAttachments.length > 0) {
+        setMessages(prev => prev.map(msg =>
+          msg.id === optimisticId ? { ...msg, attachments: optimisticAttachments } : msg
+        ));
       }
 
       // Determine message type
@@ -405,7 +484,16 @@ export const ChatThread = ({
         sender_id: user.id,
         text: currentText || "",
         type: messageType,
+        message_type: messageType,
       };
+
+      if (uploadedAttachments.length > 0) {
+        const first = uploadedAttachments[0];
+        messagePayload.file_url = first.url;
+        messagePayload.file_name = first.file.name;
+        messagePayload.file_mime = first.file.type;
+        messagePayload.file_size = first.file.size;
+      }
 
       if (currentReply) {
         messagePayload.reply_to_message_id = currentReply.messageId;
@@ -433,7 +521,7 @@ export const ChatThread = ({
       // Replace optimistic message with real one
       setMessages(prev => prev.map(msg => 
         msg.id === optimisticId 
-          ? { ...newMessage, attachments: [] } 
+          ? { ...newMessage, attachments: optimisticAttachments.length ? optimisticAttachments : [] } 
           : msg
       ));
 
@@ -454,6 +542,12 @@ export const ChatThread = ({
 
         if (attError) {
           console.error("Error inserting attachments:", attError);
+        } else {
+          // Refresh attachments with real IDs & signed URLs
+          const signed = await fetchAttachmentsForMessage(newMessage.id);
+          setMessages(prev => prev.map(msg =>
+            msg.id === newMessage.id ? { ...msg, attachments: signed } : msg
+          ));
         }
       }
 
@@ -666,9 +760,9 @@ export const ChatThread = ({
         },
         async (payload) => {
           const newMessage = payload.new as Message;
-          
+
           // Skip if deleted for current user
-          if (newMessage.deleted_for_user_ids?.includes(user.id)) return;
+          if (deletedMessageIdsRef.current.has(newMessage.id)) return;
 
           // For own messages, the optimistic message is already replaced
           // by the sendMessage handler. Skip to avoid duplicates.
@@ -689,24 +783,11 @@ export const ChatThread = ({
           }
 
           // Fetch attachments for new message from other user
-          const { data: attachmentsData } = await supabase
-            .from("message_attachments")
-            .select("*")
-            .eq("message_id", newMessage.id);
-
-          let attachments: MessageAttachmentData[] = [];
-          if (attachmentsData && attachmentsData.length > 0) {
-            attachments = await Promise.all(
-              attachmentsData.map(async (att) => {
-                const { data: signedUrlData } = await supabase.storage
-                  .from("chat-attachments")
-                  .createSignedUrl(att.url.replace(/^.*chat-attachments\//, ""), 3600);
-                return {
-                  ...att,
-                  url: signedUrlData?.signedUrl || att.url,
-                };
-              })
-            );
+          let attachments: MessageAttachmentData[] = await fetchAttachmentsForMessage(newMessage.id);
+          if (!attachments || attachments.length === 0) {
+            // Retry once in case attachments insert races the message insert
+            await new Promise(res => setTimeout(res, 500));
+            attachments = await fetchAttachmentsForMessage(newMessage.id);
           }
 
           // Use functional update to avoid duplicates
@@ -728,9 +809,9 @@ export const ChatThread = ({
         },
         (payload) => {
           const updatedMessage = payload.new as Message;
-          
+
           // If message is now deleted for current user, remove it
-          if (updatedMessage.deleted_for_user_ids?.includes(user.id)) {
+          if (deletedMessageIdsRef.current.has(updatedMessage.id)) {
             setMessages(prev => prev.filter(m => m.id !== updatedMessage.id));
             return;
           }
@@ -745,10 +826,36 @@ export const ChatThread = ({
       )
       .subscribe();
 
+    // Listen for attachment inserts to backfill when they arrive after the message
+    const attachmentChannel = supabase
+      .channel(`chat-attachments:${conversationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "message_attachments",
+        },
+        async (payload) => {
+          const attachment = payload.new as MessageAttachmentData & { message_id: string };
+          // Only care about messages currently in view
+          const signedAttachment = await fetchAttachmentsForMessage(attachment.message_id);
+          if (!signedAttachment || signedAttachment.length === 0) return;
+
+          setMessages(prev => prev.map(msg =>
+            msg.id === attachment.message_id
+              ? { ...msg, attachments: signedAttachment }
+              : msg
+          ));
+        }
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(attachmentChannel);
     };
-  }, [conversationId, user?.id, markMessagesAsRead]);
+  }, [conversationId, user?.id, markMessagesAsRead, fetchAttachmentsForMessage]);
 
   const fetchOtherUserProfile = async () => {
     const { data } = await supabase
@@ -1044,7 +1151,7 @@ export const ChatThread = ({
                             </div>
                           )}
                           {hasText && (
-                            <p className="text-sm whitespace-pre-wrap break-words">
+                            <p className="text-sm whitespace-pre-wrap break-words text-white">
                               {message.text}
                             </p>
                           )}

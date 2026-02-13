@@ -79,7 +79,7 @@ export const MessageAttachment = ({ attachment, isOwn, onAttachmentDeleted }: Me
     return (
       <>
         <div 
-          className="relative cursor-pointer group rounded-lg overflow-hidden max-w-[240px]"
+          className="relative cursor-pointer group rounded-lg overflow-hidden max-w-[240px] bg-black/30"
           onClick={() => setLightboxOpen(true)}
         >
           <img
@@ -205,24 +205,18 @@ export const MessageAttachment = ({ attachment, isOwn, onAttachmentDeleted }: Me
       className={cn(
         "relative flex items-center gap-3 p-3 pr-10 rounded-lg border max-w-[260px] self-end",
         isOwn 
-          ? "bg-primary/15 border-primary/30 text-primary-foreground" 
-          : "bg-card border-border text-foreground"
+          ? "bg-primary/20 border-primary/40 text-white" 
+          : "bg-muted/80 border-border text-white"
       )}
     >
       <div className="flex-shrink-0">
         {getIconForType(getFileIcon(attachment.mime_type))}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={cn(
-          "text-sm font-medium truncate",
-          isOwn ? "text-primary-foreground" : "text-foreground"
-        )}>
+        <p className="text-sm font-medium truncate text-white">
           {attachment.file_name}
         </p>
-        <p className={cn(
-          "text-xs",
-          isOwn ? "text-primary-foreground/70" : "text-muted-foreground"
-        )}>
+        <p className="text-xs text-white/70">
           {formatFileSize(attachment.size)}
         </p>
       </div>
