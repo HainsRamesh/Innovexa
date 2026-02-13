@@ -73,7 +73,7 @@ export const ChatThread = ({
   onMessagesRead,
 }: ChatThreadProps) => {
   const { user } = useAuth();
-  const { isBlocked, blockUser, unblockUser, reportUser } = useProfileActions(targetUserId);
+  const { isBlocked, isBlockedByOther, blockUser, unblockUser, reportUser } = useProfileActions(targetUserId);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [messageText, setMessageText] = useState("");
@@ -1215,6 +1215,12 @@ export const ChatThread = ({
         <div className="p-4 border-t border-border flex-shrink-0 text-center">
           <p className="text-sm text-muted-foreground">
             You have blocked this user. <button onClick={() => unblockUser()} className="text-primary hover:underline font-medium">Unblock</button> to send messages.
+          </p>
+        </div>
+      ) : isBlockedByOther ? (
+        <div className="p-4 border-t border-border flex-shrink-0 text-center">
+          <p className="text-sm text-muted-foreground">
+            You can't send messages to this user.
           </p>
         </div>
       ) : (
