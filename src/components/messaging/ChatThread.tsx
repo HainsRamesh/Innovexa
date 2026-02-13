@@ -164,29 +164,18 @@ export const ChatThread = ({
 
     setIsLoading(true);
     try {
-      const [deletionsResult, messagesResult] = await Promise.all([
-        supabase
-          .from("message_deletions")
-          .select("message_id")
-          .eq("user_id", user.id),
-        supabase
-          .from("messages")
-          .select("*")
-          .eq("conversation_id", convId)
-          .order("created_at", { ascending: true }),
-      ]);
+      const { data: messagesData, error: messagesError } = await supabase
+        .from("messages")
+        .select("*")
+        .eq("conversation_id", convId)
+        .order("created_at", { ascending: true });
 
-      const { data: deletionsData, error: deletionsError } = deletionsResult;
-      const { data: messagesData, error: messagesError } = messagesResult;
-
-      if (deletionsError) throw deletionsError;
       if (messagesError) throw messagesError;
 
-      const deletedIds = new Set((deletionsData || []).map((d) => d.message_id));
-      setDeletedMessageIds(deletedIds);
-
-      // Filter out messages deleted for current user (client-side filter for extra safety)
-      const filteredMessages = (messagesData || []).filter(msg => !deletedIds.has(msg.id));
+      // Filter out messages soft-deleted for current user
+      const filteredMessages = (messagesData || []).filter(msg => 
+        !(msg.deleted_for_user_ids && msg.deleted_for_user_ids.includes(user.id))
+      );
 
       // Fetch attachments for all messages
       const messageIds = filteredMessages.map(m => m.id);
@@ -222,26 +211,11 @@ export const ChatThread = ({
         }
       }
 
-      const messagesWithAttachments = filteredMessages.map(msg => {
-        const inlineAttachment: MessageAttachmentData[] =
-          msg.file_url
-            ? [{
-                id: `${msg.id}-inline`,
-                url: msg.file_url,
-                file_name: msg.file_name || "file",
-                mime_type: msg.file_mime || "application/octet-stream",
-                size: msg.file_size || 0,
-                thumbnail_url: undefined,
-                message_id: msg.id,
-              }]
-            : [];
-
-        return {
-          ...msg,
-          attachments: attachmentsMap[msg.id] || inlineAttachment,
-          message_type: (msg as any).message_type || (msg as any).type || "text",
-        };
-      });
+      const messagesWithAttachments = filteredMessages.map(msg => ({
+        ...msg,
+        attachments: attachmentsMap[msg.id] || [],
+        message_type: (msg as any).type || "text",
+      }));
 
       setMessages(messagesWithAttachments);
       
@@ -293,18 +267,11 @@ export const ChatThread = ({
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from("message_deletions")
-        .insert({ user_id: user.id, message_id: messageId });
-
-      // Ignore duplicate delete attempts
-      if (error && error.code !== "23505") throw error;
-
-      setDeletedMessageIds(prev => {
-        const updated = new Set(prev);
-        updated.add(messageId);
-        return updated;
+      const { error } = await supabase.rpc("soft_delete_message_for_me", {
+        p_message_id: messageId,
       });
+
+      if (error) throw error;
 
       // Remove from local state
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
@@ -329,9 +296,7 @@ export const ChatThread = ({
         .from("messages")
         .update({ 
           is_deleted: true,
-          text: "", // Clear the text as well
-          deleted_at: new Date().toISOString(),
-          deleted_by: user.id,
+          text: "",
         })
         .eq("id", messageId)
         .eq("sender_id", user.id); // Only allow deleting own messages
@@ -484,16 +449,7 @@ export const ChatThread = ({
         sender_id: user.id,
         text: currentText || "",
         type: messageType,
-        message_type: messageType,
       };
-
-      if (uploadedAttachments.length > 0) {
-        const first = uploadedAttachments[0];
-        messagePayload.file_url = first.url;
-        messagePayload.file_name = first.file.name;
-        messagePayload.file_mime = first.file.type;
-        messagePayload.file_size = first.file.size;
-      }
 
       if (currentReply) {
         messagePayload.reply_to_message_id = currentReply.messageId;
