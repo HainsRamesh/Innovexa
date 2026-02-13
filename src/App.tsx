@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,63 +12,73 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { MessengerDrawer } from "@/components/messaging";
 import { supabase } from "@/integrations/supabase/client";
-// Pages
+
+// Critical pages loaded eagerly
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import ExploreProblems from "./pages/ExploreProblems";
-import ProblemDetails from "./pages/ProblemDetails";
-import Solutions from "./pages/Solutions";
-import About from "./pages/About";
-import Profile from "./pages/Profile";
-import PublicProfile from "./pages/PublicProfile";
 import NotFound from "./pages/NotFound";
-import Innovations from "./pages/Innovations";
-import InnovationDetail from "./pages/InnovationDetail";
-import NewInnovation from "./pages/NewInnovation";
-import EditInnovation from "./pages/EditInnovation";
-import NewProblem from "./pages/NewProblem";
-import SolutionDetail from "./pages/SolutionDetail";
-import EditProblem from "./pages/EditProblem";
-import Features from "./pages/Features";
-import Pricing from "./pages/Pricing";
-import Docs from "./pages/Docs";
-import Blog from "./pages/Blog";
-import Careers from "./pages/Careers";
-import Contact from "./pages/Contact";
-import Privacy from "./pages/Privacy";
-import Terms from "./pages/Terms";
-import Cookies from "./pages/Cookies";
-import HelpCenter from "./pages/HelpCenter";
-import FAQs from "./pages/FAQs";
-import Troubleshooting from "./pages/Troubleshooting";
-import ReportBug from "./pages/ReportBug";
-import FeatureRequests from "./pages/FeatureRequests";
-import Accessibility from "./pages/Accessibility";
-import Roadmap from "./pages/Roadmap";
-import Community from "./pages/Community";
-import Messages from "./pages/Messages";
-import Notifications from "./pages/Notifications";
+
+// Lazy-loaded pages for code splitting
+const ExploreProblems = lazy(() => import("./pages/ExploreProblems"));
+const ProblemDetails = lazy(() => import("./pages/ProblemDetails"));
+const Solutions = lazy(() => import("./pages/Solutions"));
+const About = lazy(() => import("./pages/About"));
+const Profile = lazy(() => import("./pages/Profile"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+const Innovations = lazy(() => import("./pages/Innovations"));
+const InnovationDetail = lazy(() => import("./pages/InnovationDetail"));
+const NewInnovation = lazy(() => import("./pages/NewInnovation"));
+const EditInnovation = lazy(() => import("./pages/EditInnovation"));
+const NewProblem = lazy(() => import("./pages/NewProblem"));
+const SolutionDetail = lazy(() => import("./pages/SolutionDetail"));
+const EditProblem = lazy(() => import("./pages/EditProblem"));
+const Features = lazy(() => import("./pages/Features"));
+const Pricing = lazy(() => import("./pages/Pricing"));
+const Docs = lazy(() => import("./pages/Docs"));
+const Blog = lazy(() => import("./pages/Blog"));
+const Careers = lazy(() => import("./pages/Careers"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const Terms = lazy(() => import("./pages/Terms"));
+const Cookies = lazy(() => import("./pages/Cookies"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const FAQs = lazy(() => import("./pages/FAQs"));
+const Troubleshooting = lazy(() => import("./pages/Troubleshooting"));
+const ReportBug = lazy(() => import("./pages/ReportBug"));
+const FeatureRequests = lazy(() => import("./pages/FeatureRequests"));
+const Accessibility = lazy(() => import("./pages/Accessibility"));
+const Roadmap = lazy(() => import("./pages/Roadmap"));
+const Community = lazy(() => import("./pages/Community"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 
 // Dashboard Pages
-import DashboardOverview from "./pages/dashboard/DashboardOverview";
-import ProblemsPage from "./pages/dashboard/ProblemsPage";
-import ProblemDetailPage from "./pages/dashboard/ProblemDetailPage";
-import EditProblemPage from "./pages/dashboard/EditProblemPage";
-import NewProblemPage from "./pages/dashboard/NewProblemPage";
-import BrowseProblemsPage from "./pages/dashboard/BrowseProblemsPage";
-import MySolutionsPage from "./pages/dashboard/MySolutionsPage";
-import MyInnovationsPage from "./pages/dashboard/MyInnovationsPage";
-import SolutionDetailPage from "./pages/dashboard/SolutionDetailPage";
-import EditSolutionPage from "./pages/dashboard/EditSolutionPage";
-import InnovationViewPage from "./pages/dashboard/InnovationViewPage";
-import InnovationEditPage from "./pages/dashboard/InnovationEditPage";
-import BookmarksPage from "./pages/dashboard/BookmarksPage";
-import SettingsPage from "./pages/dashboard/SettingsPage";
-import NotificationsPage from "./pages/dashboard/NotificationsPage";
-import MessagesPage from "./pages/dashboard/MessagesPage";
-import InvestorDashboardPage from "./pages/dashboard/InvestorDashboardPage";
+const DashboardOverview = lazy(() => import("./pages/dashboard/DashboardOverview"));
+const ProblemsPage = lazy(() => import("./pages/dashboard/ProblemsPage"));
+const ProblemDetailPage = lazy(() => import("./pages/dashboard/ProblemDetailPage"));
+const EditProblemPage = lazy(() => import("./pages/dashboard/EditProblemPage"));
+const NewProblemPage = lazy(() => import("./pages/dashboard/NewProblemPage"));
+const BrowseProblemsPage = lazy(() => import("./pages/dashboard/BrowseProblemsPage"));
+const MySolutionsPage = lazy(() => import("./pages/dashboard/MySolutionsPage"));
+const MyInnovationsPage = lazy(() => import("./pages/dashboard/MyInnovationsPage"));
+const SolutionDetailPage = lazy(() => import("./pages/dashboard/SolutionDetailPage"));
+const EditSolutionPage = lazy(() => import("./pages/dashboard/EditSolutionPage"));
+const InnovationViewPage = lazy(() => import("./pages/dashboard/InnovationViewPage"));
+const InnovationEditPage = lazy(() => import("./pages/dashboard/InnovationEditPage"));
+const BookmarksPage = lazy(() => import("./pages/dashboard/BookmarksPage"));
+const SettingsPage = lazy(() => import("./pages/dashboard/SettingsPage"));
+const NotificationsPage = lazy(() => import("./pages/dashboard/NotificationsPage"));
+const MessagesPage = lazy(() => import("./pages/dashboard/MessagesPage"));
+const InvestorDashboardPage = lazy(() => import("./pages/dashboard/InvestorDashboardPage"));
 
 const queryClient = new QueryClient();
+
+// Suspense fallback that matches the app's background
+const PageFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+  </div>
+);
 
 // Protected Route Component - redirects to auth if not authenticated
 // STRICT: No dev bypass, only real Supabase authentication
@@ -215,124 +225,128 @@ const PublicOnlyRoute = ({ children }: { children: React.ReactNode }) => {
 const DashboardRoutes = () => {
   return (
     <DashboardLayout>
-      <Routes>
-        <Route index element={<DashboardOverview />} />
-        <Route path="innovator" element={<DashboardOverview />} />
-        <Route path="enterprise" element={<DashboardOverview />} />
-        <Route path="investor" element={<DashboardOverview />} />
-        <Route path="admin" element={<DashboardOverview />} />
-        <Route path="problems" element={<ProblemsPage />} />
-        <Route path="problems/new" element={<NewProblemPage />} />
-        <Route path="problems/:problemId" element={<ProblemDetailPage />} />
-        <Route path="problems/:problemId/edit" element={<EditProblemPage />} />
-        <Route path="browse" element={<BrowseProblemsPage />} />
-        <Route path="browse/:problemId" element={<ProblemDetailPage />} />
-        <Route path="browse/:problemId/edit" element={<EditProblemPage />} />
-        <Route path="solutions" element={<MySolutionsPage />} />
-        <Route path="solutions/:solutionId" element={<SolutionDetailPage />} />
-        <Route path="solutions/:solutionId/edit" element={<EditSolutionPage />} />
-        <Route path="innovations" element={<MyInnovationsPage />} />
-        <Route path="innovations/:innovationId" element={<InnovationViewPage />} />
-        <Route path="innovations/:innovationId/edit" element={<InnovationEditPage />} />
-        <Route path="bookmarks" element={<BookmarksPage />} />
-        <Route path="notifications" element={<NotificationsPage />} />
-        <Route path="messages" element={<MessagesPage />} />
-        <Route path="messages/:conversationId" element={<MessagesPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="investments" element={<DashboardOverview />} />
-        <Route path="organizations" element={<DashboardOverview />} />
-        <Route path="users" element={<DashboardOverview />} />
-      </Routes>
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route index element={<DashboardOverview />} />
+          <Route path="innovator" element={<DashboardOverview />} />
+          <Route path="enterprise" element={<DashboardOverview />} />
+          <Route path="investor" element={<DashboardOverview />} />
+          <Route path="admin" element={<DashboardOverview />} />
+          <Route path="problems" element={<ProblemsPage />} />
+          <Route path="problems/new" element={<NewProblemPage />} />
+          <Route path="problems/:problemId" element={<ProblemDetailPage />} />
+          <Route path="problems/:problemId/edit" element={<EditProblemPage />} />
+          <Route path="browse" element={<BrowseProblemsPage />} />
+          <Route path="browse/:problemId" element={<ProblemDetailPage />} />
+          <Route path="browse/:problemId/edit" element={<EditProblemPage />} />
+          <Route path="solutions" element={<MySolutionsPage />} />
+          <Route path="solutions/:solutionId" element={<SolutionDetailPage />} />
+          <Route path="solutions/:solutionId/edit" element={<EditSolutionPage />} />
+          <Route path="innovations" element={<MyInnovationsPage />} />
+          <Route path="innovations/:innovationId" element={<InnovationViewPage />} />
+          <Route path="innovations/:innovationId/edit" element={<InnovationEditPage />} />
+          <Route path="bookmarks" element={<BookmarksPage />} />
+          <Route path="notifications" element={<NotificationsPage />} />
+          <Route path="messages" element={<MessagesPage />} />
+          <Route path="messages/:conversationId" element={<MessagesPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="investments" element={<DashboardOverview />} />
+          <Route path="organizations" element={<DashboardOverview />} />
+          <Route path="users" element={<DashboardOverview />} />
+        </Routes>
+      </Suspense>
     </DashboardLayout>
   );
 };
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public only routes - redirect authenticated users */}
-      <Route path="/" element={
-        <PublicOnlyRoute><Index /></PublicOnlyRoute>
-      } />
-      <Route path="/about" element={<About />} />
-      <Route path="/auth" element={<Auth />} />
-      
-      {/* Public informational pages */}
-      <Route path="/features" element={<Features />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/docs" element={<Docs />} />
-      <Route path="/blog" element={<Blog />} />
-      <Route path="/careers" element={<Careers />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/cookies" element={<Cookies />} />
-      <Route path="/help-center" element={<HelpCenter />} />
-      <Route path="/faqs" element={<FAQs />} />
-      <Route path="/troubleshooting" element={<Troubleshooting />} />
-      <Route path="/report-bug" element={<ReportBug />} />
-      <Route path="/feature-requests" element={<FeatureRequests />} />
-      <Route path="/accessibility" element={<Accessibility />} />
-      <Route path="/roadmap" element={<Roadmap />} />
-      <Route path="/community" element={<Community />} />
-      
-      {/* Protected routes - require authentication */}
-      <Route path="/innovations" element={
-        <ProtectedRoute><Innovations /></ProtectedRoute>
-      } />
-      <Route path="/innovations/new" element={
-        <ProtectedRoute><NewInnovation /></ProtectedRoute>
-      } />
-      <Route path="/innovations/:innovationId/edit" element={
-        <ProtectedRoute><EditInnovation /></ProtectedRoute>
-      } />
-      <Route path="/innovations/:innovationId" element={
-        <ProtectedRoute><InnovationDetail /></ProtectedRoute>
-      } />
-      <Route path="/explore" element={
-        <ProtectedRoute><ExploreProblems /></ProtectedRoute>
-      } />
-      <Route path="/explore/problems" element={<Navigate to="/explore" replace />} />
-      <Route path="/explore/:problemId" element={
-        <ProtectedRoute><ProblemDetails /></ProtectedRoute>
-      } />
-      <Route path="/problems/new" element={
-        <ProtectedRoute><NewProblem /></ProtectedRoute>
-      } />
-      <Route path="/problems/:problemId/edit" element={
-        <ProtectedRoute><EditProblem /></ProtectedRoute>
-      } />
-      <Route path="/solutions" element={
-        <ProtectedRoute><Solutions /></ProtectedRoute>
-      } />
-      <Route path="/solutions/:solutionId" element={
-        <ProtectedRoute><SolutionDetail /></ProtectedRoute>
-      } />
-      <Route path="/profile" element={
-        <ProtectedRoute><Profile /></ProtectedRoute>
-      } />
-      <Route path="/users/:userId" element={
-        <ProtectedRoute><PublicProfile /></ProtectedRoute>
-      } />
-      <Route path="/messages" element={
-        <ProtectedRoute><Messages /></ProtectedRoute>
-      } />
-      <Route path="/messages/:conversationId" element={
-        <ProtectedRoute><Messages /></ProtectedRoute>
-      } />
-      <Route path="/notifications" element={
-        <ProtectedRoute><Notifications /></ProtectedRoute>
-      } />
-      <Route
-        path="/dashboard/*"
-        element={
-          <ProtectedRoute>
-            <DashboardRoutes />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<PageFallback />}>
+      <Routes>
+        {/* Public only routes - redirect authenticated users */}
+        <Route path="/" element={
+          <PublicOnlyRoute><Index /></PublicOnlyRoute>
+        } />
+        <Route path="/about" element={<About />} />
+        <Route path="/auth" element={<Auth />} />
+        
+        {/* Public informational pages */}
+        <Route path="/features" element={<Features />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/docs" element={<Docs />} />
+        <Route path="/blog" element={<Blog />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/cookies" element={<Cookies />} />
+        <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/faqs" element={<FAQs />} />
+        <Route path="/troubleshooting" element={<Troubleshooting />} />
+        <Route path="/report-bug" element={<ReportBug />} />
+        <Route path="/feature-requests" element={<FeatureRequests />} />
+        <Route path="/accessibility" element={<Accessibility />} />
+        <Route path="/roadmap" element={<Roadmap />} />
+        <Route path="/community" element={<Community />} />
+        
+        {/* Protected routes - require authentication */}
+        <Route path="/innovations" element={
+          <ProtectedRoute><Innovations /></ProtectedRoute>
+        } />
+        <Route path="/innovations/new" element={
+          <ProtectedRoute><NewInnovation /></ProtectedRoute>
+        } />
+        <Route path="/innovations/:innovationId/edit" element={
+          <ProtectedRoute><EditInnovation /></ProtectedRoute>
+        } />
+        <Route path="/innovations/:innovationId" element={
+          <ProtectedRoute><InnovationDetail /></ProtectedRoute>
+        } />
+        <Route path="/explore" element={
+          <ProtectedRoute><ExploreProblems /></ProtectedRoute>
+        } />
+        <Route path="/explore/problems" element={<Navigate to="/explore" replace />} />
+        <Route path="/explore/:problemId" element={
+          <ProtectedRoute><ProblemDetails /></ProtectedRoute>
+        } />
+        <Route path="/problems/new" element={
+          <ProtectedRoute><NewProblem /></ProtectedRoute>
+        } />
+        <Route path="/problems/:problemId/edit" element={
+          <ProtectedRoute><EditProblem /></ProtectedRoute>
+        } />
+        <Route path="/solutions" element={
+          <ProtectedRoute><Solutions /></ProtectedRoute>
+        } />
+        <Route path="/solutions/:solutionId" element={
+          <ProtectedRoute><SolutionDetail /></ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute><Profile /></ProtectedRoute>
+        } />
+        <Route path="/users/:userId" element={
+          <ProtectedRoute><PublicProfile /></ProtectedRoute>
+        } />
+        <Route path="/messages" element={
+          <ProtectedRoute><Messages /></ProtectedRoute>
+        } />
+        <Route path="/messages/:conversationId" element={
+          <ProtectedRoute><Messages /></ProtectedRoute>
+        } />
+        <Route path="/notifications" element={
+          <ProtectedRoute><Notifications /></ProtectedRoute>
+        } />
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <DashboardRoutes />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   );
 };
 

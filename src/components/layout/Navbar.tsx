@@ -107,12 +107,15 @@ export const Navbar = () => {
       <img
         src="/zynovexa-logo.png"
         alt="Zynovexa"
+        width={48}
+        height={48}
         onError={(e) => {
           e.currentTarget.src = "/favicon.ico";
         }}
         className="h-12 w-12 object-contain transition-transform group-hover:scale-105"
         loading="eager"
         decoding="async"
+        fetchPriority="high"
       />
       <span className="text-xl font-bold tracking-tight">ZYNOVEXA</span>
     </Link>
