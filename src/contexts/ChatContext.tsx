@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ChatTarget {
   userId: string;
@@ -18,31 +20,81 @@ interface ChatContextType {
   toggleDrawer: () => void;
   switchToChat: (userId: string) => void;
   removeChat: (userId: string) => void;
-  getTotalUnreadCount: () => number;
-  setTotalUnreadCount: (count: number) => void;
+  unreadCount: number;
+  refreshUnreadCount: () => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 export const ChatProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [activeChats, setActiveChats] = useState<ChatTarget[]>([]);
   const [currentChatTarget, setCurrentChatTarget] = useState<ChatTarget | null>(null);
-  const [totalUnreadCount, setTotalUnreadCountState] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const refreshUnreadCount = useCallback(async () => {
+    if (!user?.id) {
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const { data, error } = await supabase.rpc("get_unread_message_count");
+      if (!error && typeof data === "number") {
+        setUnreadCount(data);
+      }
+    } catch {
+      // silent
+    }
+  }, [user?.id]);
+
+  // Fetch on mount & when user changes
+  useEffect(() => {
+    refreshUnreadCount();
+  }, [refreshUnreadCount]);
+
+  // Realtime: listen for new messages across ALL conversations
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel("unread-messages-global")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new as { sender_id: string };
+          if (msg.sender_id !== user.id) {
+            // New message from someone else – refresh count
+            refreshUnreadCount();
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
+        () => {
+          // read_at was set – refresh count
+          refreshUnreadCount();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, refreshUnreadCount]);
 
   const openChat = useCallback((target: ChatTarget) => {
     setActiveChats((prev) => {
-      // Check if chat with this user already exists
       const existingIndex = prev.findIndex((c) => c.userId === target.userId);
       if (existingIndex >= 0) {
-        // Update with new prefilled message if provided
         const updated = [...prev];
         if (target.prefilledMessage) {
           updated[existingIndex] = { ...updated[existingIndex], ...target };
         }
         return updated;
       }
-      // Add new chat
       return [...prev, target];
     });
     setCurrentChatTarget(target);
@@ -71,12 +123,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [currentChatTarget]);
 
-  const getTotalUnreadCount = useCallback(() => totalUnreadCount, [totalUnreadCount]);
-
-  const setTotalUnreadCount = useCallback((count: number) => {
-    setTotalUnreadCountState(count);
-  }, []);
-
   return (
     <ChatContext.Provider
       value={{
@@ -88,8 +134,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         toggleDrawer,
         switchToChat,
         removeChat,
-        getTotalUnreadCount,
-        setTotalUnreadCount,
+        unreadCount,
+        refreshUnreadCount,
       }}
     >
       {children}
@@ -100,8 +146,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 export const useChat = () => {
   const context = useContext(ChatContext);
   if (context === undefined) {
-    // Return a no-op implementation for components rendered outside provider
-    // This can happen with portal-based components during initial render
     return {
       isDrawerOpen: false,
       activeChats: [],
@@ -111,8 +155,8 @@ export const useChat = () => {
       toggleDrawer: () => {},
       switchToChat: () => {},
       removeChat: () => {},
-      getTotalUnreadCount: () => 0,
-      setTotalUnreadCount: () => {},
+      unreadCount: 0,
+      refreshUnreadCount: () => {},
     } as ChatContextType;
   }
   return context;
