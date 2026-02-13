@@ -164,21 +164,25 @@ export const ChatThread = ({
 
     setIsLoading(true);
     try {
-      const { data: messagesData, error: messagesError } = await supabase
-        .from("messages")
-        .select("*")
-        .eq("conversation_id", convId)
-        .order("created_at", { ascending: true });
+      const [deletionsResult, messagesResult] = await Promise.all([
+        supabase
+          .from("message_deletions")
+          .select("message_id")
+          .eq("user_id", user.id),
+        supabase
+          .from("messages")
+          .select("*")
+          .eq("conversation_id", convId)
+          .order("created_at", { ascending: true }),
+      ]);
 
+      const { data: deletionsData, error: deletionsError } = deletionsResult;
+      const { data: messagesData, error: messagesError } = messagesResult;
+
+      if (deletionsError) throw deletionsError;
       if (messagesError) throw messagesError;
 
-      // Filter out messages deleted for current user using deleted_for_user_ids column
-      const deletedIds = new Set<string>();
-      (messagesData || []).forEach(msg => {
-        if (msg.deleted_for_user_ids && msg.deleted_for_user_ids.includes(user.id)) {
-          deletedIds.add(msg.id);
-        }
-      });
+      const deletedIds = new Set((deletionsData || []).map((d) => d.message_id));
       setDeletedMessageIds(deletedIds);
 
       // Filter out messages deleted for current user (client-side filter for extra safety)
@@ -219,15 +223,14 @@ export const ChatThread = ({
       }
 
       const messagesWithAttachments = filteredMessages.map(msg => {
-        const msgAny = msg as any;
         const inlineAttachment: MessageAttachmentData[] =
-          msgAny.file_url
+          msg.file_url
             ? [{
                 id: `${msg.id}-inline`,
-                url: msgAny.file_url,
-                file_name: msgAny.file_name || "file",
-                mime_type: msgAny.file_mime || "application/octet-stream",
-                size: msgAny.file_size || 0,
+                url: msg.file_url,
+                file_name: msg.file_name || "file",
+                mime_type: msg.file_mime || "application/octet-stream",
+                size: msg.file_size || 0,
                 thumbnail_url: undefined,
                 message_id: msg.id,
               }]
@@ -290,9 +293,9 @@ export const ChatThread = ({
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase.rpc("soft_delete_message_for_me", {
-        p_message_id: messageId,
-      });
+      const { error } = await supabase
+        .from("message_deletions")
+        .insert({ user_id: user.id, message_id: messageId });
 
       // Ignore duplicate delete attempts
       if (error && error.code !== "23505") throw error;
