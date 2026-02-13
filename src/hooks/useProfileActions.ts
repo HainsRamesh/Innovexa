@@ -275,6 +275,13 @@ export const useProfileActions = (targetUserId: string | undefined) => {
 
       setIsBlocked(false);
 
+      // Re-check if the other user still has us blocked
+      const { data: stillBlocked } = await supabase.rpc("is_user_blocked", {
+        _user_id: user.id,
+        _other_user_id: targetUserId,
+      });
+      setIsBlockedByOther(!!stillBlocked);
+
       toast({
         title: "User unblocked",
         description: "This user has been unblocked.",
