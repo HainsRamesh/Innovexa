@@ -252,8 +252,6 @@ export const ChatThread = ({
 
       // Remove from local state
       setMessages(prev => prev.filter(msg => msg.id !== messageId));
-      
-      toast({ description: "Message deleted for you" });
     } catch (error) {
       console.error("Error deleting message for me:", error);
       toast({
@@ -286,8 +284,6 @@ export const ChatThread = ({
           ? { ...msg, is_deleted: true, text: "" }
           : msg
       ));
-      
-      toast({ description: "Message deleted for everyone" });
     } catch (error) {
       console.error("Error deleting message for everyone:", error);
       toast({
@@ -557,8 +553,11 @@ export const ChatThread = ({
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (messages.length === 0) return;
+    requestAnimationFrame(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    });
+  }, [messages.length]);
 
   // Set prefilled message (only once per conversation)
   useEffect(() => {
