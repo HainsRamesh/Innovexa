@@ -74,6 +74,7 @@ export const ChatThread = ({
 }: ChatThreadProps) => {
   const { user } = useAuth();
   const { isBlocked, blockUser, unblockUser, reportUser } = useProfileActions(targetUserId);
+  const [isBlockedByOther, setIsBlockedByOther] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [messageText, setMessageText] = useState("");
@@ -596,6 +597,22 @@ export const ChatThread = ({
       handleFilesSelected(files);
     }
   };
+
+  // Check bidirectional block status
+  useEffect(() => {
+    const checkBidirectionalBlock = async () => {
+      if (!user?.id || !targetUserId) return;
+      const { data } = await supabase.rpc("is_user_blocked", {
+        _user_id: user.id,
+        _other_user_id: targetUserId,
+      });
+      // is_user_blocked returns true if EITHER direction has a block
+      // isBlocked from useProfileActions only checks if WE blocked them
+      // So if is_user_blocked is true but isBlocked is false, THEY blocked US
+      setIsBlockedByOther(data === true && !isBlocked);
+    };
+    checkBidirectionalBlock();
+  }, [user?.id, targetUserId, isBlocked]);
 
   // Initialize conversation
   useEffect(() => {
@@ -1170,6 +1187,12 @@ export const ChatThread = ({
         <div className="p-4 border-t border-border flex-shrink-0 text-center">
           <p className="text-sm text-muted-foreground">
             You have blocked this user. <button onClick={() => unblockUser()} className="text-primary hover:underline font-medium">Unblock</button> to send messages.
+          </p>
+        </div>
+      ) : isBlockedByOther ? (
+        <div className="p-4 border-t border-border flex-shrink-0 text-center">
+          <p className="text-sm text-muted-foreground">
+            You can't send messages to this user.
           </p>
         </div>
       ) : (

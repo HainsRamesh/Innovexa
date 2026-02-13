@@ -101,8 +101,20 @@ const MessagesPage = () => {
         })
       );
 
-      setConversations(enriched);
-      setFilteredConversations(enriched);
+      // Filter out conversations with blocked users (bidirectional)
+      const filteredByBlock = await Promise.all(
+        enriched.map(async (conv) => {
+          const { data: blocked } = await supabase.rpc("is_user_blocked", {
+            _user_id: user.id,
+            _other_user_id: conv.other_user.id,
+          });
+          return blocked ? null : conv;
+        })
+      );
+      const finalConversations = filteredByBlock.filter(Boolean) as ConversationItem[];
+
+      setConversations(finalConversations);
+      setFilteredConversations(finalConversations);
 
       // Auto-select conversation from URL
       if (conversationId) {
