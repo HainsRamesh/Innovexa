@@ -211,9 +211,10 @@ const Profile = () => {
         description: 'Your profile has been saved successfully.',
       });
     } catch (error) {
+      console.error('Error updating profile:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update profile. Please try again.',
+        description: error instanceof Error ? error.message : 'Failed to update profile. Please try again.',
         variant: 'destructive',
       });
     } finally {
