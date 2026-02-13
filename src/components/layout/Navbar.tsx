@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications";
 import { MessagesBell } from "@/components/messaging/MessagesBell";
 import { GlobalSearch } from "@/components/search";
+import { useChat } from "@/contexts/ChatContext";
 
 interface NavItem {
   label: string;
@@ -24,6 +25,7 @@ interface NavItem {
 
 export const Navbar = () => {
   const { user, profile, role, signOut } = useAuth();
+  const { unreadCount: messageUnreadCount } = useChat();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -243,7 +245,14 @@ export const Navbar = () => {
                       className="flex items-center justify-between px-2 pb-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <span>Messages</span>
+                      <span className="flex items-center gap-2">
+                        Messages
+                        {messageUnreadCount > 0 && (
+                          <span className="min-w-[16px] h-[16px] px-1 flex items-center justify-center text-[10px] font-bold text-primary-foreground bg-primary rounded-full">
+                            {messageUnreadCount > 99 ? "99+" : messageUnreadCount}
+                          </span>
+                        )}
+                      </span>
                       <MessageCircle className="h-[18px] w-[18px] text-muted-foreground" />
                     </Link>
                     <Link

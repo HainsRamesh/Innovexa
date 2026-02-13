@@ -25,8 +25,8 @@ export const MessengerDrawer = () => {
     activeChats,
     closeDrawer,
     openChat,
-    setTotalUnreadCount,
-    getTotalUnreadCount,
+    unreadCount,
+    refreshUnreadCount,
   } = useChat();
 
   const [view, setView] = useState<DrawerView>("list");
@@ -79,7 +79,7 @@ export const MessengerDrawer = () => {
 
   if (!user) return null;
 
-  const totalUnread = getTotalUnreadCount();
+  const totalUnread = unreadCount;
 
   return (
     <>
@@ -138,7 +138,7 @@ export const MessengerDrawer = () => {
               ref={conversationListRef}
               onSelectConversation={handleSelectConversation}
               selectedUserId={selectedChat?.userId}
-              onTotalUnreadChange={setTotalUnreadCount}
+              onTotalUnreadChange={refreshUnreadCount}
             />
           ) : selectedChat && selectedChat.userId ? (
             <ChatThread

@@ -29,7 +29,7 @@ interface ConversationItem {
 interface ConversationListProps {
   onSelectConversation: (userId: string, userName: string | null, avatarUrl: string | null) => void;
   selectedUserId?: string | null;
-  onTotalUnreadChange?: (count: number) => void;
+  onTotalUnreadChange?: (count?: number) => void;
 }
 
 export interface ConversationListRef {
