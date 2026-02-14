@@ -6,12 +6,12 @@ import {
   DialogContent,
   DialogDescription,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import {
   Drawer,
-  DrawerContent,
-} from "@/components/ui/drawer";
+  DrawerContent } from
+"@/components/ui/drawer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -33,8 +33,8 @@ import {
   Target,
   ExternalLink,
   X,
-  ArrowLeft,
-} from "lucide-react";
+  ArrowLeft } from
+"lucide-react";
 
 interface SolutionDetailDialogProps {
   solution: {
@@ -64,7 +64,7 @@ const FILE_TYPE_ICONS: Record<string, typeof FileText> = {
   jpg: FileImage,
   jpeg: FileImage,
   gif: FileImage,
-  webp: FileImage,
+  webp: FileImage
 };
 
 const getFileExtension = (filename: string): string => {
@@ -79,27 +79,27 @@ const getFileIcon = (filename: string) => {
 function SolutionDetailContent({
   solution,
   onClose,
-  isMobile,
-}: {
-  solution: NonNullable<SolutionDetailDialogProps["solution"]>;
-  onClose: () => void;
-  isMobile: boolean;
-}) {
+  isMobile
+
+
+
+
+}: {solution: NonNullable<SolutionDetailDialogProps["solution"]>;onClose: () => void;isMobile: boolean;}) {
   const { toast } = useToast();
   const { startLoading, stopLoading } = useGlobalLoading();
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
-  const [linkedProblem, setLinkedProblem] = useState<{ id: string; title: string; category: string } | null>(null);
+  const [linkedProblem, setLinkedProblem] = useState<{id: string;title: string;category: string;} | null>(null);
 
   useEffect(() => {
     if (solution?.problem_id) {
-      supabase
-        .from("problems")
-        .select("id, title, category")
-        .eq("id", solution.problem_id)
-        .single()
-        .then(({ data }) => {
-          setLinkedProblem(data ?? null);
-        });
+      supabase.
+      from("problems").
+      select("id, title, category").
+      eq("id", solution.problem_id).
+      single().
+      then(({ data }) => {
+        setLinkedProblem(data ?? null);
+      });
     }
     return () => setLinkedProblem(null);
   }, [solution?.problem_id]);
@@ -113,9 +113,9 @@ function SolutionDetailContent({
     setDownloadingIndex(index);
     startLoading("Preparing download…");
     try {
-      const { data, error } = await supabase.storage
-        .from("solution-attachments")
-        .createSignedUrl(path, 60 * 5);
+      const { data, error } = await supabase.storage.
+      from("solution-attachments").
+      createSignedUrl(path, 60 * 5);
       if (error) throw error;
       if (data?.signedUrl) window.open(data.signedUrl, "_blank");
     } catch (error) {
@@ -123,7 +123,7 @@ function SolutionDetailContent({
       toast({
         title: "Download failed",
         description: "Could not generate download link. Please try again.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setDownloadingIndex(null);
@@ -134,33 +134,33 @@ function SolutionDetailContent({
   return (
     <>
       {/* Mobile header bar */}
-      {isMobile && (
-        <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
+      {isMobile &&
+      <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
           <button
-            onClick={onClose}
-            className="rounded-full p-1.5 hover:bg-muted transition-colors"
-            aria-label="Go back"
-          >
+          onClick={onClose}
+          className="rounded-full p-1.5 hover:bg-muted transition-colors"
+          aria-label="Go back">
+
             <ArrowLeft className="h-5 w-5" />
           </button>
-          <h2 className="text-base font-semibold truncate flex-1">Solution Details</h2>
+          <h2 className="text-base font-semibold truncate flex-1">Back</h2>
         </div>
-      )}
+      }
 
       <div className={isMobile ? "px-4 py-4 space-y-6 pb-[env(safe-area-inset-bottom,1rem)]" : "space-y-6 mt-4"}>
         {/* Title (shown inside content for desktop, or below header for mobile) */}
         <div className="flex items-center gap-2 flex-wrap">
           <h3 className="text-xl font-semibold break-words">{solution.title}</h3>
-          {solution.status === "accepted" && (
-            <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
+          {solution.status === "accepted" &&
+          <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
               Approved
             </Badge>
-          )}
+          }
         </div>
 
         {/* Linked Problem */}
-        {linkedProblem && (
-          <>
+        {linkedProblem &&
+        <>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 rounded-lg bg-muted/50">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -180,7 +180,7 @@ function SolutionDetailContent({
             </div>
             <Separator />
           </>
-        )}
+        }
 
         <div>
           <h4 className="font-semibold flex items-center gap-2 mb-2">
@@ -192,8 +192,8 @@ function SolutionDetailContent({
 
         <Separator />
 
-        {solution.approach && (
-          <>
+        {solution.approach &&
+        <>
             <div>
               <h4 className="font-semibold flex items-center gap-2 mb-2">
                 <Layers className="h-4 w-4 text-primary" />
@@ -203,21 +203,21 @@ function SolutionDetailContent({
             </div>
             <Separator />
           </>
-        )}
+        }
 
-        {solution.technology_stack && solution.technology_stack.length > 0 && (
-          <>
+        {solution.technology_stack && solution.technology_stack.length > 0 &&
+        <>
             <div>
               <h4 className="font-semibold mb-2">Technology Stack</h4>
               <div className="flex flex-wrap gap-2">
-                {solution.technology_stack.map((tech) => (
-                  <Badge key={tech} variant="secondary">{tech}</Badge>
-                ))}
+                {solution.technology_stack.map((tech) =>
+              <Badge key={tech} variant="secondary">{tech}</Badge>
+              )}
               </div>
             </div>
             <Separator />
           </>
-        )}
+        }
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div className="p-3 sm:p-4 rounded-lg bg-muted/50">
@@ -238,8 +238,8 @@ function SolutionDetailContent({
           </div>
         </div>
 
-        {solution.attachments && solution.attachments.length > 0 && (
-          <>
+        {solution.attachments && solution.attachments.length > 0 &&
+        <>
             <Separator />
             <div>
               <h4 className="font-semibold flex items-center gap-2 mb-3">
@@ -248,12 +248,12 @@ function SolutionDetailContent({
               </h4>
               <div className="space-y-2">
                 {solution.attachments.map((path, index) => {
-                  const fileName = path.split("/").pop() || `Attachment ${index + 1}`;
-                  const ext = getFileExtension(fileName).toUpperCase();
-                  const IconComponent = getFileIcon(fileName);
-                  const isDownloading = downloadingIndex === index;
-                  return (
-                    <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                const fileName = path.split("/").pop() || `Attachment ${index + 1}`;
+                const ext = getFileExtension(fileName).toUpperCase();
+                const IconComponent = getFileIcon(fileName);
+                const isDownloading = downloadingIndex === index;
+                return (
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                       <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                         <IconComponent className="h-5 w-5 text-primary" />
                       </div>
@@ -264,16 +264,16 @@ function SolutionDetailContent({
                       <Button variant="outline" size="sm" onClick={() => handleDownload(path, index)} disabled={isDownloading} className="shrink-0">
                         {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Download className="h-4 w-4 mr-1" />Open</>}
                       </Button>
-                    </div>
-                  );
-                })}
+                    </div>);
+
+              })}
               </div>
             </div>
           </>
-        )}
+        }
 
-        {(!solution.attachments || solution.attachments.length === 0) && (
-          <>
+        {(!solution.attachments || solution.attachments.length === 0) &&
+        <>
             <Separator />
             <div>
               <h4 className="font-semibold flex items-center gap-2 mb-3">
@@ -286,14 +286,14 @@ function SolutionDetailContent({
               </div>
             </div>
           </>
-        )}
+        }
 
         <div className="text-sm text-muted-foreground">
           Submitted on {format(new Date(solution.created_at), "MMMM d, yyyy")}
         </div>
       </div>
-    </>
-  );
+    </>);
+
 }
 
 export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionDetailDialogProps) {
@@ -311,8 +311,8 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
             <SolutionDetailContent solution={solution} onClose={handleClose} isMobile />
           </ScrollArea>
         </DrawerContent>
-      </Drawer>
-    );
+      </Drawer>);
+
   }
 
   return (
@@ -321,8 +321,8 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
         <button
           onClick={handleClose}
           className="absolute right-3 top-3 z-10 rounded-full bg-muted/80 p-1.5 hover:bg-muted transition-colors"
-          aria-label="Close"
-        >
+          aria-label="Close">
+
           <X className="h-4 w-4" />
         </button>
         <DialogHeader>
@@ -333,6 +333,6 @@ export function SolutionDetailDialog({ solution, open, onOpenChange }: SolutionD
         </DialogHeader>
         <SolutionDetailContent solution={solution} onClose={handleClose} isMobile={false} />
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 }
