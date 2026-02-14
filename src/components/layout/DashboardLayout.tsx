@@ -33,6 +33,8 @@ import { AppRole } from "@/types";
 import { NotificationBell } from "@/components/notifications";
 import { MessagesBell } from "@/components/messaging/MessagesBell";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useChat } from "@/contexts/ChatContext";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -109,6 +111,8 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
+  const { unreadCount: messageUnreadCount } = useChat();
+  const { unreadCount: notifUnreadCount } = useNotifications();
 
   const handleSignOut = async () => {
     await signOut();
@@ -231,6 +235,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     aria-label="Notifications"
                   >
                     <Bell className="h-[18px] w-[18px] text-muted-foreground" />
+                    {notifUnreadCount > 0 && (
+                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.4)]" />
+                    )}
                   </Button>
                   <Button
                     variant="ghost"
@@ -240,6 +247,9 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     aria-label="Messages"
                   >
                     <MessageCircle className="h-[18px] w-[18px] text-muted-foreground" />
+                    {messageUnreadCount > 0 && (
+                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary shadow-[0_0_6px_hsl(var(--primary)/0.4)]" />
+                    )}
                   </Button>
                 </>
               ) : (
