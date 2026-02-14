@@ -297,20 +297,20 @@ export default function Innovations() {
         {/* Robot Avatar FAB (bottom) */}
         <Sheet open={robotOpen} onOpenChange={setRobotOpen}>
           <SheetTrigger asChild>
-            <button
-              className="relative h-11 w-11 sm:h-14 sm:w-14 rounded-full transition-all duration-200 hover:scale-105 active:scale-95 flex items-center justify-center"
+            <Button
+              size="lg"
+              className="relative h-11 w-11 sm:h-14 sm:w-14 rounded-full shadow-2xl hover:shadow-xl transition-all bg-primary hover:bg-primary/90"
               style={{
-                background: 'linear-gradient(135deg, hsl(170 45% 45%), hsl(150 40% 50%))',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.12), inset 0 1px 2px rgba(255,255,255,0.15)',
+                boxShadow: '0 0 20px hsl(var(--primary) / 0.5), 0 4px 15px rgba(0,0,0,0.25)'
               }}
             >
-              <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
+              <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold border-2 border-background">
                   {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
-            </button>
+            </Button>
           </SheetTrigger>
           <SheetContent side="right" className="w-[380px] sm:w-[420px] p-0 z-[110] flex flex-col [&>button]:hidden">
             <div className="flex-1 overflow-hidden">
