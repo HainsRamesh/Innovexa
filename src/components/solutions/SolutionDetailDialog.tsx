@@ -135,15 +135,14 @@ function SolutionDetailContent({
     <>
       {/* Mobile header bar */}
       {isMobile &&
-      <div className="sticky top-0 z-10 flex items-center gap-3 px-4 py-3 border-b border-border bg-background">
+      <div className="sticky top-0 z-10 flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+          <h2 className="text-base font-semibold truncate">Solution Details</h2>
           <button
           onClick={onClose}
           className="rounded-full p-1.5 hover:bg-muted transition-colors"
-          aria-label="Go back">
-
-            <ArrowLeft className="h-5 w-5" />
+          aria-label="Close">
+            <X className="h-5 w-5" />
           </button>
-          <h2 className="text-base font-semibold truncate flex-1">Back</h2>
         </div>
       }
 
