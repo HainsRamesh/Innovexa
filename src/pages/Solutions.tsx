@@ -393,14 +393,14 @@ const Solutions = () => {
           <CardTitle>Solutions submitted to your problems</CardTitle>
           <CardDescription>Review and track submissions for challenges your organization owns.</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-hidden">
-          <Table>
+        <CardContent className="overflow-x-auto p-2 sm:p-6">
+          <Table className="text-xs sm:text-sm">
             <TableHeader>
               <TableRow>
-                <TableHead>Solution</TableHead>
-                <TableHead>Problem</TableHead>
-                <TableHead>Submitted by</TableHead>
-                <TableHead>Date</TableHead>
+                <TableHead className="min-w-[120px]">Solution</TableHead>
+                <TableHead className="hidden md:table-cell">Problem</TableHead>
+                <TableHead className="hidden lg:table-cell">Submitted by</TableHead>
+                <TableHead className="hidden sm:table-cell">Date</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -408,29 +408,36 @@ const Solutions = () => {
             <TableBody>
               {filteredMyProblems.map((solution) => (
                 <TableRow key={solution.id}>
-                  <TableCell>
-                    <div className="font-semibold">{solution.title}</div>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{solution.description}</p>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{solution.problems?.title || 'Untitled problem'}</div>
-                    <Badge variant="outline" className="mt-1 inline-flex capitalize">
-                      {solution.problems?.category || 'general'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm font-medium">
+                  <TableCell className="px-2 py-2 sm:px-4 sm:py-3">
+                    <div className="font-semibold text-xs sm:text-sm line-clamp-1">{solution.title}</div>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2">{solution.description}</p>
+                    {/* Show problem & author inline on mobile */}
+                    <div className="md:hidden mt-1 text-[11px] text-muted-foreground line-clamp-1">
+                      {solution.problems?.title || 'Untitled problem'}
+                    </div>
+                    <div className="lg:hidden md:hidden mt-0.5 text-[11px] text-muted-foreground">
                       {solution.author?.full_name || 'Innovator'}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <div className="text-sm text-muted-foreground">
+                  <TableCell className="hidden md:table-cell px-2 sm:px-4">
+                    <div className="font-medium text-xs sm:text-sm line-clamp-1">{solution.problems?.title || 'Untitled problem'}</div>
+                    <Badge variant="outline" className="mt-1 inline-flex capitalize text-[10px] sm:text-xs">
+                      {solution.problems?.category || 'general'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell px-2 sm:px-4">
+                    <div className="text-xs sm:text-sm font-medium">
+                      {solution.author?.full_name || 'Innovator'}
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell px-2 sm:px-4">
+                    <div className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(solution.created_at).toLocaleDateString()}
                     </div>
                   </TableCell>
-                  <TableCell className="whitespace-nowrap">{getStatusBadge(solution.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="sm" variant="outline" onClick={() => handleViewDetails(solution)}>
+                  <TableCell className="whitespace-nowrap px-2 sm:px-4">{getStatusBadge(solution.status)}</TableCell>
+                  <TableCell className="text-right px-2 sm:px-4">
+                    <Button size="sm" variant="outline" className="text-xs px-2 sm:px-3" onClick={() => handleViewDetails(solution)}>
                       View
                     </Button>
                   </TableCell>
