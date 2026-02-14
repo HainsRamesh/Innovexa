@@ -18,6 +18,9 @@ export const FloatingMessageButton = ({ className }: FloatingMessageButtonProps)
 
   if (!user || isDrawerOpen) return null;
 
+  const { unreadCount } = useChat();
+  const displayCount = unreadCount > 99 ? "99+" : unreadCount;
+
   return (
     <button
       onClick={() => {
@@ -35,9 +38,23 @@ export const FloatingMessageButton = ({ className }: FloatingMessageButtonProps)
         "border border-border",
         className
       )}
-      aria-label="Open messages"
+      aria-label={`Open messages${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
     >
       <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+      {unreadCount > 0 && (
+        <span
+          className={cn(
+            "absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1",
+            "flex items-center justify-center",
+            "text-[10px] font-bold text-primary-foreground",
+            "bg-primary rounded-full",
+            "shadow-[0_0_6px_hsl(var(--primary)/0.4)]",
+            "animate-in fade-in zoom-in duration-200"
+          )}
+        >
+          {displayCount}
+        </span>
+      )}
     </button>
   );
 };

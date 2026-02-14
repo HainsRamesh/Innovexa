@@ -167,29 +167,19 @@ export const ChatThread = ({
     try {
       const [
         { data: messagesData, error: messagesError },
-        { data: deletionsData, error: deletionsError },
       ] = await Promise.all([
         supabase
           .from("messages")
           .select("*")
           .eq("conversation_id", convId)
           .order("created_at", { ascending: true }),
-        supabase
-          .from("message_deletions")
-          .select("message_id")
-          .eq("user_id", user.id),
       ]);
 
       if (messagesError) throw messagesError;
-      if (deletionsError) throw deletionsError;
 
-      const deletionSet = new Set((deletionsData || []).map((d) => d.message_id));
-      setDeletedMessageIds(deletionSet);
-
-      // Apply any upstream filters (e.g., block rules) first, then always apply per-user deletions last
       const filteredMessages = (messagesData || [])
         .filter((msg) => !(msg.deleted_for_user_ids && msg.deleted_for_user_ids.includes(user.id)))
-        .filter((msg) => !deletionSet.has(msg.id));
+        .filter((msg) => !deletedMessageIds.has(msg.id));
 
       // Fetch attachments for all messages
       const messageIds = filteredMessages.map(m => m.id);
@@ -286,12 +276,9 @@ export const ChatThread = ({
     if (!user?.id) return;
 
     try {
-      const { error } = await supabase
-        .from("message_deletions")
-        .upsert(
-          { user_id: user.id, message_id: messageId },
-          { onConflict: "user_id,message_id" }
-        );
+      const { error } = await supabase.rpc("soft_delete_message_for_me", {
+        p_message_id: messageId,
+      });
 
       if (error) throw error;
 
