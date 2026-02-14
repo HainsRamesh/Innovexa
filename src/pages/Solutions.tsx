@@ -565,9 +565,9 @@ const Solutions = () => {
         <div className="container mx-auto">
           {isInnovator ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-6">
-                <TabsTrigger value="approved">Approved Solutions ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</TabsTrigger>
-                <TabsTrigger value="my-solutions">My Solutions ({activeTab === 'my-solutions' ? filteredMine.length : mySolutions.length})</TabsTrigger>
+              <TabsList className="mb-6 w-full sm:w-auto flex">
+                <TabsTrigger value="approved" className="flex-1 sm:flex-initial text-xs sm:text-sm px-2 sm:px-4">Approved ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</TabsTrigger>
+                <TabsTrigger value="my-solutions" className="flex-1 sm:flex-initial text-xs sm:text-sm px-2 sm:px-4">My Solutions ({activeTab === 'my-solutions' ? filteredMine.length : mySolutions.length})</TabsTrigger>
               </TabsList>
 
               <TabsContent value="approved">
