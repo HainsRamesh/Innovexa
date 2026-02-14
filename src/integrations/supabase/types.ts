@@ -672,32 +672,6 @@ export type Database = {
             columns: ["message_id"]
             isOneToOne: false
             referencedRelation: "messages"
-          referencedColumns: ["id"]
-        },
-      ]
-    }
-      message_deletions: {
-        Row: {
-          created_at: string
-          message_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          message_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          message_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_deletions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
