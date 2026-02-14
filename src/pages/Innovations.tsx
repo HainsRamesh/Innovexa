@@ -298,13 +298,13 @@ export default function Innovations() {
         <Sheet open={robotOpen} onOpenChange={setRobotOpen}>
           <SheetTrigger asChild>
             <Button
-              size="lg"
-              className="relative h-11 w-11 sm:h-14 sm:w-14 rounded-full shadow-2xl hover:shadow-xl transition-all bg-primary hover:bg-primary/90"
+              size="icon"
+              className="relative !h-13 !w-13 sm:!h-16 sm:!w-16 !rounded-full shadow-2xl hover:shadow-xl transition-all bg-primary hover:bg-primary/90"
               style={{
                 boxShadow: '0 0 20px hsl(var(--primary) / 0.5), 0 4px 15px rgba(0,0,0,0.25)'
               }}
             >
-              <Bot className="h-5 w-5 sm:h-6 sm:w-6" />
+              <Bot className="h-6 w-6 sm:h-7 sm:w-7" />
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold border-2 border-background">
                   {unreadCount > 99 ? "99+" : unreadCount}
