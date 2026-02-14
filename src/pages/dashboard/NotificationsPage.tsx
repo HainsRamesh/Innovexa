@@ -41,22 +41,55 @@ const NotificationsPage = () => {
     ? groupedNotifications 
     : filterByCategory(activeFilter);
 
+  const getNavigationPath = (notification: GroupedNotification): string | null => {
+    const { related_type, related_id, data, type } = notification;
+    const notifData = data as Record<string, string | undefined>;
+
+    // Solution-related notifications (comments, approvals, status updates)
+    if (related_type === 'solution' && related_id) {
+      return `/dashboard/solutions/${related_id}`;
+    }
+
+    // Problem-related notifications
+    if (related_type === 'problem' && related_id) {
+      return `/dashboard/problems/${related_id}`;
+    }
+
+    // Innovation-related notifications
+    if (related_type === 'innovation' && related_id) {
+      return `/dashboard/innovations/${related_id}`;
+    }
+
+    // Investor interest without related_type set
+    if (type === 'investor_interest' && related_id) {
+      if (notifData?.innovation_id) return `/dashboard/innovations/${notifData.innovation_id}`;
+      if (notifData?.problem_id) return `/dashboard/problems/${notifData.problem_id}`;
+    }
+
+    // Solution submitted / approved / rejected without related_type
+    if ((type === 'solution_submitted' || type === 'solution_approved' || type === 'solution_rejected' || type === 'status_update')) {
+      if (notifData?.solution_id) return `/dashboard/solutions/${notifData.solution_id}`;
+      if (notifData?.problem_id) return `/dashboard/problems/${notifData.problem_id}`;
+    }
+
+    // Comment/mention fallback via data
+    if ((type === 'comment' || type === 'mention')) {
+      if (notifData?.solution_id) return `/dashboard/solutions/${notifData.solution_id}`;
+      if (notifData?.innovation_id) return `/dashboard/innovations/${notifData.innovation_id}`;
+      if (notifData?.problem_id) return `/dashboard/problems/${notifData.problem_id}`;
+    }
+
+    return null;
+  };
+
   const handleNotificationClick = (notification: GroupedNotification) => {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-    
-    const { related_type, related_id, data } = notification;
-    
-    if (related_type === 'solution' && related_id) {
-      const problemId = (data as { problem_id?: string })?.problem_id;
-      if (problemId) {
-        navigate(`/dashboard/problems/${problemId}/solutions/${related_id}`);
-      }
-    } else if (related_type === 'problem' && related_id) {
-      navigate(`/dashboard/problems/${related_id}`);
-    } else if (related_type === 'innovation' && related_id) {
-      navigate(`/innovations/${related_id}`);
+
+    const path = getNavigationPath(notification);
+    if (path) {
+      navigate(path);
     }
   };
 

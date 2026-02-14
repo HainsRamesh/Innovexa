@@ -102,7 +102,41 @@ export const useNotifications = () => {
         throw error;
       }
 
-      const notifs = (data || []) as Notification[];
+      let notifs = (data || []) as Notification[];
+
+      // Enrich notifications that have actor_id but missing/placeholder actor_name
+      const needsEnrichment = notifs.filter(
+        n => n.actor_id && (!n.actor_name || n.actor_name === 'Someone')
+      );
+
+      if (needsEnrichment.length > 0) {
+        const uniqueActorIds = [...new Set(needsEnrichment.map(n => n.actor_id!))];
+        const { data: profiles } = await supabase
+          .from('public_profiles')
+          .select('id, full_name, avatar_url')
+          .in('id', uniqueActorIds);
+
+        if (profiles && profiles.length > 0) {
+          const profileMap = new Map(profiles.map(p => [p.id, p]));
+          notifs = notifs.map(n => {
+            if (n.actor_id && (!n.actor_name || n.actor_name === 'Someone')) {
+              const profile = profileMap.get(n.actor_id);
+              if (profile?.full_name) {
+                // Update message to replace "Someone" with actual name
+                const updatedMessage = n.message.replace(/^Someone/, profile.full_name);
+                return {
+                  ...n,
+                  actor_name: profile.full_name,
+                  actor_avatar_url: n.actor_avatar_url || profile.avatar_url,
+                  message: updatedMessage,
+                };
+              }
+            }
+            return n;
+          });
+        }
+      }
+
       console.log('[Notifications] Fetched count:', notifs.length, 'unread:', notifs.filter(n => !n.is_read).length);
       setNotifications(notifs);
       setUnreadCount(notifs.filter(n => !n.is_read).length);
