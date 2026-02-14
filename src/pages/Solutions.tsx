@@ -566,7 +566,10 @@ const Solutions = () => {
           {isInnovator ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="mb-6 w-full sm:w-auto flex">
-                <TabsTrigger value="approved" className="flex-1 sm:flex-initial text-xs sm:text-sm px-2 sm:px-4">Approved ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</TabsTrigger>
+                <TabsTrigger value="approved" className="flex-1 sm:flex-initial text-xs sm:text-sm px-2 sm:px-4">
+                  <span className="sm:hidden">Approved ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</span>
+                  <span className="hidden sm:inline">Approved Solutions ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</span>
+                </TabsTrigger>
                 <TabsTrigger value="my-solutions" className="flex-1 sm:flex-initial text-xs sm:text-sm px-2 sm:px-4">My Solutions ({activeTab === 'my-solutions' ? filteredMine.length : mySolutions.length})</TabsTrigger>
               </TabsList>
 
