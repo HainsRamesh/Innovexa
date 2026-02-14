@@ -15,6 +15,7 @@ import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { NotificationBell } from "@/components/notifications";
 import { MessagesBell } from "@/components/messaging/MessagesBell";
+import { useNotifications } from "@/hooks/useNotifications";
 import { GlobalSearch } from "@/components/search";
 import { useChat } from "@/contexts/ChatContext";
 
@@ -26,6 +27,7 @@ interface NavItem {
 export const Navbar = () => {
   const { user, profile, role, signOut } = useAuth();
   const { unreadCount: messageUnreadCount } = useChat();
+  const { unreadCount: notifUnreadCount } = useNotifications();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -261,7 +263,14 @@ export const Navbar = () => {
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span>Notifications</span>
-                      <Bell className="h-[18px] w-[18px] text-muted-foreground" />
+                      <span className="relative flex items-center">
+                        <Bell className="h-[18px] w-[18px] text-muted-foreground" />
+                        {notifUnreadCount > 0 && (
+                          <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center text-[10px] font-bold text-primary-foreground bg-primary rounded-full shadow-[0_0_6px_hsl(var(--primary)/0.4)]">
+                            {notifUnreadCount > 99 ? "99+" : notifUnreadCount}
+                          </span>
+                        )}
+                      </span>
                     </Link>
                     <Button variant="ghost" asChild className="justify-start">
                       <Link to={getDashboardLink()} onClick={() => setMobileMenuOpen(false)}>
