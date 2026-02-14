@@ -1322,8 +1322,8 @@ const moderateAsset = async (
         </Card>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => navigate("/innovations")} disabled={isSubmitting}>
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-4">
+          <Button type="button" variant="outline" onClick={() => navigate("/innovations")} disabled={isSubmitting} className="text-sm sm:text-base h-9 sm:h-10">
             Cancel
           </Button>
           {/* Only show Save as Draft for create mode, not edit mode */}
@@ -1333,12 +1333,13 @@ const moderateAsset = async (
               variant="secondary"
               onClick={form.handleSubmit((data) => onSubmit(data, true))}
               disabled={isSubmitting}
+              className="text-sm sm:text-base h-9 sm:h-10"
             >
               {isSavingDraft ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
               Save as Draft
             </Button>
           )}
-          <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, false))} disabled={isSubmitting}>
+          <Button type="button" onClick={form.handleSubmit((data) => onSubmit(data, false))} disabled={isSubmitting} className="text-sm sm:text-base h-9 sm:h-10">
             {isPublishing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Send className="h-4 w-4 mr-2" />}
             {mode === "edit" ? "Update Innovation" : "Publish Innovation"}
           </Button>
