@@ -389,62 +389,101 @@ const Solutions = () => {
 
     return (
       <Card>
-        <CardHeader>
-          <CardTitle>Solutions submitted to your problems</CardTitle>
-          <CardDescription>Review and track submissions for challenges your organization owns.</CardDescription>
+        <CardHeader className="px-3 py-4 sm:px-6 sm:py-6">
+          <CardTitle className="text-base sm:text-lg">Solutions submitted to your problems</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">Review and track submissions for challenges your organization owns.</CardDescription>
         </CardHeader>
-        <CardContent className="overflow-x-auto p-2 sm:p-6">
-          <Table className="text-xs sm:text-sm">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[120px]">Solution</TableHead>
-                <TableHead className="hidden md:table-cell">Problem</TableHead>
-                <TableHead className="hidden lg:table-cell">Submitted by</TableHead>
-                <TableHead className="hidden sm:table-cell">Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMyProblems.map((solution) => (
-                <TableRow key={solution.id}>
-                  <TableCell className="px-2 py-2 sm:px-4 sm:py-3">
-                    <div className="font-semibold text-xs sm:text-sm line-clamp-1">{solution.title}</div>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground line-clamp-1 sm:line-clamp-2">{solution.description}</p>
-                    {/* Show problem & author inline on mobile */}
-                    <div className="md:hidden mt-1 text-[11px] text-muted-foreground line-clamp-1">
-                      {solution.problems?.title || 'Untitled problem'}
-                    </div>
-                    <div className="lg:hidden md:hidden mt-0.5 text-[11px] text-muted-foreground">
-                      {solution.author?.full_name || 'Innovator'}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell px-2 sm:px-4">
-                    <div className="font-medium text-xs sm:text-sm line-clamp-1">{solution.problems?.title || 'Untitled problem'}</div>
-                    <Badge variant="outline" className="mt-1 inline-flex capitalize text-[10px] sm:text-xs">
+        <CardContent className="px-0 sm:px-6 pb-4 sm:pb-6">
+          {/* Mobile card layout */}
+          <div className="sm:hidden space-y-3 px-3">
+            {filteredMyProblems.map((solution) => (
+              <div key={solution.id} className="rounded-lg border border-border/60 p-3 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm leading-snug line-clamp-2">{solution.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{solution.description}</p>
+                  </div>
+                  {getStatusBadge(solution.status)}
+                </div>
+
+                <div className="space-y-1.5 text-xs">
+                  <div className="flex gap-1.5">
+                    <span className="text-muted-foreground shrink-0">Problem:</span>
+                    <span className="font-medium line-clamp-1">{solution.problems?.title || 'Untitled problem'}</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <span className="text-muted-foreground shrink-0">Category:</span>
+                    <Badge variant="outline" className="capitalize text-[10px] h-5 px-1.5">
                       {solution.problems?.category || 'general'}
                     </Badge>
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell px-2 sm:px-4">
-                    <div className="text-xs sm:text-sm font-medium">
-                      {solution.author?.full_name || 'Innovator'}
-                    </div>
-                  </TableCell>
-                  <TableCell className="hidden sm:table-cell px-2 sm:px-4">
-                    <div className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(solution.created_at).toLocaleDateString()}
-                    </div>
-                  </TableCell>
-                  <TableCell className="whitespace-nowrap px-2 sm:px-4">{getStatusBadge(solution.status)}</TableCell>
-                  <TableCell className="text-right px-2 sm:px-4">
-                    <Button size="sm" variant="outline" className="text-xs px-2 sm:px-3" onClick={() => handleViewDetails(solution)}>
-                      View
-                    </Button>
-                  </TableCell>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <span className="text-muted-foreground shrink-0">By:</span>
+                    <span className="font-medium">{solution.author?.full_name || 'Innovator'}</span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <span className="text-muted-foreground shrink-0">Date:</span>
+                    <span>{new Date(solution.created_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                <Button size="sm" variant="outline" className="w-full text-xs mt-1" onClick={() => handleViewDetails(solution)}>
+                  View Details
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop table layout */}
+          <div className="hidden sm:block overflow-x-auto">
+            <Table className="text-xs sm:text-sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="min-w-[160px]">Solution</TableHead>
+                  <TableHead className="hidden md:table-cell">Problem</TableHead>
+                  <TableHead className="hidden lg:table-cell">Submitted by</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredMyProblems.map((solution) => (
+                  <TableRow key={solution.id}>
+                    <TableCell className="px-4 py-3">
+                      <div className="font-semibold text-sm line-clamp-1">{solution.title}</div>
+                      <p className="text-xs text-muted-foreground line-clamp-2">{solution.description}</p>
+                      <div className="md:hidden mt-1 text-xs text-muted-foreground line-clamp-1">
+                        {solution.problems?.title || 'Untitled problem'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell px-4">
+                      <div className="font-medium text-sm line-clamp-1">{solution.problems?.title || 'Untitled problem'}</div>
+                      <Badge variant="outline" className="mt-1 inline-flex capitalize text-xs">
+                        {solution.problems?.category || 'general'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell px-4">
+                      <div className="text-sm font-medium">
+                        {solution.author?.full_name || 'Innovator'}
+                      </div>
+                    </TableCell>
+                    <TableCell className="px-4">
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(solution.created_at).toLocaleDateString()}
+                      </div>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap px-4">{getStatusBadge(solution.status)}</TableCell>
+                    <TableCell className="text-right px-4">
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => handleViewDetails(solution)}>
+                        View
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     );
