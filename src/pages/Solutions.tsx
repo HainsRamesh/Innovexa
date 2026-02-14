@@ -494,29 +494,32 @@ const Solutions = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-12 px-4">
-        <div className="container mx-auto text-center">
-          <Badge variant="secondary" className="mb-4">
+      <section className="pt-20 sm:pt-24 pb-8 sm:pb-12 px-4">
+        <div className="container mx-auto text-center max-w-3xl">
+          <Badge variant="secondary" className="mb-3 sm:mb-4 text-[11px] sm:text-xs">
             {isEnterprise ? "My Problems' Solutions" : isInvestor ? 'Investment Opportunities' : 'Accepted Solutions'}
           </Badge>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4 leading-tight tracking-tight">
             {isEnterprise ? (
               <>
-                Solutions for <span className="text-gradient">My Problems</span>
+                Solutions for{' '}
+                <span className="text-gradient block sm:inline">My Problems</span>
               </>
             ) : isInvestor ? (
               <>
-                Discover <span className="text-gradient">Investment Opportunities</span>
+                Discover{' '}
+                <span className="text-gradient block sm:inline">Investment Opportunities</span>
               </>
             ) : (
               <>
-                Innovative <span className="text-gradient">Solutions</span>
+                Innovative{' '}
+                <span className="text-gradient">Solutions</span>
               </>
             )}
           </h1>
 
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
             {isEnterprise
               ? 'Review solutions submitted to your posted problems'
               : isInvestor
