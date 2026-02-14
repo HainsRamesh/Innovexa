@@ -31,32 +31,40 @@ export const NotificationItem = memo(({
 
   const getNavigationPath = (): string | null => {
     const { related_type, related_id, data, type } = notification;
-    
-    // Handle solution-related notifications
+    const notifData = data as Record<string, string | undefined>;
+
+    // Solution-related notifications (comments, approvals, status updates)
     if (related_type === 'solution' && related_id) {
-      const problemId = (data as { problem_id?: string })?.problem_id;
-      if (problemId) {
-        return `/dashboard/problems/${problemId}`;
-      }
       return `/dashboard/solutions/${related_id}`;
     }
-    
-    // Handle problem-related notifications  
+
+    // Problem-related notifications
     if (related_type === 'problem' && related_id) {
-      return `/explore/${related_id}`;
+      return `/dashboard/problems/${related_id}`;
     }
-    
-    // Handle innovation-related notifications
+
+    // Innovation-related notifications
     if (related_type === 'innovation' && related_id) {
       return `/dashboard/innovations/${related_id}`;
     }
 
-    // Handle specific notification types that may not have related_type set
+    // Investor interest without related_type
     if (type === 'investor_interest' && related_id) {
-      const innovationId = (data as { innovation_id?: string })?.innovation_id;
-      const problemId = (data as { problem_id?: string })?.problem_id;
-      if (innovationId) return `/dashboard/innovations/${innovationId}`;
-      if (problemId) return `/explore/${problemId}`;
+      if (notifData?.innovation_id) return `/dashboard/innovations/${notifData.innovation_id}`;
+      if (notifData?.problem_id) return `/dashboard/problems/${notifData.problem_id}`;
+    }
+
+    // Solution submitted / approved / rejected without related_type
+    if ((type === 'solution_submitted' || type === 'solution_approved' || type === 'solution_rejected' || type === 'status_update')) {
+      if (notifData?.solution_id) return `/dashboard/solutions/${notifData.solution_id}`;
+      if (notifData?.problem_id) return `/dashboard/problems/${notifData.problem_id}`;
+    }
+
+    // Comment/mention fallback via data
+    if ((type === 'comment' || type === 'mention')) {
+      if (notifData?.solution_id) return `/dashboard/solutions/${notifData.solution_id}`;
+      if (notifData?.innovation_id) return `/dashboard/innovations/${notifData.innovation_id}`;
+      if (notifData?.problem_id) return `/dashboard/problems/${notifData.problem_id}`;
     }
 
     return null;
