@@ -168,7 +168,7 @@ const ExploreProblems = () => {
       <Navbar />
 
       {/* Filters - Sticky directly below navbar */}
-      <div className="bg-background border-b border-border">
+      <div className="sticky top-16 z-30 bg-background border-b border-border">
         <div className="container mx-auto px-4 max-w-3xl py-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
