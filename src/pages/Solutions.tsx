@@ -500,7 +500,7 @@ const Solutions = () => {
             {isEnterprise ? "My Problems' Solutions" : isInvestor ? 'Investment Opportunities' : 'Accepted Solutions'}
           </Badge>
 
-          <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold mb-3 sm:mb-4 leading-tight tracking-tight">
+          <h1 className="font-bold mb-3 sm:mb-4 leading-tight tracking-tight">
             {isEnterprise ? (
               <>
                 Solutions for{' '}
