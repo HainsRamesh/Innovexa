@@ -44,7 +44,7 @@ const Cookies = () => {
       
       <main className="flex-1">
         {/* Header */}
-        <section className="bg-gradient-to-b from-muted/50 to-background py-16 md:py-24">
+        <section className="bg-gradient-to-b from-muted/50 to-background py-10 md:py-14">
           <div className="container mx-auto px-4">
             <Link to="/">
               <Button variant="ghost" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground">
