@@ -53,7 +53,7 @@ const Cookies = () => {
               </Button>
             </Link>
             
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-col items-center gap-4 mb-6 text-center">
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Cookie className="h-7 w-7 text-primary" />
               </div>
