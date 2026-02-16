@@ -500,23 +500,12 @@ const Solutions = () => {
             {isEnterprise ? "My Problems' Solutions" : isInvestor ? 'Investment Opportunities' : 'Accepted Solutions'}
           </Badge>
 
-          <h1 className="font-bold mb-3 sm:mb-4 leading-tight tracking-tight">
-            {isEnterprise ? (
-              <>
-                Solutions for{' '}
-                <span className="text-gradient block sm:inline">My Problems</span>
-              </>
-            ) : isInvestor ? (
-              <>
-                Discover{' '}
-                <span className="text-gradient block sm:inline">Investment Opportunities</span>
-              </>
-            ) : (
-              <>
-                Innovative{' '}
-                <span className="text-gradient">Solutions</span>
-              </>
-            )}
+          <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 leading-tight tracking-tight text-foreground">
+            {isEnterprise
+              ? 'Solutions for My Problems'
+              : isInvestor
+                ? 'Discover Investment Opportunities'
+                : 'Innovative Solutions'}
           </h1>
 
           <p className="text-sm sm:text-base md:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
