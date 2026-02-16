@@ -118,12 +118,12 @@ const Index = () => {
             </Badge>
 
             <h1
-              className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight animate-fade-in text-foreground"
+              className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight animate-fade-in"
               style={{ animationDelay: "0.1s" }}
             >
               Where Real Problems
               <br />
-              Meet Real Solutions
+              <span className="text-gradient-primary">Meet Real Solutions</span>
             </h1>
 
             <p
