@@ -554,7 +554,7 @@ const Solutions = () => {
         <div className="container mx-auto">
           {isInnovator ? (
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-6 w-full sm:w-2/3 lg:w-2/3 flex h-12 sm:h-11 gap-1 p-1.5 rounded-xl bg-secondary/60 backdrop-blur-sm border border-border/40">
+              <TabsList className="mb-6 w-full sm:w-2/3 lg:w-auto flex h-12 sm:h-11 gap-1 p-1.5 rounded-xl bg-secondary/60 backdrop-blur-sm border border-border/40">
                 <TabsTrigger value="approved" className="flex-1 lg:flex-initial text-xs sm:text-sm px-3 sm:px-5 py-2 rounded-lg font-medium transition-all data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md">
                   <span className="sm:hidden">Approved ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</span>
                   <span className="hidden sm:inline">Approved Solutions ({activeTab === 'approved' ? filteredApproved.length : approvedSolutions.length})</span>
