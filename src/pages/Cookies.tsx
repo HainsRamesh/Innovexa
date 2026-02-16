@@ -45,15 +45,15 @@ const Cookies = () => {
       <main className="flex-1">
         {/* Header */}
         <section className="bg-gradient-to-b from-muted/50 to-background py-16 md:py-24">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 text-center">
             <Link to="/">
-              <Button variant="ghost" className="mb-6 -ml-2 text-muted-foreground hover:text-foreground">
+              <Button variant="ghost" className="mb-6 text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Back to Home
               </Button>
             </Link>
             
-            <div className="flex flex-col items-center gap-4 mb-6 text-center">
+            <div className="flex flex-col items-center gap-4 mb-6">
               <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
                 <Cookie className="h-7 w-7 text-primary" />
               </div>
@@ -63,7 +63,7 @@ const Cookies = () => {
               </div>
             </div>
             
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto text-center">
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               This Cookie Policy explains how ZyNoveXa uses cookies and similar technologies 
               to recognize you when you visit our platform.
             </p>
@@ -73,7 +73,7 @@ const Cookies = () => {
         {/* Content */}
         <section className="py-12 md:py-16">
           <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto space-y-12">
+            <div className="max-w-4xl mx-auto space-y-12 text-center">
               
               {/* What are cookies */}
               <div className="space-y-4">
@@ -138,7 +138,7 @@ const Cookies = () => {
                   You have the right to decide whether to accept or reject cookies. You can manage 
                   your cookie preferences in several ways:
                 </p>
-                <ul className="list-disc list-inside space-y-2 text-muted-foreground ml-4">
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
                   <li>
                     <strong className="text-foreground">Browser Settings:</strong> Most web browsers allow you to control 
                     cookies through their settings. You can set your browser to refuse cookies or delete certain cookies.
@@ -182,7 +182,7 @@ const Cookies = () => {
               </div>
 
               {/* Contact */}
-              <div className="p-6 rounded-xl bg-primary/5 border border-primary/10">
+              <div className="p-6 rounded-xl bg-primary/5 border border-primary/10 text-center">
                 <h2 className="text-xl font-semibold text-foreground mb-3">Questions About Cookies?</h2>
                 <p className="text-muted-foreground mb-4">
                   If you have any questions about our use of cookies or this Cookie Policy, please contact us.
