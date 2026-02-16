@@ -118,8 +118,8 @@ const Index = () => {
             </Badge>
 
             <h1
-              className="text-4xl sm:text-5xl lg:text-7xl font-bold mb-6 leading-tight animate-fade-in"
-              style={{ animationDelay: "0.1s" }}
+              className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold mb-6 leading-[1.1] tracking-tight animate-fade-in whitespace-normal"
+              style={{ animationDelay: "0.1s", fontSize: "clamp(1.875rem, 5vw + 0.5rem, 4.5rem)" }}
             >
               Where Real Problems
               <br />
@@ -127,8 +127,8 @@ const Index = () => {
             </h1>
 
             <p
-              className="text-lg sm:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-fade-in"
-              style={{ animationDelay: "0.2s" }}
+              className="text-muted-foreground mb-10 max-w-2xl mx-auto animate-fade-in"
+              style={{ animationDelay: "0.2s", fontSize: "clamp(1rem, 1vw + 0.75rem, 1.25rem)" }}
             >
               INNOVEXA connects enterprises with global innovators to solve real-world challenges. AI-powered matching,
               evaluation, and discovery for breakthrough results.
