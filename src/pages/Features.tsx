@@ -76,7 +76,7 @@ const Features = () => {
               <Sparkles className="h-3 w-3 mr-1.5" />
               Platform Features
             </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+            <h1 className="hero-heading mb-6">
               Powerful Features for
               <span className="text-gradient-primary block">Innovation at Scale</span>
             </h1>

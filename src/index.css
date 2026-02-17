@@ -203,6 +203,17 @@ html[style] {
 }
 
 @layer utilities {
+  .hero-heading {
+    @apply text-4xl sm:text-5xl md:text-6xl leading-[1.05] font-extrabold;
+  }
+
+  /* Ensure inner highlights don't shrink the hero title */
+  .hero-heading span {
+    font-size: inherit;
+    line-height: inherit;
+    font-weight: inherit;
+  }
+
   .text-gradient-primary {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);

@@ -72,7 +72,7 @@ const Pricing = () => {
               <Sparkles className="h-3 w-3 mr-1.5" />
               Pricing
             </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+            <h1 className="hero-heading mb-6">
               Simple, Transparent
               <span className="text-gradient-primary block">Pricing</span>
             </h1>

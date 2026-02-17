@@ -29,7 +29,7 @@ const About = () => {
               <Lightbulb className="h-3 w-3 mr-1.5" />
               About INNOVEXA
             </Badge>
-            <h1 className="text-4xl lg:text-5xl font-bold mb-6">
+            <h1 className="hero-heading mb-6">
               Bridging Problems with
               <br />
               <span className="text-gradient-primary">Breakthrough Solutions</span>

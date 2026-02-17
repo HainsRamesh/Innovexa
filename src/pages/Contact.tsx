@@ -57,7 +57,7 @@ const Contact = () => {
               <MessageCircle className="h-3 w-3 mr-1.5" />
               Contact Us
             </Badge>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+            <h1 className="hero-heading mb-6">
               Let's Start a
               <span className="text-gradient-primary block">Conversation</span>
             </h1>
